@@ -1,14 +1,7 @@
+use strict;
+
 # Can't use Test.pm, that's a 5.005 thing.
 package My::Test;
-
-# This feature requires a fairly new version of Test::Harness
-BEGIN {
-    require Test::Harness;
-    if( $Test::Harness::VERSION < 1.20 ) {
-        print "1..0\n";
-        exit(0);
-    }
-}
 
 print "1..2\n";
 
@@ -27,28 +20,16 @@ sub ok ($;$) {
 
 
 package main;
-
-require Test::Simple;
+require Test::More;
 
 push @INC, 't', '.';
 require Catch::More;
 my($out, $err) = Catch::More::caught();
 
-
-Test::Simple->import('no_plan');
-
-ok(1, 'foo');
+Test::More->import('skip_all');
 
 
 END {
-    My::Test::ok($$out eq <<OUT);
-ok 1 - foo
-1..1
-OUT
-
-    My::Test::ok($$err eq <<ERR);
-ERR
-
-    # Prevent Test::Simple from exiting with non zero
-    exit 0;
+    My::Test::ok($$out eq "1..0\n");
+    My::Test::ok($$err eq "");
 }
