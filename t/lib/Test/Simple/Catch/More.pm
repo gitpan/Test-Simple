@@ -1,10 +1,10 @@
 # For testing Test::More;
-package Catch::More;
+package Test::Simple::Catch::More;
 
-my $out = tie *Test::Simple::TESTOUT, 'Catch::More';
-tie *Test::More::TESTOUT, 'Catch::More', $out;
-my $err = tie *Test::More::TESTERR, 'Catch::More';
-tie *Test::Simple::TESTERR, 'Catch::More', $err;
+my $out = tie *Test::Simple::TESTOUT, __PACKAGE__;
+tie *Test::More::TESTOUT, __PACKAGE__, $out;
+my $err = tie *Test::More::TESTERR, __PACKAGE__;
+tie *Test::Simple::TESTERR, __PACKAGE__, $err;
 
 # We have to use them to shut up a "used only once" warning.
 () = (*Test::More::TESTOUT, *Test::More::TESTERR);
