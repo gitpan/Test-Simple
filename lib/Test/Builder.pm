@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION $CLASS);
-$VERSION = '0.13';
+$VERSION = '0.14';
 $CLASS = __PACKAGE__;
 
 my $IsVMS = $^O eq 'VMS';
@@ -149,6 +149,12 @@ sub plan {
             die "You said to run 0 tests!  You've got to run something.\n";
         }
     }
+    else {
+        require Carp;
+        my @args = grep { defined } ($cmd, $arg);
+        Carp::croak("plan() doesn't understand @args");
+    }
+        
 }
 
 =item B<expected_tests>
@@ -639,7 +645,7 @@ sub todo_skip {
 
     my $out = "not ok";
     $out   .= " $Curr_Test" if $self->use_numbers;
-    $out   .= " # TODO $why\n";
+    $out   .= " # TODO & SKIP $why\n";
 
     $Test->_print($out);
 
@@ -816,6 +822,7 @@ sub diag {
 
     # Escape each line with a #.
     foreach (@msgs) {
+        $_ = 'undef' unless defined;
         s/^/# /gms;
     }
 
@@ -850,6 +857,15 @@ sub _print {
 
     local($\, $", $,) = (undef, ' ', '');
     my $fh = $self->output;
+
+    # Escape each line after the first with a # so we don't
+    # confuse Test::Harness.
+    foreach (@msgs) {
+        s/\n(.)/\n# $1/sg;
+    }
+
+    push @msgs, "\n" unless $msgs[-1] =~ /\n\Z/;
+
     print $fh @msgs;
 }
 

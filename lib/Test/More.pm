@@ -18,7 +18,7 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.42';
+$VERSION = '0.44';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
@@ -176,15 +176,17 @@ sub plan {
     my $caller = caller;
 
     $Test->exported_to($caller);
-    $Test->plan(@plan);
 
     my @imports = ();
     foreach my $idx (0..$#plan) {
         if( $plan[$idx] eq 'import' ) {
-            @imports = @{$plan[$idx+1]};
+            my($tag, $imports) = splice @plan, $idx, 2;
+            @imports = @$imports;
             last;
         }
     }
+
+    $Test->plan(@plan);
 
     __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
 }
@@ -455,7 +457,7 @@ as one test.  If you desire otherwise, use:
 
 sub can_ok ($@) {
     my($proto, @methods) = @_;
-    my $class= ref $proto || $proto;
+    my $class = ref $proto || $proto;
 
     unless( @methods ) {
         my $ok = $Test->ok( 0, "$class->can(...)" );
@@ -465,10 +467,9 @@ sub can_ok ($@) {
 
     my @nok = ();
     foreach my $method (@methods) {
-        my $test = "'$class'->can('$method')";
         local($!, $@);  # don't interfere with caller's $@
                         # eval sometimes resets $!
-        eval $test || push @nok, $method;
+        eval { $proto->can($method) } || push @nok, $method;
     }
 
     my $name;
@@ -670,7 +671,7 @@ sub use_ok ($;@) {
     eval <<USE;
 package $pack;
 require $module;
-$module->import(\@imports);
+'$module'->import(\@imports);
 USE
 
     my $ok = $Test->ok( !$@, "use $module;" );
