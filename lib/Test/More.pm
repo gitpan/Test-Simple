@@ -3,13 +3,22 @@ package Test::More;
 use 5.004;
 
 use strict;
-use Carp;
 use Test::Builder;
+
+
+# Can't use Carp because it might cause use_ok() to accidentally succeed
+# even though the module being used forgot to use Carp.  Yes, this
+# actually happened.
+sub _carp {
+    my($file, $line) = (caller(1))[1,2];
+    warn @_, sprintf " at $file line $line\n";
+}
+
 
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.31';
+$VERSION = '0.32';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like is_deeply
@@ -23,24 +32,6 @@ $VERSION = '0.31';
 
 my $Test = Test::Builder->new;
 
-sub import {
-    my($class, @plan) = @_;
-
-    my $caller = caller;
-
-    $Test->exported_to($caller);
-    $Test->plan(@plan);
-
-    my @imports = ();
-    foreach my $idx (0..$#plan) {
-        if( $plan[$idx] eq 'import' ) {
-            @imports = @{$plan[$idx+1]};
-            last;
-        }
-    }
-
-    __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
-}
 
 # 5.004's Exporter doesn't have export_to_level.
 sub _export_to_level
@@ -149,6 +140,48 @@ have to use the 'import' option.  For example, to import everything
 but 'fail', you'd do:
 
   use Test::More tests => 23, import => ['!fail'];
+
+Alternatively, you can use the plan() function.  Useful for when you
+have to calculate the number of tests.
+
+  use Test::More;
+  plan tests => keys %Stuff * 3;
+
+or for deciding between running the tests at all:
+
+  use Test::More;
+  if( $^O eq 'MacOS' ) {
+      plan skip_all => 'Test irrelevent on MacOS';
+  }
+  else {
+      plan tests => 42;
+  }
+
+=cut
+
+sub plan {
+    my(@plan) = @_;
+
+    my $caller = caller;
+
+    $Test->exported_to($caller);
+    $Test->plan(@plan);
+
+    my @imports = ();
+    foreach my $idx (0..$#plan) {
+        if( $plan[$idx] eq 'import' ) {
+            @imports = @{$plan[$idx+1]};
+            last;
+        }
+    }
+
+    __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
+}
+
+sub import {
+    my($class) = shift;
+    goto &plan;
+}
 
 
 =head2 Test names
@@ -392,7 +425,7 @@ sub can_ok ($@) {
 
 =item B<isa_ok>
 
-  isa_ok($object, $class);
+  isa_ok($object, $class, $object_name);
 
 Checks to see if the given $object->isa($class).  Also checks to make
 sure the object was defined in the first place.  Handy for this sort
@@ -408,21 +441,26 @@ where you'd otherwise have to write
 
 to safeguard against your test script blowing up.
 
+The diagnostics of this test normally just refer to 'the object'.  If
+you'd like them to be more specific, you can supply an $object_name
+(for example 'Test customer').
+
 =cut
 
-sub isa_ok ($$) {
-    my($object, $class) = @_;
+sub isa_ok ($$;$) {
+    my($object, $class, $obj_name) = @_;
 
     my $diag;
-    my $name = "object->isa('$class')";
+    $obj_name = 'The object' unless defined $obj_name;
+    my $name = "$obj_name isa $class";
     if( !defined $object ) {
-        $diag = "The object isn't defined";
+        $diag = "$obj_name isn't defined";
     }
     elsif( !ref $object ) {
-        $diag = "The object isn't a reference";
+        $diag = "$obj_name isn't a reference";
     }
     elsif( !$object->isa($class) ) {
-        $diag = "The object isn't a '$class'";
+        $diag = "$obj_name isn't a '$class'";
     }
 
     my $ok;
@@ -619,8 +657,8 @@ sub skip {
 
     unless( defined $how_many ) {
         # $how_many can only be avoided when no_plan is in use.
-        carp "skip() needs to know \$how_many tests are in the block"
-          if $Test::Simple::Planned_Tests;
+        _carp "skip() needs to know \$how_many tests are in the block"
+          unless $Test::Builder::No_Plan;
         $how_many = 1;
     }
 
