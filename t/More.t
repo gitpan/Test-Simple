@@ -1,6 +1,6 @@
 #!perl -w
 
-use Test::More tests => 24;
+use Test::More tests => 35;
 
 use_ok('Text::Soundex');
 require_ok('Test::More');
@@ -16,12 +16,18 @@ like("fooble", '/^foo/',    'foo is like fooble');
 like("FooBle", '/foo/i',   'foo is like FooBle');
 like("/usr/local/pr0n/", '/^\/usr\/local/',   'regexes with slashes in like' );
 
+unlike("fbar", '/^bar/',    'unlike bar');
+unlike("FooBle", '/foo/',   'foo is unlike FooBle');
+unlike("/var/local/pr0n/", '/^\/usr\/local/','regexes with slashes in unlike' );
+
 can_ok('Test::More', qw(require_ok use_ok ok is isnt like skip can_ok
                         pass fail eq_array eq_hash eq_set));
 can_ok(bless({}, "Test::More"), qw(require_ok use_ok ok is isnt like skip 
                                    can_ok pass fail eq_array eq_hash eq_set));
 
 isa_ok(bless([], "Foo"), "Foo");
+isa_ok([], 'ARRAY');
+isa_ok(\42, 'SCALAR');
 
 
 pass('pass() passed');
@@ -87,3 +93,23 @@ ok( eq_hash(\%hash1, \%hash2),  'eq_hash with complicated hashes');
 
 ok( !eq_hash(\%hash1, \%hash2),
     'eq_hash with slightly different complicated hashes' );
+
+is( Test::Builder->new, Test::More->builder,    'builder()' );
+
+
+cmp_ok(42, '==', 42,        'cmp_ok ==');
+cmp_ok('foo', 'eq', 'foo',  '       eq');
+cmp_ok(42.5, '<', 42.6,     '       <');
+cmp_ok(0, '||', 1,          '       ||');
+
+
+# Piers pointed out sometimes people override isa().
+{
+    package Wibble;
+    sub isa {
+        my($self, $class) = @_;
+        return 1 if $class eq 'Wibblemeister';
+    }
+    sub new { bless {} }
+}
+isa_ok( Wibble->new, 'Wibblemeister' );
