@@ -1,3 +1,5 @@
+#!perl -w
+
 use Test::More tests => 9;
 
 # If we skip with the same name, Test::Harness will report it back and
