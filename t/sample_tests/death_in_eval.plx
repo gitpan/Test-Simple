@@ -1,4 +1,5 @@
 require Test::Simple;
+use Carp;
 
 push @INC, 't', '.';
 require Catch;
@@ -16,3 +17,6 @@ ok(1);
 eval "die 'Bar'";
 ok(1);
 
+eval {
+        croak "Moo";
+};
