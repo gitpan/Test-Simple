@@ -45,7 +45,7 @@ WriteMakefile(
         my($self, $orig_perl, $tests) = @_;
 
         my @perls = ($orig_perl);
-        push @perls, qw(perl5.00503 perl5.004) if $ENV{PERL_TEST_ALL};
+        push @perls, qw(perl5.004_05 bleadperl) if $ENV{PERL_TEST_ALL};
 
         my $out;
         foreach my $perl (@perls) {

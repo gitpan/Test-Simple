@@ -6,7 +6,7 @@ use Test::Utils;
 
 use vars qw($VERSION);
 
-$VERSION = '0.13';
+$VERSION = '0.14';
 
 my(@Test_Results) = ();
 my($Num_Tests, $Planned_Tests, $Test_Died) = (0,0,0);
@@ -91,6 +91,8 @@ Test::Simple - Basic utilities for writing tests.
 
 
 =head1 DESCRIPTION
+
+** If you are unfamiliar with testing B<read Test::Tutorial> first! **
 
 This is an extremely simple, extremely basic module for writing tests
 suitable for CPAN modules and other pursuits.  If you wish to do more
