@@ -18,7 +18,7 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.46';
+$VERSION = '0.47';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
@@ -304,7 +304,7 @@ test:
 Will produce something like this:
 
     not ok 17 - Is foo the same as bar?
-    #     Failed test 1 (foo.t at line 139)
+    #     Failed test (foo.t at line 139)
     #          got: 'waffle'
     #     expected: 'yarblokos'
 

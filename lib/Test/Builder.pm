@@ -8,17 +8,10 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION $CLASS);
-$VERSION = '0.16';
+$VERSION = '0.17';
 $CLASS = __PACKAGE__;
 
 my $IsVMS = $^O eq 'VMS';
-
-use vars qw($Level);
-my @Test_Results = ();
-my @Test_Details = ();
-my($Test_Died) = 0;
-my($Have_Plan) = 0;
-my $Curr_Test = 0;
 
 # Make Test::Builder thread-safe for ithreads.
 BEGIN {
@@ -27,14 +20,20 @@ BEGIN {
         require threads;
         require threads::shared;
         threads::shared->import;
-        share(\$Curr_Test);
-        share(\@Test_Details);
-        share(\@Test_Results);
     }
     else {
-        *lock = sub { 0 };
+        *share = sub { 0 };
+        *lock  = sub { 0 };
     }
 }
+
+use vars qw($Level);
+my($Test_Died) = 0;
+my($Have_Plan) = 0;
+my $Original_Pid = $$;
+my $Curr_Test = 0;      share($Curr_Test);
+my @Test_Results = ();  share(@Test_Results);
+my @Test_Details = ();  share(@Test_Details);
 
 
 =head1 NAME
@@ -278,6 +277,10 @@ like Test::Simple's ok().
 sub ok {
     my($self, $test, $name) = @_;
 
+    # $test might contain an object which we don't want to accidentally
+    # store, so we turn it into a boolean.
+    $test = $test ? 1 : 0;
+
     unless( $Have_Plan ) {
         require Carp;
         Carp::croak("You tried to run a test without a plan!  Gotta have a plan.");
@@ -297,6 +300,7 @@ ERR
 
     my $out;
     my $result = {};
+    share($result);
 
     unless( $test ) {
         $out .= "not ";
@@ -658,13 +662,16 @@ sub skip {
     lock($Curr_Test);
     $Curr_Test++;
 
-    $Test_Results[$Curr_Test-1] = {
+    my %result;
+    share(%result);
+    %result = (
         'ok'      => 1,
         actual_ok => 1,
         name      => '',
         type      => 'skip',
         reason    => $why,
-    };
+    );
+    $Test_Results[$Curr_Test-1] = \%result;
 
     my $out = "ok";
     $out   .= " $Curr_Test" if $self->use_numbers;
@@ -700,13 +707,17 @@ sub todo_skip {
     lock($Curr_Test);
     $Curr_Test++;
 
-    $Test_Results[$Curr_Test-1] = {
+    my %result;
+    share(%result);
+    %result = (
         'ok'      => 1,
         actual_ok => 0,
         name      => '',
         type      => 'todo_skip',
         reason    => $why,
-    };
+    );
+
+    $Test_Results[$Curr_Test-1] = \%result;
 
     my $out = "not ok";
     $out   .= " $Curr_Test" if $self->use_numbers;
@@ -1066,8 +1077,15 @@ sub current_test {
         if( $num > @Test_Results ) {
             my $start = @Test_Results ? $#Test_Results + 1 : 0;
             for ($start..$num-1) {
-                @{ $Test_Results[$_]}{qw( ok actual_ok reason type name)} = 
-                    ( 1, undef, 'incrementing test number', 'unknown', undef );
+                my %result;
+                share(%result);
+                %result = ( ok        => 1, 
+                            actual_ok => undef, 
+                            reason    => 'incrementing test number', 
+                            type      => 'unknown', 
+                            name      => undef 
+                          );
+                $Test_Results[$_] = \%result;
             }
         }
     }
@@ -1281,6 +1299,10 @@ sub _ending {
 
     _sanity_check();
 
+    # Don't bother with an ending if this is a forked copy.  Only the parent
+    # should do the ending.
+    do{ _my_exit($?) && return } if $Original_Pid != $$;
+
     # Bailout if plan() was never called.  This is so
     # "require Test::Simple" doesn't puke.
     do{ _my_exit(0) && return } if !$Have_Plan && !$Test_Died;
@@ -1294,9 +1316,14 @@ sub _ending {
         }
 
         # 5.8.0 threads bug.  Shared arrays will not be auto-extended 
-        # by a slice.
-        $Test_Results[$Expected_Tests-1] = undef
-          unless defined $Test_Results[$Expected_Tests-1];
+        # by a slice.  Worse, we have to fill in every entry else
+        # we'll get an "Invalid value for shared scalar" error
+        for my $idx ($#Test_Results..$Expected_Tests-1) {
+            my %empty_result = ();
+            share(%empty_result);
+            $Test_Results[$idx] = \%empty_result
+              unless defined $Test_Results[$idx];
+        }
 
         my $num_failed = grep !$_->{'ok'}, @Test_Results[0..$Expected_Tests-1];
         $num_failed += abs($Expected_Tests - @Test_Results);
