@@ -1,16 +1,19 @@
 package Test::Simple;
 
+use 5.004;
+
 use strict 'vars';
-require 5.004;
 use Test::Utils;
 
 use vars qw($VERSION);
 
-$VERSION = '0.14';
+$VERSION = '0.16';
 
 my(@Test_Results) = ();
 my($Num_Tests, $Planned_Tests, $Test_Died) = (0,0,0);
 my($Have_Plan) = 0;
+
+my $IsVMS = $^O eq 'VMS';
 
 
 # I'd like to have Test::Simple interfere with the program being
@@ -138,7 +141,7 @@ All tests are run in scalar context.  So this:
 
     ok( @stuff, 'I have some stuff' );
 
-will do what you mean (fail if stuff is empty).
+will do what you mean (fail if stuff is empty)
 
 =cut
 
@@ -298,8 +301,9 @@ doesn't actually exit, that's your job.
 =cut
 
 sub _my_exit {
-  $? = $_[0];
-  return 1;
+    $? = $_[0];
+
+    return 1;
 }
 
 
@@ -423,6 +427,20 @@ Test::Simple will only report a maximum of 254 failures in its exit
 code.  If this is a problem, you probably have a huge test script.
 Split it into multiple files.  (Otherwise blame the Unix folks for
 using an unsigned short integer as the exit status).
+
+Because VMS's exit codes are much, much different than the rest of the
+universe, and perl does horrible mangling to them that gets in my way,
+it works like this on VMS.
+
+    0     SS$_NORMAL        all tests successful
+    4     SS$_ABORT         something went wrong
+
+Unfortunately, I can't differentiate any further.
+
+
+=head1 NOTES
+
+Test::Simple is B<explicitly> tested all the way back to perl 5.004.
 
 
 =head1 HISTORY

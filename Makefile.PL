@@ -5,9 +5,9 @@
 # - Fill in your dependencies in PREREQ_PM
 # Alternatively, you can say the hell with this and use h2xs.
 
-use ExtUtils::MakeMaker;
+use 5.004;
 
-require 5.004;
+use ExtUtils::MakeMaker;
 
 $PACKAGE = 'Test::Simple';
 ($PACKAGE_FILE = $PACKAGE) =~ s|::|/|g;
@@ -45,7 +45,9 @@ WriteMakefile(
         my($self, $orig_perl, $tests) = @_;
 
         my @perls = ($orig_perl);
-        push @perls, qw(perl5.004_05 bleadperl) if $ENV{PERL_TEST_ALL};
+        push @perls, qw(perl5.004 perl5.004_04 perl5.004_05 
+                        perl5.005_03 bleadperl) 
+          if $ENV{PERL_TEST_ALL};
 
         my $out;
         foreach my $perl (@perls) {
