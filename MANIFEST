@@ -69,4 +69,3 @@ t/use_ok.t
 t/useing.t
 TODO
 META.yml                                 Module meta-data (added by MakeMaker)
-SIGNATURE                                Public-key signature (added by MakeMaker)
