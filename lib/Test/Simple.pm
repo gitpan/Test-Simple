@@ -2,10 +2,10 @@ package Test::Simple;
 
 require 5.005;
 
-$Test::Simple::VERSION = '0.01';
+$Test::Simple::VERSION = '0.03';
 
 my(@Test_Results) = ();
-my($Num_Tests, $Planned_Tests) = (0,0);
+my($Num_Tests, $Planned_Tests, $Test_Died) = (0,0,0);
 
 # I'd like to have Test::Simple interfere with the program being
 # tested as little as possible.  This includes using Exporter or
@@ -111,6 +111,12 @@ sub ok ($;$) {
     # Make sure the print doesn't get interfered with.
     local($\, $,);
 
+    print TESTERR <<ERR if defined $name and $name !~ /\D/;
+You named your test '$name'.  You shouldn't use numbers for your test names.
+Very confusing.
+ERR
+
+
     # We must print this all in one shot or else it will break on VMS
     my $msg;
     unless( $test ) {
@@ -126,6 +132,15 @@ sub ok ($;$) {
 
     print TESTOUT $msg;
 
+    #'#
+    unless( $test ) {
+        my($pack, $file, $line) = (caller)[0,1,2];
+        if( $pack eq 'Test::More' ) {
+            ($file, $line) = (caller(1))[1,2];
+        }
+        print TESTERR "# Failed test ($file at line $line)\n";
+    }
+
     return $test;
 }
 
@@ -140,7 +155,16 @@ If all your tests passed, Test::Simple will exit with zero (which is
 normal).  If anything failed it will exit with how many failed.  If
 you run less (or more) tests than you planned, the missing (or extras)
 will be considered failures.  If no tests were ever run Test::Simple
-will throw a warning and exit with -1.
+will throw a warning and exit with 255.  If the test died, even after
+having successfully completed all its tests, it will still be
+considered a failure and will exit with 255.
+
+So the exit codes are...
+
+    0                   all tests successful
+    255                 test died
+    any other number    how many failed (including missing or extras)
+
 
 =begin _private
 
@@ -191,6 +215,11 @@ WHOA
 
 =cut
 
+$SIG{__DIE__} = sub {
+    return if $^S or !defined $^S;   # don't muck with a death in an eval;
+    $Test_Died = 1;
+};
+
 END {
     _sanity_check();
 
@@ -216,11 +245,22 @@ FAIL
 FAIL
         }
 
+        if( $Test_Died ) {
+            print TESTERR <<"FAIL";
+# Looks like your test died just after $Num_Tests.
+FAIL
+
+            exit( 255 );
+        }
+
         exit( $num_failed );
+    }
+    elsif ( $Test::Simple::Skip_All ) {
+        exit( 0 );
     }
     else {
         print TESTERR "# No tests run!\n";
-        exit( -1 );
+        exit( 255 );
     }
 }
 
@@ -263,6 +303,13 @@ It will produce output like this:
 Indicating the Film::Rating() method is broken.
 
 
+=head1 NOTES
+
+What if you have more than 254 failures?  That's probably a huge test
+script.  Split it into multiple files.  (Otherwise blame the Unix
+folks for using an unsigned short integer as the exit status).
+
+
 =head1 HISTORY
 
 This module was conceived while talking with Tony Bowden in his
@@ -271,13 +318,14 @@ complicated feature into the new Testing module.  He observed that the
 main problem is not dealing with these edge cases but that people hate
 to write tests B<at all>.  What was needed was a dead simple module
 that took all the hard work out of testing and was really, really easy
-to learn.  This is it.
+to learn.  Paul Johnson simultaneously had this idea (unfortunately,
+he wasn't in Tony's kitchen).  This is it.
 
 
 =head1 AUTHOR
 
-Idea by Tony Bowden, code by Michael G Schwern <schwern@pobox.com>,
-wardrobe by Calvin Klein.
+Idea by Tony Bowden and Paul Johnson, code by Michael G Schwern
+<schwern@pobox.com>, wardrobe by Calvin Klein.
 
 
 =head1 SEE ALSO
@@ -287,7 +335,9 @@ wardrobe by Calvin Klein.
 =item L<Test::More>
 
 More testing functions!  Once you outgrow Test::Simple, look at
-Test::More.
+Test::More.  Test::Simple is 100% forward compatible with Test::More
+(ie. you can just use Test::More instead of Test::Simple in your
+programs and things will still work).
 
 =item L<Test>
 
