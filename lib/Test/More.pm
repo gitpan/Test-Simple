@@ -14,7 +14,7 @@ BEGIN {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT);
-$VERSION = '0.13';
+$VERSION = '0.17';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like
@@ -24,6 +24,7 @@ $VERSION = '0.13';
              skip
              $TODO
              plan
+             can_ok  isa_ok
             );
 
 
@@ -97,6 +98,9 @@ Test::More - yet another framework for writing test scripts
       ok( foo(),       $test_name );
       is( foo(42), 23, $test_name );
   };
+
+  can_ok($module, @methods);
+  isa_ok($object, $class);
 
   pass($test_name);
   fail($test_name);
@@ -397,6 +401,87 @@ DIAGNOSTIC
 
     return $ok;
 }
+
+=item B<can_ok>
+
+  can_ok($module, @methods);
+
+Checks to make sure the $module can do these @methods (works with
+functions, too).
+
+    can_ok('Foo', qw(this that whatever));
+
+is almost exactly like saying:
+
+    ok( Foo->can('this') );
+    ok( Foo->can('that') );
+    ok( Foo->can('whatever') );
+
+only without all the typing.  Handy for quickly enforcing an
+interface.
+
+Each method counts as a seperate test.
+
+=cut
+
+sub can_ok ($@) {
+    my($module, @methods) = @_;
+
+    my $all_ok = 1;
+    foreach my $method (@methods) {
+        my $test = "$module->can('$method')";
+        ok( eval $test, $test ) or $all_ok = 0;
+    }
+
+    return $all_ok;
+}
+
+=item B<isa_ok>
+
+  isa_ok($object, $class);
+
+Checks to see if the given $object->isa($class).  Also checks to make
+sure the object was defined in the first place.  Handy for this sort
+of thing:
+
+    my $obj = Some::Module->new;
+    isa_ok( $obj, 'Some::Module' );
+
+where you'd otherwise have to write
+
+    my $obj = Some::Module->new;
+    ok( defined $obj && $obj->isa('Some::Module') );
+
+to safeguard against your test script blowing up.
+
+=cut
+
+sub isa_ok ($$) {
+    my($object, $class) = @_;
+
+    my $diag;
+    my $name = "object->isa('$class')";
+    if( !defined $object ) {
+        $diag = "The object isn't defined";
+    }
+    elsif( !ref $object ) {
+        $diag = "The object isn't a reference";
+    }
+    elsif( !$object->isa($class) ) {
+        $diag = "The object isn't a '$class'";
+    }
+
+    if( $diag ) {
+        ok( 0, $name );
+        my_print *TESTERR, "#     $diag\n";
+        return 0;
+    }
+    else {
+        ok( 1, $name );
+        return 1;
+    }
+}
+
 
 =item B<pass>
 
