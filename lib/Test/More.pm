@@ -18,7 +18,7 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.47';
+$VERSION = '0.48_01';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
@@ -33,6 +33,7 @@ $VERSION = '0.47';
             );
 
 my $Test = Test::Builder->new;
+my $Show_Diag = 1;
 
 
 # 5.004's Exporter doesn't have export_to_level.
@@ -177,16 +178,25 @@ sub plan {
 
     $Test->exported_to($caller);
 
+    my @cleaned_plan;
     my @imports = ();
-    foreach my $idx (0..$#plan) {
+    my $idx = 0;
+    while( $idx <= $#plan ) {
         if( $plan[$idx] eq 'import' ) {
-            my($tag, $imports) = splice @plan, $idx, 2;
-            @imports = @$imports;
-            last;
+            @imports = @{$plan[$idx+1]};
+            $idx += 2;
+        }
+        elsif( $plan[$idx] eq 'no_diag' ) {
+            $Show_Diag = 0;
+            $idx++;
+        }
+        else {
+            push @cleaned_plan, $plan[$idx];
+            $idx++;
         }
     }
 
-    $Test->plan(@plan);
+    $Test->plan(@cleaned_plan);
 
     __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
 }
@@ -619,6 +629,12 @@ which would produce:
 You might remember C<ok() or diag()> with the mnemonic C<open() or
 die()>.
 
+All diag()s can be made silent by passing the "no_diag" option to
+Test::More.  C<use Test::More tests => 1, 'no_diag'>.  This is useful
+if you have diagnostics for personal testing but then wish to make
+them silent for release without commenting out each individual
+statement.
+
 B<NOTE> The exact formatting of the diagnostic output is still
 changing, but it is guaranteed that whatever you throw at it it won't
 interfere with the test.
@@ -626,6 +642,7 @@ interfere with the test.
 =cut
 
 sub diag {
+    return unless $Show_Diag;
     $Test->diag(@_);
 }
 
@@ -658,7 +675,12 @@ is like doing this:
 
    use Some::Module qw(foo bar);
 
-don't try to do this:
+Version numbers can be checked like so:
+
+   # Just like "use Some::Module 1.02"
+   BEGIN { use_ok('Some::Module', 1.02) }
+
+Don't try to do this:
 
    BEGIN {
        use_ok('Some::Module');
@@ -667,7 +689,7 @@ don't try to do this:
        ...happening at compile time...
    }
 
-instead, you want:
+because the notion of "compile-time" is relative.  Instead, you want:
 
   BEGIN { use_ok('Some::Module') }
   BEGIN { ...some code that depends on the use... }
@@ -679,19 +701,31 @@ sub use_ok ($;@) {
     my($module, @imports) = @_;
     @imports = () unless @imports;
 
-    my $pack = caller;
+    my($pack,$filename,$line) = caller;
 
     local($@,$!);   # eval sometimes interferes with $!
-    eval <<USE;
+
+    if( @imports == 1 and $imports[0] =~ /^\d+(?:\.\d+)?$/ ) {
+        # probably a version check.  Perl needs to see the bare number
+        # for it to work with non-Exporter based modules.
+        eval <<USE;
 package $pack;
-require $module;
-'$module'->import(\@imports);
+use $module $imports[0];
 USE
+    }
+    else {
+        eval <<USE;
+package $pack;
+use $module \@imports;
+USE
+    }
 
     my $ok = $Test->ok( !$@, "use $module;" );
 
     unless( $ok ) {
         chomp $@;
+        $@ =~ s{^BEGIN failed--compilation aborted at .*$}
+                {BEGIN failed--compilation aborted at $filename line $line.}m;
         $Test->diag(<<DIAGNOSTIC);
     Tried to use '$module'.
     Error:  $@
@@ -1159,15 +1193,45 @@ sub builder {
 =back
 
 
+=head1 EXIT CODES
+
+If all your tests passed, Test::Builder will exit with zero (which is
+normal).  If anything failed it will exit with how many failed.  If
+you run less (or more) tests than you planned, the missing (or extras)
+will be considered failures.  If no tests were ever run Test::Builder
+will throw a warning and exit with 255.  If the test died, even after
+having successfully completed all its tests, it will still be
+considered a failure and will exit with 255.
+
+So the exit codes are...
+
+    0                   all tests successful
+    255                 test died
+    any other number    how many failed (including missing or extras)
+
+If you fail more than 254 tests, it will be reported as 254.
+
+
 =head1 NOTES
 
 Test::More is B<explicitly> tested all the way back to perl 5.004.
 
-Test::More is thread-safe for perl 5.8.0 and up.
-
 =head1 BUGS and CAVEATS
 
 =over 4
+
+=item Threads
+
+Test::More will only be aware of threads if "use threads" has been done
+I<before> Test::More is loaded.  This is ok:
+
+    use threads;
+    use Test::More;
+
+This may cause problems:
+
+    use Test::More
+    use threads;
 
 =item Making your own ok()
 
@@ -1220,7 +1284,9 @@ been distributed with Perl since 5.004_05.
 L<Test::Harness> for details on how your test results are interpreted
 by Perl.
 
-L<Test::Unit> describes a very featureful unit testing interface.
+L<Test::Unit> is XUnit style testing.
+
+L<Test::Class> is like XUnit but more perlish.
 
 L<Test::Inline> shows the idea of embedded testing.
 
