@@ -33,7 +33,7 @@ WriteMakefile(
     NAME            => $PACKAGE,
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
     PREREQ_PM       => { 
-                        Test::Harness   => 1.23,
+                        Test::Harness   => 2.03,
                         File::Spec      => 0.6,
                        },
 );
@@ -47,12 +47,11 @@ WriteMakefile(
 
         my @perls = ($orig_perl);
         push @perls, qw(
-                        perl
-                        perl5.004
+                        perl5.4.0
+                        perl5.5.3
                         perl5.6.0
-                        perl5.005_03
-                        perl5.004_05
-                        perl5.004_04
+                        perl
+                        perl5.8.0
                        )
           if $ENV{PERL_TEST_ALL};
 
