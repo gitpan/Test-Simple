@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.20_02';
+$VERSION = '0.21';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -273,9 +273,13 @@ the appropriate headers.
 =cut
 
 sub expected_tests {
-    my($self, $max) = @_;
+    my $self = shift;
+    my($max) = @_;
 
-    if( defined $max ) {
+    if( @_ ) {
+        die "Number of tests must be a postive integer.  You gave it '$max'.\n"
+          unless $max =~ /^\+?\d+$/ and $max > 0;
+
         $Expected_Tests = $max;
         $Have_Plan      = 1;
 
