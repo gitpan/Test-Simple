@@ -10,6 +10,7 @@ lib/Test/Tutorial.pod
 t/Builder.t
 t/More.t
 t/buffer.t
+t/curr_test.t
 t/diag.t
 t/exit.t
 t/extra.t
@@ -30,6 +31,7 @@ t/lib/Test/Simple/sample_tests/require.plx
 t/lib/Test/Simple/sample_tests/success.plx
 t/lib/Test/Simple/sample_tests/too_few.plx
 t/lib/Test/Simple/sample_tests/two_fail.plx
+t/maybe_regex.t
 t/missing.t
 t/no_ending.t
 t/no_header.t
