@@ -5,7 +5,10 @@ lib/Test/Simple.pm
 lib/Test/Tutorial.pod
 Makefile.PL
 MANIFEST
+META.yml			Module meta-data (added by MakeMaker)
 README
+SIGNATURE			Public-key signature (added by MakeMaker)
+t/00signature.t
 t/00test_harness_check.t
 t/bad_plan.t
 t/buffer.t
@@ -42,7 +45,6 @@ t/lib/Test/Simple/sample_tests/success.plx
 t/lib/Test/Simple/sample_tests/too_few.plx
 t/lib/Test/Simple/sample_tests/two_fail.plx
 t/lib/TieOut.pm
-t/lib/Tmp.pm
 t/maybe_regex.t
 t/missing.t
 t/More.t
@@ -68,4 +70,3 @@ t/undef.t
 t/use_ok.t
 t/useing.t
 TODO
-META.yml                                 Module meta-data (added by MakeMaker)
