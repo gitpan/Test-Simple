@@ -1,6 +1,7 @@
 Changes
 MANIFEST
 Makefile.PL
+README
 TODO
 lib/Test/Builder.pm
 lib/Test/More.pm
@@ -13,6 +14,7 @@ t/extra.t
 t/fail-like.t
 t/fail-more.t
 t/fail.t
+t/filehandles.t
 t/import.t
 t/is_deeply.t
 t/lib/Test/Simple/Catch.pm
