@@ -18,7 +18,9 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.51_01';
+$VERSION = '0.51_02';
+$VERSION = eval $VERSION;    # make the alpha version come out as a number
+
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
@@ -760,8 +762,9 @@ DIAGNOSTIC
 =item B<require_ok>
 
    require_ok($module);
+   require_ok($file);
 
-Like use_ok(), except it requires the $module.
+Like use_ok(), except it requires the $module or $file.
 
 =cut
 
@@ -769,6 +772,10 @@ sub require_ok ($) {
     my($module) = shift;
 
     my $pack = caller;
+
+    # Try to deterine if we've been given a module name or file.
+    # Module names must be barewords, files not.
+    $module = qq['$module'] unless _is_module_name($module);
 
     local($!, $@); # eval sometimes interferes with $!
     eval <<REQUIRE;
@@ -788,6 +795,17 @@ DIAGNOSTIC
     }
 
     return $ok;
+}
+
+
+sub _is_module_name {
+    my $module = shift;
+
+    # Module names start with a letter.
+    # End with an alphanumeric.
+    # The rest is an alphanumeric or ::
+    $module =~ s/\b::\b//g;
+    $module =~ /^[a-zA-Z]\w+$/;
 }
 
 =back
@@ -968,8 +986,7 @@ Not everything is a simple eq check or regex.  There are times you
 need to see if two arrays are equivalent, for instance.  For these
 instances, Test::More provides a handful of useful functions.
 
-B<NOTE> These are NOT well-tested on circular references.  Nor am I
-quite sure what will happen with filehandles.
+B<NOTE> I'm not quite sure what will happen with filehandles.
 
 =over 4
 
@@ -987,7 +1004,7 @@ along these lines.
 
 =cut
 
-use vars qw(@Data_Stack);
+use vars qw(@Data_Stack %Refs_Seen);
 my $DNE = bless [], 'Does::Not::Exist';
 sub is_deeply {
     unless( @_ == 2 or @_ == 3 ) {
@@ -1012,6 +1029,7 @@ WARNING
     }
     else {
         local @Data_Stack = ();
+        local %Refs_Seen  = ();
         if( _deep_check($this, $that) ) {
             $ok = $Test->ok(1, $name);
         }
@@ -1078,6 +1096,7 @@ multi-level structures are handled correctly.
 #'#
 sub eq_array {
     local @Data_Stack;
+    local %Refs_Seen;
     _eq_array(@_);
 }
 
@@ -1090,6 +1109,13 @@ sub _eq_array  {
     }
 
     return 1 if $a1 eq $a2;
+
+    if($Refs_Seen{$a1}) {
+        return $Refs_Seen{$a1} eq $a2;
+    }
+    else {
+        $Refs_Seen{$a1} = "$a2";
+    }
 
     my $ok = 1;
     my $max = $#$a1 > $#$a2 ? $#$a1 : $#$a2;
@@ -1114,6 +1140,8 @@ sub _deep_check {
     {
         # Quiet uninitialized value warnings when comparing undefs.
         local $^W = 0; 
+
+        $Test->_unoverload(\$e1, \$e2);
 
         # Either they're both references or both not.
         my $same_ref = !(!ref $e1 xor !ref $e2);
@@ -1174,6 +1202,7 @@ is a deep check.
 
 sub eq_hash {
     local @Data_Stack;
+    local %Refs_Seen;
     return _eq_hash(@_);
 }
 
@@ -1186,6 +1215,13 @@ sub _eq_hash {
     }
 
     return 1 if $a1 eq $a2;
+
+    if( $Refs_Seen{$a1} ) {
+        return $Refs_Seen{$a1} eq $a2;
+    }
+    else {
+        $Refs_Seen{$a1} = "$a2";
+    }
 
     my $ok = 1;
     my $bigger = keys %$a1 > keys %$a2 ? $a1 : $a2;
@@ -1285,13 +1321,27 @@ So the exit codes are...
 If you fail more than 254 tests, it will be reported as 254.
 
 
-=head1 NOTES
-
-Test::More is B<explicitly> tested all the way back to perl 5.004.
-
-=head1 BUGS and CAVEATS
+=head1 CAVEATS and NOTES
 
 =over 4
+
+=item Backwards compatibility
+
+Test::More works with Perls as old as 5.004_05.
+
+
+=item Overloaded objects
+
+String overloaded objects are compared B<as strings>.  This prevents
+Test::More from piercing an object's interface allowing better blackbox
+testing.  So if a function starts returning overloaded objects instead of
+bare strings your tests won't notice the difference.  This is good.
+
+However, it does mean that functions like is_deeply() cannot be used to
+test the internals of string overloaded objects.  In this case I would
+suggest Test::Deep which contains more flexible testing functions for
+complex data structures.
+
 
 =item Threads
 
@@ -1306,12 +1356,6 @@ This may cause problems:
     use Test::More
     use threads;
 
-=item Making your own ok()
-
-If you are trying to extend Test::More, don't.  Use Test::Builder
-instead.
-
-=item The eq_* family has some caveats.
 
 =item Test::Harness upgrade
 
@@ -1373,6 +1417,11 @@ Michael G Schwern E<lt>schwern@pobox.comE<gt> with much inspiration
 from Joshua Pritikin's Test module and lots of help from Barrie
 Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and
 the perl-qa gang.
+
+
+=head1 BUGS
+
+See F<http://rt.cpan.org> to report and view bugs.
 
 
 =head1 COPYRIGHT

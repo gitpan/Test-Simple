@@ -13,6 +13,7 @@ t/00test_harness_check.t
 t/bad_plan.t
 t/buffer.t
 t/Builder.t
+t/circular_data.t
 t/curr_test.t
 t/details.t
 t/diag.t
@@ -55,11 +56,13 @@ t/no_plan.t
 t/ok_obj.t
 t/output.t
 t/overload.t
+t/overload_threads.t
 t/plan.t
 t/plan_is_noplan.t
 t/plan_no_plan.t
 t/plan_shouldnt_import.t
 t/plan_skip_all.t
+t/require_ok.t
 t/reset.t
 t/simple.t
 t/skip.t
