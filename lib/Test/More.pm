@@ -18,7 +18,7 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.51';
+$VERSION = '0.51_01';
 @ISA    = qw(Exporter);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
@@ -177,36 +177,51 @@ or for deciding between running the tests at all:
 sub plan {
     my(@plan) = @_;
 
-    my $caller = caller;
-
-    $Test->exported_to($caller);
-
-    my @cleaned_plan;
-    my @imports = ();
     my $idx = 0;
+    my @cleaned_plan;
     while( $idx <= $#plan ) {
-        if( $plan[$idx] eq 'import' ) {
-            @imports = @{$plan[$idx+1]};
-            $idx += 2;
-        }
-        elsif( $plan[$idx] eq 'no_diag' ) {
+        my $item = $plan[$idx];
+
+        if( $item eq 'no_diag' ) {
             $Show_Diag = 0;
-            $idx++;
         }
         else {
-            push @cleaned_plan, $plan[$idx];
-            $idx++;
+            push @cleaned_plan, $item;
         }
+
+        $idx++;
     }
 
     $Test->plan(@cleaned_plan);
-
-    __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
 }
 
 sub import {
     my($class) = shift;
-    goto &plan;
+
+    my $caller = caller;
+
+    $Test->exported_to($caller);
+
+    my $idx = 0;
+    my @plan;
+    my @imports;
+    while( $idx <= $#_ ) {
+        my $item = $_[$idx];
+
+        if( $item eq 'import' ) {
+            push @imports, @{$_[$idx+1]};
+            $idx++;
+        }
+        else {
+            push @plan, $item;
+        }
+
+        $idx++;
+    }
+
+    plan(@plan);
+
+    __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
 }
 
 
@@ -618,7 +633,10 @@ messages which are safer than just C<print STDERR>.
   diag(@diagnostic_message);
 
 Prints a diagnostic message which is guaranteed not to interfere with
-test output.  Handy for this sort of thing:
+test output.  Like C<print> @diagnostic_message is simply concatinated
+together.
+
+Handy for this sort of thing:
 
     ok( grep(/foo/, @users), "There's a foo user" ) or
         diag("Since there's no foo, check that /etc/bar is set up right");
@@ -986,7 +1004,10 @@ WARNING
     my($this, $that, $name) = @_;
 
     my $ok;
-    if( !ref $this || !ref $that ) {
+    if( !ref $this xor !ref $that ) {  # one's a reference, one isn't
+        $ok = 0;
+    }
+    if( !ref $this and !ref $that ) {
         $ok = $Test->is_eq($this, $that, $name);
     }
     else {
@@ -1055,8 +1076,19 @@ multi-level structures are handled correctly.
 =cut
 
 #'#
-sub eq_array  {
+sub eq_array {
+    local @Data_Stack;
+    _eq_array(@_);
+}
+
+sub _eq_array  {
     my($a1, $a2) = @_;
+
+    if( grep !UNIVERSAL::isa($_, 'ARRAY'), $a1, $a2 ) {
+        warn "eq_array passed a non-array ref";
+        return 0;
+    }
+
     return 1 if $a1 eq $a2;
 
     my $ok = 1;
@@ -1071,6 +1103,7 @@ sub eq_array  {
 
         last unless $ok;
     }
+
     return $ok;
 }
 
@@ -1078,24 +1111,32 @@ sub _deep_check {
     my($e1, $e2) = @_;
     my $ok = 0;
 
-    my $eq;
     {
         # Quiet uninitialized value warnings when comparing undefs.
         local $^W = 0; 
 
-        if( $e1 eq $e2 ) {
+        # Either they're both references or both not.
+        my $same_ref = !(!ref $e1 xor !ref $e2);
+
+        if( defined $e1 xor defined $e2 ) {
+            $ok = 0;
+        }
+        elsif ( $e1 == $DNE xor $e2 == $DNE ) {
+            $ok = 0;
+        }
+        elsif ( $same_ref and ($e1 eq $e2) ) {
             $ok = 1;
         }
         else {
             if( UNIVERSAL::isa($e1, 'ARRAY') and
                 UNIVERSAL::isa($e2, 'ARRAY') )
             {
-                $ok = eq_array($e1, $e2);
+                $ok = _eq_array($e1, $e2);
             }
             elsif( UNIVERSAL::isa($e1, 'HASH') and
                    UNIVERSAL::isa($e2, 'HASH') )
             {
-                $ok = eq_hash($e1, $e2);
+                $ok = _eq_hash($e1, $e2);
             }
             elsif( UNIVERSAL::isa($e1, 'REF') and
                    UNIVERSAL::isa($e2, 'REF') )
@@ -1109,6 +1150,7 @@ sub _deep_check {
             {
                 push @Data_Stack, { type => 'REF', vals => [$e1, $e2] };
                 $ok = _deep_check($$e1, $$e2);
+                pop @Data_Stack if $ok;
             }
             else {
                 push @Data_Stack, { vals => [$e1, $e2] };
@@ -1131,7 +1173,18 @@ is a deep check.
 =cut
 
 sub eq_hash {
+    local @Data_Stack;
+    return _eq_hash(@_);
+}
+
+sub _eq_hash {
     my($a1, $a2) = @_;
+
+    if( grep !UNIVERSAL::isa($_, 'HASH'), $a1, $a2 ) {
+        warn "eq_hash passed a non-hash ref";
+        return 0;
+    }
+
     return 1 if $a1 eq $a2;
 
     my $ok = 1;
@@ -1163,17 +1216,22 @@ While the order of elements does not matter, duplicate elements do.
 
 =cut
 
-# We must make sure that references are treated neutrally.  It really
-# doesn't matter how we sort them, as long as both arrays are sorted
-# with the same algorithm.
-sub _bogus_sort { local $^W = 0;  ref $a ? -1 : ref $b ? 1 : $a cmp $b }
-
 sub eq_set  {
     my($a1, $a2) = @_;
     return 0 unless @$a1 == @$a2;
 
     # There's faster ways to do this, but this is easiest.
-    return eq_array( [sort _bogus_sort @$a1], [sort _bogus_sort @$a2] );
+    local $^W = 0;
+
+    # We must make sure that references are treated neutrally.  It really
+    # doesn't matter how we sort them, as long as both arrays are sorted
+    # with the same algorithm.
+    # Have to inline the sort routine due to a threading/sort bug.
+    # See [rt.cpan.org 6782]
+    return eq_array(
+           [sort { ref $a ? -1 : ref $b ? 1 : $a cmp $b } @$a1],
+           [sort { ref $a ? -1 : ref $b ? 1 : $a cmp $b } @$a2]
+    );
 }
 
 =back
@@ -1313,12 +1371,13 @@ L<Bundle::Test> installs a whole bunch of useful test modules.
 
 Michael G Schwern E<lt>schwern@pobox.comE<gt> with much inspiration
 from Joshua Pritikin's Test module and lots of help from Barrie
-Slaymaker, Tony Bowden, blackstar.co.uk, chromatic and the perl-qa gang.
+Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and
+the perl-qa gang.
 
 
 =head1 COPYRIGHT
 
-Copyright 2001, 2002 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+Copyright 2001, 2002, 2004 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.

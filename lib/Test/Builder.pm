@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.20';
+$VERSION = '0.20_01';
 
 my $IsVMS = $^O eq 'VMS';
 
@@ -959,9 +959,11 @@ Test::Builder's default output settings will not be affected.
 
     $Test->diag(@msgs);
 
-Prints out the given $message.  Normally, it uses the failure_output()
-handle, but if this is for a TODO test, the todo_output() handle is
-used.
+Prints out the given @msgs.  Like C<print>, arguments are simply
+appended together.
+
+Normally, it uses the failure_output() handle, but if this is for a
+TODO test, the todo_output() handle is used.
 
 Output will be indented and marked with a # so as not to interfere
 with test output.  A newline will be put on the end if there isn't one
@@ -986,16 +988,18 @@ sub diag {
     # Prevent printing headers when compiling (i.e. -c)
     return if $^C;
 
-    # Escape each line with a #.
-    foreach (@msgs) {
-        $_ = 'undef' unless defined;
-        s/^/# /gms;
-    }
+    # Smash args together like print does.
+    # Convert undef to 'undef' so its readable.
+    my $msg = join '', map { defined($_) ? $_ : 'undef' } @msgs;
 
-    push @msgs, "\n" unless $msgs[-1] =~ /\n\Z/;
+    # Escape each line with a #.
+    $msg =~ s/^/# /gm;
+
+    # Stick a newline on the end if it needs it.
+    $msg .= "\n" unless $msg =~ /\n\Z/;
 
     local $Level = $Level + 1;
-    $self->_print_diag(@msgs);
+    $self->_print_diag($msg);
 
     return 0;
 }
@@ -1019,18 +1023,19 @@ sub _print {
     # tests are deparsed with B::Deparse
     return if $^C;
 
+    my $msg = join '', @msgs;
+
     local($\, $", $,) = (undef, ' ', '');
     my $fh = $self->output;
 
     # Escape each line after the first with a # so we don't
     # confuse Test::Harness.
-    foreach (@msgs) {
-        s/\n(.)/\n# $1/sg;
-    }
+    $msg =~ s/\n(.)/\n# $1/sg;
 
-    push @msgs, "\n" unless $msgs[-1] =~ /\n\Z/;
+    # Stick a newline on the end if it needs it.
+    $msg .= "\n" unless $msg =~ /\n\Z/;
 
-    print $fh @msgs;
+    print $fh $msg;
 }
 
 
@@ -1531,8 +1536,8 @@ E<lt>schwern@pobox.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2002 by chromatic E<lt>chromatic@wgz.orgE<gt>,
-                  Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+Copyright 2002, 2004 by chromatic E<lt>chromatic@wgz.orgE<gt> and
+                        Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
