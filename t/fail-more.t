@@ -1,7 +1,16 @@
 #!perl -w
 
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
+
 use strict;
-use lib 't/lib';
 
 require Test::Simple::Catch;
 my($out, $err) = Test::Simple::Catch::caught();
@@ -156,13 +165,13 @@ OUT
 #     Failed test ($0 at line 53)
 #     can_ok() called with no methods
 #     Failed test ($0 at line 55)
-#     The object isn't a 'Wibble' its a 'Foo'
+#     The object isn't a 'Wibble' it's a 'Foo'
 #     Failed test ($0 at line 56)
 #     My Wibble isn't a reference
 #     Failed test ($0 at line 57)
 #     Another Wibble isn't defined
 #     Failed test ($0 at line 58)
-#     The object isn't a 'HASH' its a 'ARRAY'
+#     The object isn't a 'HASH' it's a 'ARRAY'
 #     Failed test ($0 at line 68)
 #          got: 'foo'
 #     expected: 'bar'
