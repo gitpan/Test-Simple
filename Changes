@@ -1,4 +1,22 @@
-Revision history for Perl extension Test::Simple
+0.48_02  Mon Jul 19 02:07:23 EDT 2004
+    * Overloaded objects as names now won't blow up under threads
+      [rt.cpan.org 4218 and 4232]
+    * Overloaded objects which stringify to undef used as test names
+      now won't cause internal uninit warnings. [rt.cpan.org 4232]
+    * Failure diagnostics now come out on their own line when run in 
+      Test::Harness.
+    - eq_set() sometimes wasn't giving the right results if nested refs 
+      were involved [rt.cpan.org 3747]
+    - isnt() giving wrong diagnostics and warning if given any undefs.
+    * Give unlike() the right prototype [rt.cpan.org 4944]
+    - Change from CVS to Aegis
+    - is_deeply() will now do some basic argument checks to guard against
+      accidentally passing in a whole array instead of its reference.
+    - Mentioning Test::Differences, Test::Deep and Bundle::Test.
+    - Removed dependency on File::Spec.
+    - Fixing the grammar of diagnostic outputs when only a single test
+      is run or failed (ie. "Looks like you failed 1 tests").
+      [Darren Chamberlain]
 
 0.48_01  Mon Nov 11 02:36:43 EST 2002
     - Mention Test::Class in Test::More's SEE ALSO

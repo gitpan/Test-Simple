@@ -50,6 +50,7 @@ WriteMakefile(
     VERSION_FROM    => "lib/$PACKAGE_FILE.pm", # finds $VERSION
     PREREQ_PM       => { 
                         Test::Harness   => 2.03,
+                        File::Spec      => 0.82,
                        },
     # Added to the core somewhere around 5.7.2.
     INSTALLDIRS     => $] >= 5.00702 ? 'perl' : 'site'
@@ -59,15 +60,14 @@ WriteMakefile(
 {
     package MY;
 
-    use File::Spec;
-
+    use File::Basename;
     sub test_via_harness {
         my($self, $orig_perl, $tests) = @_;
 
-        my $tlib = File::Spec->rel2abs('t/lib/');
-
         my @perls = ();
         if( $ENV{PERL_TEST_ALL} ) {
+            require File::Spec;
+            my $tlib = File::Spec->rel2abs('t/lib/');
             push @perls, 
               map "PERL5LIB=$tlib $_",
                 qw(
@@ -97,6 +97,22 @@ WriteMakefile(
         $out =~ s{-I\$\(PERL_\w*LIB\)}{}g;
 
         return $out;
+    }
+}
+
+
+{
+    package MY;
+
+    sub libscan {
+        my($self, $path) = @_;
+
+        return unless $self->SUPER::libscan($path);
+
+        my $file = basename($path);
+        return '' if $file =~ /,\w$/;   # aegis meta file.
+
+        return $path;
     }
 }
 

@@ -24,6 +24,7 @@ use strict;
 
 require Test::Simple::Catch;
 my($out, $err) = Test::Simple::Catch::caught();
+local $ENV{HARNESS_ACTIVE} = 0;
 
 
 # Can't use Test.pm, that's a 5.005 thing.
@@ -63,7 +64,7 @@ OUT
 #     Failed test \\(.*\\)
 #                   'foo'
 #     doesn't match '\\(\\?-xism:that\\)'
-# Looks like you failed 1 tests of 1\\.
+# Looks like you failed 1 test of 1\\.
 ERR
 
 

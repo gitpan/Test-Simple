@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.18_01';
+$VERSION = '0.18_02';
 
 my $IsVMS = $^O eq 'VMS';
 
@@ -334,6 +334,17 @@ sub ok {
     lock $Curr_Test;
     $Curr_Test++;
 
+    # In case $name is a string overloaded object, force it to stringify.
+    local($@,$!);
+    eval { 
+        if( defined $name ) {
+            require overload;
+            if( my $string_meth = overload::Method($name, '""') ) {
+                $name = $name->$string_meth();
+            }
+        }
+    };
+
     $self->diag(<<ERR) if defined $name and $name =~ /^[\d\s]+$/;
     You named your test '$name'.  You shouldn't use numbers for your test names.
     Very confusing.
@@ -384,6 +395,7 @@ ERR
 
     unless( $test ) {
         my $msg = $todo ? "Failed (TODO)" : "Failed";
+        $self->_print_diag("\n") if $ENV{HARNESS_ACTIVE};
         $self->diag("    $msg test ($file at line $line)\n");
     } 
 
@@ -489,7 +501,7 @@ sub isnt_eq {
         my $test = defined $got || defined $dont_expect;
 
         $self->ok($test, $name);
-        $self->_cmp_diag('ne', $got, $dont_expect) unless $test;
+        $self->_cmp_diag($got, 'ne', $dont_expect) unless $test;
         return $test;
     }
 
@@ -505,7 +517,7 @@ sub isnt_num {
         my $test = defined $got || defined $dont_expect;
 
         $self->ok($test, $name);
-        $self->_cmp_diag('!=', $got, $dont_expect) unless $test;
+        $self->_cmp_diag($got, '!=', $dont_expect) unless $test;
         return $test;
     }
 
@@ -938,9 +950,7 @@ sub diag {
     push @msgs, "\n" unless $msgs[-1] =~ /\n\Z/;
 
     local $Level = $Level + 1;
-    my $fh = $self->todo ? $self->todo_output : $self->failure_output;
-    local($\, $", $,) = (undef, ' ', '');
-    print $fh @msgs;
+    $self->_print_diag(@msgs);
 
     return 0;
 }
@@ -979,9 +989,24 @@ sub _print {
 }
 
 
+=item B<_print_diag>
+
+    $Test->_print_diag(@msg);
+
+Like _print, but prints to the current diagnostic filehandle.
+
+=cut
+
+sub _print_diag {
+    my $self = shift;
+
+    local($\, $", $,) = (undef, ' ', '');
+    my $fh = $self->todo ? $self->todo_output : $self->failure_output;
+    print $fh @_;
+}    
+
 =item B<output>
 
-    my $fh = $Test->output;
     $Test->output($fh);
     $Test->output($file);
 
@@ -991,7 +1016,6 @@ Defaults to STDOUT.
 
 =item B<failure_output>
 
-    my $fh = $Test->failure_output;
     $Test->failure_output($fh);
     $Test->failure_output($file);
 
@@ -1001,7 +1025,6 @@ Defaults to STDERR.
 
 =item B<todo_output>
 
-    my $fh = $Test->todo_output;
     $Test->todo_output($fh);
     $Test->todo_output($file);
 
@@ -1371,19 +1394,22 @@ sub _ending {
         $num_failed += abs($Expected_Tests - @Test_Results);
 
         if( $Curr_Test < $Expected_Tests ) {
+            my $s = $Expected_Tests == 1 ? '' : 's';
             $self->diag(<<"FAIL");
-Looks like you planned $Expected_Tests tests but only ran $Curr_Test.
+Looks like you planned $Expected_Tests test$s but only ran $Curr_Test.
 FAIL
         }
         elsif( $Curr_Test > $Expected_Tests ) {
             my $num_extra = $Curr_Test - $Expected_Tests;
+            my $s = $Expected_Tests == 1 ? '' : 's';
             $self->diag(<<"FAIL");
-Looks like you planned $Expected_Tests tests but ran $num_extra extra.
+Looks like you planned $Expected_Tests test$s but ran $num_extra extra.
 FAIL
         }
         elsif ( $num_failed ) {
+            my $s = $num_failed == 1 ? '' : 's';
             $self->diag(<<"FAIL");
-Looks like you failed $num_failed tests of $Expected_Tests.
+Looks like you failed $num_failed test$s of $Expected_Tests.
 FAIL
         }
 
@@ -1404,6 +1430,7 @@ FAIL
         $self->diag(<<'FAIL');
 Looks like your test died before it could output anything.
 FAIL
+        _my_exit( 255 ) && return;
     }
     else {
         $self->diag("No tests run!\n");
