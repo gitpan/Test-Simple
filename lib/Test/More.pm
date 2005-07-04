@@ -18,7 +18,7 @@ sub _carp {
 
 require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.60';
+$VERSION = '0.60_01';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 @ISA    = qw(Exporter);
@@ -32,6 +32,7 @@ $VERSION = eval $VERSION;    # make the alpha version come out as a number
              plan
              can_ok  isa_ok
              diag
+	     BAIL_OUT
             );
 
 my $Test = Test::Builder->new;
@@ -100,11 +101,10 @@ Test::More - yet another framework for writing test scripts
   pass($test_name);
   fail($test_name);
 
-  # UNIMPLEMENTED!!!
-  my @status = Test::More::status;
+  BAIL_OUT($why);
 
   # UNIMPLEMENTED!!!
-  BAIL_OUT($why);
+  my @status = Test::More::status;
 
 
 =head1 DESCRIPTION
@@ -137,7 +137,7 @@ have no plan.  (Try to avoid using this as it weakens your test.)
   use Test::More qw(no_plan);
 
 B<NOTE>: using no_plan requires a Test::Harness upgrade else it will
-think everything has failed.  See L<BUGS and CAVEATS>)
+think everything has failed.  See L<CAVEATS and NOTES>).
 
 In some cases, you'll want to completely skip an entire testing script.
 
@@ -283,7 +283,8 @@ but we B<very> strongly encourage its use.
 Should an ok() fail, it will produce some diagnostics:
 
     not ok 18 - sufficient mucus
-    #     Failed test 18 (foo.t at line 42)
+    #   Failed test 'sufficient mucus'
+    #   in foo.t at line 42.
 
 This is actually Test::Simple's ok() routine.
 
@@ -329,7 +330,8 @@ test:
 Will produce something like this:
 
     not ok 17 - Is foo the same as bar?
-    #     Failed test (foo.t at line 139)
+    #   Failed test 'Is foo the same as bar?'
+    #   in foo.t at line 139.
     #          got: 'waffle'
     #     expected: 'yarblokos'
 
@@ -434,7 +436,7 @@ Its advantage over ok() is when the test fails you'll know what $this
 and $that were:
 
     not ok 1
-    #     Failed test (foo.t at line 12)
+    #   Failed test in foo.t at line 12.
     #     '23'
     #         &&
     #     undef
@@ -616,56 +618,6 @@ sub fail (;$) {
 
 =back
 
-=head2 Diagnostics
-
-If you pick the right test function, you'll usually get a good idea of
-what went wrong when it failed.  But sometimes it doesn't work out
-that way.  So here we have ways for you to write your own diagnostic
-messages which are safer than just C<print STDERR>.
-
-=over 4
-
-=item B<diag>
-
-  diag(@diagnostic_message);
-
-Prints a diagnostic message which is guaranteed not to interfere with
-test output.  Like C<print> @diagnostic_message is simply concatinated
-together.
-
-Handy for this sort of thing:
-
-    ok( grep(/foo/, @users), "There's a foo user" ) or
-        diag("Since there's no foo, check that /etc/bar is set up right");
-
-which would produce:
-
-    not ok 42 - There's a foo user
-    #     Failed test (foo.t at line 52)
-    # Since there's no foo, check that /etc/bar is set up right.
-
-You might remember C<ok() or diag()> with the mnemonic C<open() or
-die()>.
-
-All diag()s can be made silent by passing the "no_diag" option to
-Test::More.  C<use Test::More tests => 1, 'no_diag'>.  This is useful
-if you have diagnostics for personal testing but then wish to make
-them silent for release without commenting out each individual
-statement.
-
-B<NOTE> The exact formatting of the diagnostic output is still
-changing, but it is guaranteed that whatever you throw at it it won't
-interfere with the test.
-
-=cut
-
-sub diag {
-    return unless $Show_Diag;
-    $Test->diag(@_);
-}
-
-
-=back
 
 =head2 Module tests
 
@@ -805,6 +757,188 @@ sub _is_module_name {
 
 =back
 
+
+=head2 Complex data structures
+
+Not everything is a simple eq check or regex.  There are times you
+need to see if two data structures are equivalent.  For these
+instances Test::More provides a handful of useful functions.
+
+B<NOTE> I'm not quite sure what will happen with filehandles.
+
+=over 4
+
+=item B<is_deeply>
+
+  is_deeply( $this, $that, $test_name );
+
+Similar to is(), except that if $this and $that are references, it
+does a deep comparison walking each data structure to see if they are
+equivalent.  If the two structures are different, it will display the
+place where they start differing.
+
+is_deeply() compares the dereferenced values of references, the
+references themselves (except for their type) are ignored.  This means
+aspects such as blessing and ties are not considered "different".
+
+Test::Differences and Test::Deep provide more in-depth functionality
+along these lines.
+
+=cut
+
+use vars qw(@Data_Stack %Refs_Seen);
+my $DNE = bless [], 'Does::Not::Exist';
+sub is_deeply {
+    unless( @_ == 2 or @_ == 3 ) {
+        my $msg = <<WARNING;
+is_deeply() takes two or three args, you gave %d.
+This usually means you passed an array or hash instead 
+of a reference to it
+WARNING
+        chop $msg;   # clip off newline so carp() will put in line/file
+
+        _carp sprintf $msg, scalar @_;
+
+	return $Test->ok(0);
+    }
+
+    my($this, $that, $name) = @_;
+
+    $Test->_unoverload_str(\$that, \$this);
+
+    my $ok;
+    if( !ref $this and !ref $that ) {  		# neither is a reference
+        $ok = $Test->is_eq($this, $that, $name);
+    }
+    elsif( !ref $this xor !ref $that ) {  	# one's a reference, one isn't
+        $ok = $Test->ok(0, $name);
+	$Test->diag( _format_stack({ vals => [ $this, $that ] }) );
+    }
+    else {			       		# both references
+        local @Data_Stack = ();
+        if( _deep_check($this, $that) ) {
+            $ok = $Test->ok(1, $name);
+        }
+        else {
+            $ok = $Test->ok(0, $name);
+            $Test->diag(_format_stack(@Data_Stack));
+        }
+    }
+
+    return $ok;
+}
+
+sub _format_stack {
+    my(@Stack) = @_;
+
+    my $var = '$FOO';
+    my $did_arrow = 0;
+    foreach my $entry (@Stack) {
+        my $type = $entry->{type} || '';
+        my $idx  = $entry->{'idx'};
+        if( $type eq 'HASH' ) {
+            $var .= "->" unless $did_arrow++;
+            $var .= "{$idx}";
+        }
+        elsif( $type eq 'ARRAY' ) {
+            $var .= "->" unless $did_arrow++;
+            $var .= "[$idx]";
+        }
+        elsif( $type eq 'REF' ) {
+            $var = "\${$var}";
+        }
+    }
+
+    my @vals = @{$Stack[-1]{vals}}[0,1];
+    my @vars = ();
+    ($vars[0] = $var) =~ s/\$FOO/     \$got/;
+    ($vars[1] = $var) =~ s/\$FOO/\$expected/;
+
+    my $out = "Structures begin differing at:\n";
+    foreach my $idx (0..$#vals) {
+        my $val = $vals[$idx];
+        $vals[$idx] = !defined $val ? 'undef'          :
+                      $val eq $DNE  ? "Does not exist" :
+	              ref $val      ? "$val"           :
+                                      "'$val'";
+    }
+
+    $out .= "$vars[0] = $vals[0]\n";
+    $out .= "$vars[1] = $vals[1]\n";
+
+    $out =~ s/^/    /msg;
+    return $out;
+}
+
+
+sub _type {
+    my $thing = shift;
+
+    return '' if !ref $thing;
+
+    for my $type (qw(ARRAY HASH REF SCALAR GLOB Regexp)) {
+        return $type if UNIVERSAL::isa($thing, $type);
+    }
+
+    return '';
+}
+
+=back
+
+
+=head2 Diagnostics
+
+If you pick the right test function, you'll usually get a good idea of
+what went wrong when it failed.  But sometimes it doesn't work out
+that way.  So here we have ways for you to write your own diagnostic
+messages which are safer than just C<print STDERR>.
+
+=over 4
+
+=item B<diag>
+
+  diag(@diagnostic_message);
+
+Prints a diagnostic message which is guaranteed not to interfere with
+test output.  Like C<print> @diagnostic_message is simply concatinated
+together.
+
+Handy for this sort of thing:
+
+    ok( grep(/foo/, @users), "There's a foo user" ) or
+        diag("Since there's no foo, check that /etc/bar is set up right");
+
+which would produce:
+
+    not ok 42 - There's a foo user
+    #   Failed test 'There's a foo user'
+    #   in foo.t at line 52.
+    # Since there's no foo, check that /etc/bar is set up right.
+
+You might remember C<ok() or diag()> with the mnemonic C<open() or
+die()>.
+
+All diag()s can be made silent by passing the "no_diag" option to
+Test::More.  C<use Test::More tests => 1, 'no_diag'>.  This is useful
+if you have diagnostics for personal testing but then wish to make
+them silent for release without commenting out each individual
+statement.
+
+B<NOTE> The exact formatting of the diagnostic output is still
+changing, but it is guaranteed that whatever you throw at it it won't
+interfere with the test.
+
+=cut
+
+sub diag {
+    return unless $Show_Diag;
+    $Test->diag(@_);
+}
+
+
+=back
+
+
 =head2 Conditional tests
 
 Sometimes running a test under certain conditions will cause the
@@ -922,7 +1056,7 @@ Once a todo test starts succeeding, simply move it outside the block.
 When the block is empty, delete it.
 
 B<NOTE>: TODO tests require a Test::Harness upgrade else it will
-treat it as a normal failure.  See L<BUGS and CAVEATS>)
+treat it as a normal failure.  See L<CAVEATS and NOTES>).
 
 
 =item B<todo_skip>
@@ -977,124 +1111,33 @@ but want to put tests in your testing script (always a good idea).
 
 =back
 
-=head2 Complex data structures
 
-Not everything is a simple eq check or regex.  There are times you
-need to see if two data structures are equivalent.  For these
-instances Test::More provides a handful of useful functions.
-
-B<NOTE> I'm not quite sure what will happen with filehandles.
+=head2 Test control
 
 =over 4
 
-=item B<is_deeply>
+=item B<BAIL_OUT>
 
-  is_deeply( $this, $that, $test_name );
+    BAIL_OUT($reason);
 
-Similar to is(), except that if $this and $that are hash or array
-references, it does a deep comparison walking each data structure to
-see if they are equivalent.  If the two structures are different, it
-will display the place where they start differing.
+Incidates to the harness that things are going so badly all testing
+should terminate.  This includes the running any additional test scripts.
 
-Test::Differences and Test::Deep provide more in-depth functionality
-along these lines.
+This is typically used when testing cannot continue such as a critical
+module failing to compile or a necessary external utility not being
+available such as a database connection failing.
+
+The test will exit with 255.
 
 =cut
 
-use vars qw(@Data_Stack %Refs_Seen);
-my $DNE = bless [], 'Does::Not::Exist';
-sub is_deeply {
-    unless( @_ == 2 or @_ == 3 ) {
-        my $msg = <<WARNING;
-is_deeply() takes two or three args, you gave %d.
-This usually means you passed an array or hash instead 
-of a reference to it
-WARNING
-        chop $msg;   # clip off newline so carp() will put in line/file
+sub BAIL_OUT {
+    my $reason = shift;
 
-        _carp sprintf $msg, scalar @_;
-
-	return $Test->ok(0);
-    }
-
-    my($this, $that, $name) = @_;
-
-    my $ok;
-    if( !ref $this and !ref $that ) {  		# neither is a reference
-        $ok = $Test->is_eq($this, $that, $name);
-    }
-    elsif( !ref $this xor !ref $that ) {  	# one's a reference, one isn't
-        $ok = $Test->ok(0, $name);
-	$Test->diag( _format_stack({ vals => [ $this, $that ] }) );
-    }
-    else {			       		# both references
-        local @Data_Stack = ();
-        if( _deep_check($this, $that) ) {
-            $ok = $Test->ok(1, $name);
-        }
-        else {
-            $ok = $Test->ok(0, $name);
-            $Test->diag(_format_stack(@Data_Stack));
-        }
-    }
-
-    return $ok;
+    $Test->BAIL_OUT($reason);
 }
 
-sub _format_stack {
-    my(@Stack) = @_;
-
-    my $var = '$FOO';
-    my $did_arrow = 0;
-    foreach my $entry (@Stack) {
-        my $type = $entry->{type} || '';
-        my $idx  = $entry->{'idx'};
-        if( $type eq 'HASH' ) {
-            $var .= "->" unless $did_arrow++;
-            $var .= "{$idx}";
-        }
-        elsif( $type eq 'ARRAY' ) {
-            $var .= "->" unless $did_arrow++;
-            $var .= "[$idx]";
-        }
-        elsif( $type eq 'REF' ) {
-            $var = "\${$var}";
-        }
-    }
-
-    my @vals = @{$Stack[-1]{vals}}[0,1];
-    my @vars = ();
-    ($vars[0] = $var) =~ s/\$FOO/     \$got/;
-    ($vars[1] = $var) =~ s/\$FOO/\$expected/;
-
-    my $out = "Structures begin differing at:\n";
-    foreach my $idx (0..$#vals) {
-        my $val = $vals[$idx];
-        $vals[$idx] = !defined $val ? 'undef'          :
-                      $val eq $DNE  ? "Does not exist" :
-	              ref $val      ? "$val"           :
-                                      "'$val'";
-    }
-
-    $out .= "$vars[0] = $vals[0]\n";
-    $out .= "$vars[1] = $vals[1]\n";
-
-    $out =~ s/^/    /msg;
-    return $out;
-}
-
-
-sub _type {
-    my $thing = shift;
-
-    return '' if !ref $thing;
-
-    for my $type (qw(ARRAY HASH REF SCALAR GLOB Regexp)) {
-        return $type if UNIVERSAL::isa($thing, $type);
-    }
-
-    return '';
-}
+=back
 
 
 =head2 Discouraged comparison functions
@@ -1115,6 +1158,7 @@ C<is_deeply()> can do that better and with diagnostics.
 
 They may be deprecated in future versions.
 
+=over 4
 
 =item B<eq_array>
 
@@ -1170,7 +1214,7 @@ sub _deep_check {
         # Quiet uninitialized value warnings when comparing undefs.
         local $^W = 0; 
 
-        $Test->_unoverload(\$e1, \$e2);
+        $Test->_unoverload_str(\$e1, \$e2);
 
         # Either they're both references or both not.
         my $same_ref = !(!ref $e1 xor !ref $e2);
@@ -1298,6 +1342,11 @@ Is better written:
 B<NOTE> By historical accident, this is not a true set comparision.
 While the order of elements does not matter, duplicate elements do.
 
+B<NOTE> eq_set() does not know how to deal with references at the top
+level.  The following is an example of a comparison which might not work:
+
+    eq_set([\1, \2], [\2, \1]);
+
 Test::Deep contains much better set comparison functions.
 
 =cut
@@ -1309,14 +1358,20 @@ sub eq_set  {
     # There's faster ways to do this, but this is easiest.
     local $^W = 0;
 
-    # We must make sure that references are treated neutrally.  It really
-    # doesn't matter how we sort them, as long as both arrays are sorted
-    # with the same algorithm.
+    # It really doesn't matter how we sort them, as long as both arrays are 
+    # sorted with the same algorithm.
+    #
+    # Ensure that references are not accidentally treated the same as a
+    # string containing the reference.
+    #
     # Have to inline the sort routine due to a threading/sort bug.
     # See [rt.cpan.org 6782]
+    #
+    # I don't know how references would be sorted so we just don't sort
+    # them.  This means eq_set doesn't really work with refs.
     return eq_array(
-           [sort { ref $a ? -1 : ref $b ? 1 : $a cmp $b } @$a1],
-           [sort { ref $a ? -1 : ref $b ? 1 : $a cmp $b } @$a2]
+           [grep(ref, @$a1), sort( grep(!ref, @$a1) )],
+           [grep(ref, @$a2), sort( grep(!ref, @$a2) )],
     );
 }
 
@@ -1365,7 +1420,7 @@ considered a failure and will exit with 255.
 So the exit codes are...
 
     0                   all tests successful
-    255                 test died
+    255                 test died or all passed but wrong # of tests run
     any other number    how many failed (including missing or extras)
 
 If you fail more than 254 tests, it will be reported as 254.
@@ -1384,10 +1439,12 @@ Test::More works with Perls as old as 5.004_05.
 
 =item Overloaded objects
 
-String overloaded objects are compared B<as strings>.  This prevents
-Test::More from piercing an object's interface allowing better blackbox
-testing.  So if a function starts returning overloaded objects instead of
-bare strings your tests won't notice the difference.  This is good.
+String overloaded objects are compared B<as strings> (or in cmp_ok()'s
+case, strings or numbers as appropriate to the comparison op).  This
+prevents Test::More from piercing an object's interface allowing
+better blackbox testing.  So if a function starts returning overloaded
+objects instead of bare strings your tests won't notice the
+difference.  This is good.
 
 However, it does mean that functions like is_deeply() cannot be used to
 test the internals of string overloaded objects.  In this case I would

@@ -4,7 +4,7 @@ use 5.004;
 
 use strict 'vars';
 use vars qw($VERSION);
-$VERSION = '0.60';
+$VERSION = '0.60_01';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 
@@ -107,7 +107,7 @@ considered a failure and will exit with 255.
 So the exit codes are...
 
     0                   all tests successful
-    255                 test died
+    255                 test died or all passed but wrong # of tests run
     any other number    how many failed (including missing or extras)
 
 If you fail more than 254 tests, it will be reported as 254.
@@ -144,7 +144,8 @@ It will produce output like this:
     ok 2 - Title() get
     ok 3 - Director() get
     not ok 4 - Rating() get
-    #    Failed test (t/film.t at line 14)
+    #   Failed test 'Rating() get'
+    #   in t/film.t at line 14.
     ok 5 - NumExplodingSheep() get
     # Looks like you failed 1 tests of 5
 

@@ -9,6 +9,7 @@ README
 t/00signature.t
 t/00test_harness_check.t
 t/bad_plan.t
+t/bail_out.t
 t/buffer.t
 t/Builder.t
 t/circular_data.t
@@ -45,6 +46,7 @@ t/lib/Test/Simple/sample_tests/pre_plan_death.plx
 t/lib/Test/Simple/sample_tests/require.plx
 t/lib/Test/Simple/sample_tests/success.plx
 t/lib/Test/Simple/sample_tests/too_few.plx
+t/lib/Test/Simple/sample_tests/too_few_fail.plx
 t/lib/Test/Simple/sample_tests/two_fail.plx
 t/lib/TieOut.pm
 t/maybe_regex.t
