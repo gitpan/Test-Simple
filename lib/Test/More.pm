@@ -3,7 +3,6 @@ package Test::More;
 use 5.004;
 
 use strict;
-use Test::Builder;
 
 
 # Can't use Carp because it might cause use_ok() to accidentally succeed
@@ -16,12 +15,12 @@ sub _carp {
 
 
 
-require Exporter;
 use vars qw($VERSION @ISA @EXPORT %EXPORT_TAGS $TODO);
-$VERSION = '0.60_01';
+$VERSION = '0.60_02';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
-@ISA    = qw(Exporter);
+use Test::Builder::Module;
+@ISA    = qw(Test::Builder::Module);
 @EXPORT = qw(ok use_ok require_ok
              is isnt like unlike is_deeply
              cmp_ok
@@ -34,20 +33,6 @@ $VERSION = eval $VERSION;    # make the alpha version come out as a number
              diag
 	     BAIL_OUT
             );
-
-my $Test = Test::Builder->new;
-my $Show_Diag = 1;
-
-
-# 5.004's Exporter doesn't have export_to_level.
-sub _export_to_level
-{
-      my $pkg = shift;
-      my $level = shift;
-      (undef) = shift;                  # redundant arg
-      my $callpkg = caller($level);
-      $pkg->export($callpkg, @_);
-}
 
 
 =head1 NAME
@@ -172,53 +157,34 @@ or for deciding between running the tests at all:
 =cut
 
 sub plan {
-    my(@plan) = @_;
+    my $tb = Test::More->builder;
 
-    my $idx = 0;
-    my @cleaned_plan;
-    while( $idx <= $#plan ) {
-        my $item = $plan[$idx];
-
-        if( $item eq 'no_diag' ) {
-            $Show_Diag = 0;
-        }
-        else {
-            push @cleaned_plan, $item;
-        }
-
-        $idx++;
-    }
-
-    $Test->plan(@cleaned_plan);
+    $tb->plan(@_);
 }
 
-sub import {
-    my($class) = shift;
 
-    my $caller = caller;
+# This implements "use Test::More 'no_diag'" but the behavior is
+# deprecated.
+sub import_extra {
+    my $class = shift;
+    my $list  = shift;
 
-    $Test->exported_to($caller);
-
+    my @other = ();
     my $idx = 0;
-    my @plan;
-    my @imports;
-    while( $idx <= $#_ ) {
-        my $item = $_[$idx];
+    while( $idx <= $#{$list} ) {
+        my $item = $list->[$idx];
 
-        if( $item eq 'import' ) {
-            push @imports, @{$_[$idx+1]};
-            $idx++;
+        if( defined $item and $item eq 'no_diag' ) {
+            $class->builder->no_diag(1);
         }
         else {
-            push @plan, $item;
+            push @other, $item;
         }
 
         $idx++;
     }
 
-    plan(@plan);
-
-    __PACKAGE__->_export_to_level(1, __PACKAGE__, @imports);
+    @$list = @other;
 }
 
 
@@ -292,7 +258,9 @@ This is actually Test::Simple's ok() routine.
 
 sub ok ($;$) {
     my($test, $name) = @_;
-    $Test->ok($test, $name);
+    my $tb = Test::More->builder;
+
+    $tb->ok($test, $name);
 }
 
 =item B<is>
@@ -356,11 +324,15 @@ function which is an alias of isnt().
 =cut
 
 sub is ($$;$) {
-    $Test->is_eq(@_);
+    my $tb = Test::More->builder;
+
+    $tb->is_eq(@_);
 }
 
 sub isnt ($$;$) {
-    $Test->isnt_eq(@_);
+    my $tb = Test::More->builder;
+
+    $tb->isnt_eq(@_);
 }
 
 *isn't = \&isnt;
@@ -397,7 +369,9 @@ diagnostics on failure.
 =cut
 
 sub like ($$;$) {
-    $Test->like(@_);
+    my $tb = Test::More->builder;
+
+    $tb->like(@_);
 }
 
 
@@ -411,7 +385,9 @@ given pattern.
 =cut
 
 sub unlike ($$;$) {
-    $Test->unlike(@_);
+    my $tb = Test::More->builder;
+
+    $tb->unlike(@_);
 }
 
 
@@ -449,7 +425,9 @@ is()'s use of C<eq> will interfere:
 =cut
 
 sub cmp_ok($$$;$) {
-    $Test->cmp_ok(@_);
+    my $tb = Test::More->builder;
+
+    $tb->cmp_ok(@_);
 }
 
 
@@ -485,10 +463,11 @@ as one test.  If you desire otherwise, use:
 sub can_ok ($@) {
     my($proto, @methods) = @_;
     my $class = ref $proto || $proto;
+    my $tb = Test::More->builder;
 
     unless( @methods ) {
-        my $ok = $Test->ok( 0, "$class->can(...)" );
-        $Test->diag('    can_ok() called with no methods');
+        my $ok = $tb->ok( 0, "$class->can(...)" );
+        $tb->diag('    can_ok() called with no methods');
         return $ok;
     }
 
@@ -503,9 +482,9 @@ sub can_ok ($@) {
     $name = @methods == 1 ? "$class->can('$methods[0]')" 
                           : "$class->can(...)";
     
-    my $ok = $Test->ok( !@nok, $name );
+    my $ok = $tb->ok( !@nok, $name );
 
-    $Test->diag(map "    $class->can('$_') failed\n", @nok);
+    $tb->diag(map "    $class->can('$_') failed\n", @nok);
 
     return $ok;
 }
@@ -541,6 +520,7 @@ you'd like them to be more specific, you can supply an $object_name
 
 sub isa_ok ($$;$) {
     my($object, $class, $obj_name) = @_;
+    my $tb = Test::More->builder;
 
     my $diag;
     $obj_name = 'The object' unless defined $obj_name;
@@ -580,11 +560,11 @@ WHOA
 
     my $ok;
     if( $diag ) {
-        $ok = $Test->ok( 0, $name );
-        $Test->diag("    $diag\n");
+        $ok = $tb->ok( 0, $name );
+        $tb->diag("    $diag\n");
     }
     else {
-        $ok = $Test->ok( 1, $name );
+        $ok = $tb->ok( 1, $name );
     }
 
     return $ok;
@@ -609,11 +589,13 @@ Use these very, very, very sparingly.
 =cut
 
 sub pass (;$) {
-    $Test->ok(1, @_);
+    my $tb = Test::More->builder;
+    $tb->ok(1, @_);
 }
 
 sub fail (;$) {
-    $Test->ok(0, @_);
+    my $tb = Test::More->builder;
+    $tb->ok(0, @_);
 }
 
 =back
@@ -670,6 +652,7 @@ because the notion of "compile-time" is relative.  Instead, you want:
 sub use_ok ($;@) {
     my($module, @imports) = @_;
     @imports = () unless @imports;
+    my $tb = Test::More->builder;
 
     my($pack,$filename,$line) = caller;
 
@@ -690,13 +673,13 @@ use $module \@imports;
 USE
     }
 
-    my $ok = $Test->ok( !$@, "use $module;" );
+    my $ok = $tb->ok( !$@, "use $module;" );
 
     unless( $ok ) {
         chomp $@;
         $@ =~ s{^BEGIN failed--compilation aborted at .*$}
                 {BEGIN failed--compilation aborted at $filename line $line.}m;
-        $Test->diag(<<DIAGNOSTIC);
+        $tb->diag(<<DIAGNOSTIC);
     Tried to use '$module'.
     Error:  $@
 DIAGNOSTIC
@@ -717,6 +700,7 @@ Like use_ok(), except it requires the $module or $file.
 
 sub require_ok ($) {
     my($module) = shift;
+    my $tb = Test::More->builder;
 
     my $pack = caller;
 
@@ -730,11 +714,11 @@ package $pack;
 require $module;
 REQUIRE
 
-    my $ok = $Test->ok( !$@, "require $module;" );
+    my $ok = $tb->ok( !$@, "require $module;" );
 
     unless( $ok ) {
         chomp $@;
-        $Test->diag(<<DIAGNOSTIC);
+        $tb->diag(<<DIAGNOSTIC);
     Tried to require '$module'.
     Error:  $@
 DIAGNOSTIC
@@ -789,6 +773,8 @@ along these lines.
 use vars qw(@Data_Stack %Refs_Seen);
 my $DNE = bless [], 'Does::Not::Exist';
 sub is_deeply {
+    my $tb = Test::More->builder;
+
     unless( @_ == 2 or @_ == 3 ) {
         my $msg = <<WARNING;
 is_deeply() takes two or three args, you gave %d.
@@ -799,29 +785,29 @@ WARNING
 
         _carp sprintf $msg, scalar @_;
 
-	return $Test->ok(0);
+	return $tb->ok(0);
     }
 
     my($this, $that, $name) = @_;
 
-    $Test->_unoverload_str(\$that, \$this);
+    $tb->_unoverload_str(\$that, \$this);
 
     my $ok;
     if( !ref $this and !ref $that ) {  		# neither is a reference
-        $ok = $Test->is_eq($this, $that, $name);
+        $ok = $tb->is_eq($this, $that, $name);
     }
     elsif( !ref $this xor !ref $that ) {  	# one's a reference, one isn't
-        $ok = $Test->ok(0, $name);
-	$Test->diag( _format_stack({ vals => [ $this, $that ] }) );
+        $ok = $tb->ok(0, $name);
+	$tb->diag( _format_stack({ vals => [ $this, $that ] }) );
     }
     else {			       		# both references
         local @Data_Stack = ();
         if( _deep_check($this, $that) ) {
-            $ok = $Test->ok(1, $name);
+            $ok = $tb->ok(1, $name);
         }
         else {
-            $ok = $Test->ok(0, $name);
-            $Test->diag(_format_stack(@Data_Stack));
+            $ok = $tb->ok(0, $name);
+            $tb->diag(_format_stack(@Data_Stack));
         }
     }
 
@@ -900,7 +886,7 @@ messages which are safer than just C<print STDERR>.
   diag(@diagnostic_message);
 
 Prints a diagnostic message which is guaranteed not to interfere with
-test output.  Like C<print> @diagnostic_message is simply concatinated
+test output.  Like C<print> @diagnostic_message is simply concatenated
 together.
 
 Handy for this sort of thing:
@@ -918,12 +904,6 @@ which would produce:
 You might remember C<ok() or diag()> with the mnemonic C<open() or
 die()>.
 
-All diag()s can be made silent by passing the "no_diag" option to
-Test::More.  C<use Test::More tests => 1, 'no_diag'>.  This is useful
-if you have diagnostics for personal testing but then wish to make
-them silent for release without commenting out each individual
-statement.
-
 B<NOTE> The exact formatting of the diagnostic output is still
 changing, but it is guaranteed that whatever you throw at it it won't
 interfere with the test.
@@ -931,8 +911,9 @@ interfere with the test.
 =cut
 
 sub diag {
-    return unless $Show_Diag;
-    $Test->diag(@_);
+    my $tb = Test::More->builder;
+
+    $tb->diag(@_);
 }
 
 
@@ -1001,16 +982,17 @@ use TODO.  Read on.
 #'#
 sub skip {
     my($why, $how_many) = @_;
+    my $tb = Test::More->builder;
 
     unless( defined $how_many ) {
         # $how_many can only be avoided when no_plan is in use.
         _carp "skip() needs to know \$how_many tests are in the block"
-          unless $Test->has_plan eq 'no_plan';
+          unless $tb->has_plan eq 'no_plan';
         $how_many = 1;
     }
 
     for( 1..$how_many ) {
-        $Test->skip($why);
+        $tb->skip($why);
     }
 
     local $^W = 0;
@@ -1081,16 +1063,17 @@ interpret them as passing.
 
 sub todo_skip {
     my($why, $how_many) = @_;
+    my $tb = Test::More->builder;
 
     unless( defined $how_many ) {
         # $how_many can only be avoided when no_plan is in use.
         _carp "todo_skip() needs to know \$how_many tests are in the block"
-          unless $Test->has_plan eq 'no_plan';
+          unless $tb->has_plan eq 'no_plan';
         $how_many = 1;
     }
 
     for( 1..$how_many ) {
-        $Test->todo_skip($why);
+        $tb->todo_skip($why);
     }
 
     local $^W = 0;
@@ -1133,8 +1116,9 @@ The test will exit with 255.
 
 sub BAIL_OUT {
     my $reason = shift;
+    my $tb = Test::More->builder;
 
-    $Test->BAIL_OUT($reason);
+    $tb->BAIL_OUT($reason);
 }
 
 =back
@@ -1203,6 +1187,8 @@ sub _eq_array  {
 
 sub _deep_check {
     my($e1, $e2) = @_;
+    my $tb = Test::More->builder;
+
     my $ok = 0;
 
     # Effectively turn %Refs_Seen into a stack.  This avoids picking up
@@ -1214,7 +1200,7 @@ sub _deep_check {
         # Quiet uninitialized value warnings when comparing undefs.
         local $^W = 0; 
 
-        $Test->_unoverload_str(\$e1, \$e2);
+        $tb->_unoverload_str(\$e1, \$e2);
 
         # Either they're both references or both not.
         my $same_ref = !(!ref $e1 xor !ref $e2);
@@ -1339,7 +1325,7 @@ Is better written:
 
     is_deeply( [sort @this], [sort @that] );
 
-B<NOTE> By historical accident, this is not a true set comparision.
+B<NOTE> By historical accident, this is not a true set comparison.
 While the order of elements does not matter, duplicate elements do.
 
 B<NOTE> eq_set() does not know how to deal with references at the top
@@ -1398,11 +1384,6 @@ you can access the underlying Test::Builder object like so:
 Returns the Test::Builder object underlying Test::More for you to play
 with.
 
-=cut
-
-sub builder {
-    return Test::Builder->new;
-}
 
 =back
 

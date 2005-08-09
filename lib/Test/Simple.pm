@@ -3,22 +3,15 @@ package Test::Simple;
 use 5.004;
 
 use strict 'vars';
-use vars qw($VERSION);
-$VERSION = '0.60_01';
+use vars qw($VERSION @ISA @EXPORT);
+$VERSION = '0.60_02';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
+use Test::Builder::Module;
+@ISA    = qw(Test::Builder::Module);
+@EXPORT = qw(ok);
 
-use Test::Builder;
-my $Test = Test::Builder->new;
-
-sub import {
-    my $self = shift;
-    my $caller = caller;
-    *{$caller.'::ok'} = \&ok;
-
-    $Test->exported_to($caller);
-    $Test->plan(@_);
-}
+my $CLASS = __PACKAGE__;
 
 
 =head1 NAME
@@ -85,7 +78,7 @@ will do what you mean (fail if stuff is empty)
 =cut
 
 sub ok ($;$) {
-    $Test->ok(@_);
+    $CLASS->builder->ok(@_);
 }
 
 
