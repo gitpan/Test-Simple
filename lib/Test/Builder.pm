@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.30_02';
+$VERSION = '0.31';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -472,13 +472,20 @@ sub _unoverload {
 
     foreach my $thing (@_) {
         eval { 
-            if( defined $$thing ) {
+            if( _is_object($$thing) ) {
                 if( my $string_meth = overload::Method($$thing, $type) ) {
                     $$thing = $$thing->$string_meth();
                 }
             }
         };
     }
+}
+
+
+sub _is_object {
+    my $thing = shift;
+
+    return eval { ref $thing && $thing->isa('UNIVERSAL') } ? 1 : 0;
 }
 
 
