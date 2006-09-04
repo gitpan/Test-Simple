@@ -1,11 +1,13 @@
-# http://module-build.sourceforge.net/META-spec.html
-#XXXXXXX This is a prototype!!!  It will change in the future!!! XXXXX#
-name:         Test-Simple
-version:      0.64
-version_from: lib/Test/Simple.pm
-installdirs:  perl
-requires:
+--- #YAML:1.0
+name:                Test-Simple
+version:             0.64_01
+abstract:            ~
+license:             unknown
+generated_by:        ExtUtils::MakeMaker version 6.30_03
+author:              ~
+distribution_type:   module
+requires:     
     Test::Harness:                 2.03
-
-distribution_type: module
-generated_by: ExtUtils::MakeMaker version 6.30
+meta-spec:
+    url: http://module-build.sourceforge.net/META-spec-new.html
+    version: 1.1
