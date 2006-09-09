@@ -8,7 +8,7 @@ $^C ||= 0;
 
 use strict;
 use vars qw($VERSION);
-$VERSION = '0.33_01';
+$VERSION = '0.33_02';
 $VERSION = eval $VERSION;    # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -57,9 +57,11 @@ BEGIN {
             return $_[0];
         };
     }
+    # 5.8.0's threads::shared is busted when threads are off
+    # and earlier Perls just don't have that module at all.
     else {
-        require threads::shared;
-        threads::shared->import;
+        *share = sub { return $_[0] };
+        *lock  = sub { 0 };
     }
 }
 
