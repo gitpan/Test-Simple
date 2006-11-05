@@ -1,13 +1,12 @@
 --- #YAML:1.0
 name:                Test-Simple
-version:             0.64_02
+version:             0.64_03
 abstract:            ~
-license:             unknown
-generated_by:        ExtUtils::MakeMaker version 6.30_03
-author:              ~
+license:             perl
+generated_by:        ExtUtils::MakeMaker version 6.31
 distribution_type:   module
 requires:     
     Test::Harness:                 2.03
 meta-spec:
-    url: http://module-build.sourceforge.net/META-spec-new.html
-    version: 1.1
+    url:     http://module-build.sourceforge.net/META-spec-v1.2.html
+    version: 1.2
