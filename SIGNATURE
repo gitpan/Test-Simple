@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 44bd0e20586a729c9f7476113326dcc3bdbc2ef8 Changes
+SHA1 e9cf6b900fce700f92fb3004e9cdcc902c154605 Changes
 SHA1 f3c281bd1d1a9b5703215dd9587cb183c95ca82b MANIFEST
-SHA1 3dcdb3b7045f4489734ac9c9d37851beadf74524 META.yml
+SHA1 bc1d29089622d47f291e66d87097deb4645fedb0 META.yml
 SHA1 f67ad8cfdb83e53080516587146b20fd576f3793 Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 ad761920d29c767f09160ff59ce3a186abcae143 TODO
-SHA1 72a56291651a6b496dad485e0ffae93146c427d4 lib/Test/Builder.pm
-SHA1 fe6273706045e8d7d153f473ad1904bac89da588 lib/Test/Builder/Module.pm
-SHA1 4fe542ddbcbf10ece5b5029cf1ffa12ca3528f6b lib/Test/Builder/Tester.pm
+SHA1 029312cc86234934d914baf29cb94915807bfb7a lib/Test/Builder.pm
+SHA1 3f9b83a647a670b7220943168710e1933eb2c6b8 lib/Test/Builder/Module.pm
+SHA1 f80ddaf234b2cb03b00c0293383f24d990300624 lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 e5243ecaadc1947e26475c38bda15461b6b19971 lib/Test/More.pm
-SHA1 d1f6ad10bfe353cace76ae758cc1587583d00824 lib/Test/Simple.pm
+SHA1 201d44808d5590068a1b48f586aaa2a41ff08b50 lib/Test/More.pm
+SHA1 10c219ac0e2d3bfdb5aad196e34a72f2a1b631e1 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 0b3fe95e5cca173245f11ef2c81c55b1c7f001a5 t/00signature.t
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
@@ -112,7 +112,7 @@ SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.5 (Darwin)
 
-iD8DBQFFTipSWMohlhD1QycRAn9GAJsG33JImHywLfkQqrgTr9Lf8/teCACeOggY
-Z/7P6FRXvZBmKoWHlIaGB6Q=
-=h5oh
+iD8DBQFFVKkUWMohlhD1QycRAjfIAKDUNvHxftMEi7VlAfvjfEwH2kldVACfR02F
+wlK+2fWD4UMrXi75euXWWxU=
+=Wmbe
 -----END PGP SIGNATURE-----
