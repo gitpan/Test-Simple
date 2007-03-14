@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 9d924a81124233e0b5c09600206d50e956c99fc2 Changes
+SHA1 c76e03d84559fa1554057e4b0c8ac598dff23f1b Changes
 SHA1 f3c281bd1d1a9b5703215dd9587cb183c95ca82b MANIFEST
-SHA1 1963cb07b4a8264a536b29cca1fc16a894425dd8 META.yml
+SHA1 6b339e2c7a27da9f856656f40144e78964a682fc META.yml
 SHA1 6e7597ac1c575fb1d0af0eb22aee14f48d1a399b Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
-SHA1 ad761920d29c767f09160ff59ce3a186abcae143 TODO
-SHA1 ebaa2ee38f1a0193f6c6818ef8299a1d3f735025 lib/Test/Builder.pm
+SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
+SHA1 387da90aefb7b1e287617d6f4922118ad428f398 lib/Test/Builder.pm
 SHA1 f9a14515643e3c52cd5ac4ca5175c28cfeaa3482 lib/Test/Builder/Module.pm
 SHA1 be30092e23d2e64c4a5e26617cdeef3c32a27cdb lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 6e5b4cd33e03742583b477691748eb6c2cac8177 lib/Test/More.pm
-SHA1 5000b17ae43ecdf71abcb5594044a46b2d3bc62a lib/Test/Simple.pm
+SHA1 a29c9fd85793b6e01855cf013fa012105aac1382 lib/Test/More.pm
+SHA1 60bc6fb0f0c34487fa5a6db18e61d24c98951779 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 0b3fe95e5cca173245f11ef2c81c55b1c7f001a5 t/00signature.t
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
@@ -45,7 +45,7 @@ SHA1 fae415c7bdaf59d1e1b82de8f394e16071ce1edc t/exit.t
 SHA1 7eb5704774659c66d53071da7047e1e9c8f787b9 t/extra.t
 SHA1 431170ce398fc73bc1160c697f7c4b605ae540ec t/extra_one.t
 SHA1 da8d8cef669f7ffddba9097296e5d6b0de549da7 t/fail-like.t
-SHA1 9ca6aeb92db77121157af11cc9aa714ef6279941 t/fail-more.t
+SHA1 1d5e4ab8829f422c9f447af2e0db52be4cdd19bd t/fail-more.t
 SHA1 4bbd0d5bdf1ac073b81c588807dc6c768303cf43 t/fail.t
 SHA1 7070511e1b3ccd4ba98973cb6d3e330e05feaf40 t/fail_one.t
 SHA1 efa817d1b1a2e0b81cbbdac1bda96b15584293dd t/filehandles.t
@@ -112,7 +112,7 @@ SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.5 (Darwin)
 
-iD8DBQFF90H0WMohlhD1QycRAjuRAJ9w6sK5z5xMIkGIdu5WQe6VHXK/bACbBfEF
-/4OAdNsasEyBaFFb/twwMBY=
-=I4w6
+iD8DBQFF9/y5WMohlhD1QycRAnnxAKC2mYHzj5HQMqKfaMVpQ4mKsKUvyACffTk3
+QnrjHwAZrO3Mbpms67IaCdg=
+=E4V9
 -----END PGP SIGNATURE-----
