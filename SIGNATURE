@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 6e83f988e7e7cde605563b2f1dd7f59de054f699 Changes
+SHA1 9d924a81124233e0b5c09600206d50e956c99fc2 Changes
 SHA1 f3c281bd1d1a9b5703215dd9587cb183c95ca82b MANIFEST
-SHA1 b9222b52f5bbc8cc4e184b5f0a06a82ca145ad66 META.yml
-SHA1 f67ad8cfdb83e53080516587146b20fd576f3793 Makefile.PL
+SHA1 1963cb07b4a8264a536b29cca1fc16a894425dd8 META.yml
+SHA1 6e7597ac1c575fb1d0af0eb22aee14f48d1a399b Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 ad761920d29c767f09160ff59ce3a186abcae143 TODO
-SHA1 a1dc5451dcbdf5c82136957095a1968479895aad lib/Test/Builder.pm
-SHA1 d704ca6dd99954bab31b1553759aaec7915ebc66 lib/Test/Builder/Module.pm
+SHA1 ebaa2ee38f1a0193f6c6818ef8299a1d3f735025 lib/Test/Builder.pm
+SHA1 f9a14515643e3c52cd5ac4ca5175c28cfeaa3482 lib/Test/Builder/Module.pm
 SHA1 be30092e23d2e64c4a5e26617cdeef3c32a27cdb lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 c2e433602a5072fa444146995673b6afa02aa968 lib/Test/More.pm
-SHA1 635769623f2dcb26f6dc6c479852b10fd989cbba lib/Test/Simple.pm
+SHA1 6e5b4cd33e03742583b477691748eb6c2cac8177 lib/Test/More.pm
+SHA1 5000b17ae43ecdf71abcb5594044a46b2d3bc62a lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 0b3fe95e5cca173245f11ef2c81c55b1c7f001a5 t/00signature.t
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
@@ -45,7 +45,7 @@ SHA1 fae415c7bdaf59d1e1b82de8f394e16071ce1edc t/exit.t
 SHA1 7eb5704774659c66d53071da7047e1e9c8f787b9 t/extra.t
 SHA1 431170ce398fc73bc1160c697f7c4b605ae540ec t/extra_one.t
 SHA1 da8d8cef669f7ffddba9097296e5d6b0de549da7 t/fail-like.t
-SHA1 138523bf672b27f9963e07483202ea003fcd5b7c t/fail-more.t
+SHA1 9ca6aeb92db77121157af11cc9aa714ef6279941 t/fail-more.t
 SHA1 4bbd0d5bdf1ac073b81c588807dc6c768303cf43 t/fail.t
 SHA1 7070511e1b3ccd4ba98973cb6d3e330e05feaf40 t/fail_one.t
 SHA1 efa817d1b1a2e0b81cbbdac1bda96b15584293dd t/filehandles.t
@@ -55,7 +55,7 @@ SHA1 e36e82a3a96d49e5592189af8e93b3e2a2af5e79 t/has_plan.t
 SHA1 8a46b361fafc96aa86af359290fa6d1beedce453 t/has_plan2.t
 SHA1 79abdda4bc9a6f345272ea0bed532c2b014b7589 t/import.t
 SHA1 9d1f157958ae985706edafb7f0f55f053c1d41f4 t/is_deeply_fail.t
-SHA1 e4ee7df8dfd93ebf474cd13660b62d15294497bc t/is_fh.t
+SHA1 a2a437d9b70fb38ecc4f9a81b406782264c32c4b t/is_fh.t
 SHA1 8402cffef120e850cbb19a65683b69dfb192c9c8 t/lib/NoExporter.pm
 SHA1 d6720b79d3fb10113de5717f7ff3e1cc5efa0e9a t/lib/Test/Simple/Catch.pm
 SHA1 fb6841b529dc60b00abf891415c64ac9680ee755 t/lib/Test/Simple/sample_tests/death.plx
@@ -80,7 +80,7 @@ SHA1 9699ec9a3d13280ccff9bd0d80e74c1004b705e3 t/no_header.t
 SHA1 5581ac83c76b1bf2b83996cc394f243bd0115b79 t/no_plan.t
 SHA1 2e928ebfbbae32fbd073dbf3498a0df31d43672a t/ok_obj.t
 SHA1 5039666fbffb866250e77e9787ed59417d21f4f7 t/output.t
-SHA1 c2bd7fde3384c2d2e68431fe0b7437207edc116f t/overload.t
+SHA1 81c8b1a3603d00da9f8396b3219e13bdc2038991 t/overload.t
 SHA1 e16d771fc9142824bc2f9b216f96b2db0c2130fa t/overload_threads.t
 SHA1 37bae7a80190632cb9da3d93e6c72f9cecc9477e t/plan.t
 SHA1 6043a3bc5b8f82b8b0c61a1308116a8aabcb4eec t/plan_bad.t
@@ -88,7 +88,7 @@ SHA1 fa6ef0e9a794b77929d144be4047e6fecd22a823 t/plan_is_noplan.t
 SHA1 17239c84bc59cb0e8ccb673eed566769816373fb t/plan_no_plan.t
 SHA1 84167106fd893e16a5e8a881e0ef2383d36357cf t/plan_shouldnt_import.t
 SHA1 a1c2e27ac994c6f76edbd6a799158518924f793f t/plan_skip_all.t
-SHA1 b6f9594411311cb76f46154aae43def8c3f570d6 t/pod-coverage.t
+SHA1 faa9b948161f3c82a45d887522b6892f0d76b72d t/pod-coverage.t
 SHA1 6d5c8f755e04fe8f7aff2d2e8f4df38601c543ae t/pod.t
 SHA1 303196fd295c075dcb1d72fbc70e143e3befa316 t/require_ok.t
 SHA1 e20cd104708d80bc2a1bdf326bbc57823c7dc0de t/reset.t
@@ -112,7 +112,7 @@ SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.5 (Darwin)
 
-iD8DBQFFtSyZWMohlhD1QycRAqlMAJwPy0W276O3rP6++vNpL3O44PH8VgCeJwpv
-nlIp2eLy94ktb8pybKcD+nc=
-=JMWk
+iD8DBQFF90H0WMohlhD1QycRAjuRAJ9w6sK5z5xMIkGIdu5WQe6VHXK/bACbBfEF
+/4OAdNsasEyBaFFb/twwMBY=
+=I4w6
 -----END PGP SIGNATURE-----
