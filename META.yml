@@ -1,9 +1,9 @@
 --- #YAML:1.0
 name:                Test-Simple
-version:             0.70
+version:             0.71
 abstract:            ~
 license:             perl
-generated_by:        ExtUtils::MakeMaker version 6.31
+generated_by:        ExtUtils::MakeMaker version 6.36
 distribution_type:   module
 requires:     
     Test::Harness:                 2.03
