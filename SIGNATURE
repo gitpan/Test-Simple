@@ -14,22 +14,21 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 0d511b8d608704d3296a9f95c99ad1ec15c4e921 Changes
-SHA1 4f8265a5a9c8f8997a36a6786c108ce6f3921d58 MANIFEST
-SHA1 a23b5b2322ddb3d761cc51d9e4e8fc4021fc8c26 META.yml
+SHA1 714411ff3604de189caac6258c9978726afe0020 Changes
+SHA1 3196194229d4a7bad3dab895b00735a2aa43ea2d MANIFEST
+SHA1 98a8ca9b10f362832df2436e4ef80b3daa1ce0ef META.yml
 SHA1 e4d7c2458e8a023a62af2fc79300ad23dab3418a Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 e12fe0af10ada0cf15841e9e2ebd50603d8c27fa lib/Test/Builder.pm
-SHA1 2d6233859d7f64678f407f6247b50a7f6a67a33e lib/Test/Builder/Module.pm
-SHA1 cd296932b34ce924fc60ff5efb1b1a6d728e0ecc lib/Test/Builder/Tester.pm
+SHA1 16ff16fed921e853f468e6b06b6719c32e07fadb lib/Test/Builder.pm
+SHA1 3fff33c6b9da32a1e6d36967e85c5c880c4d38de lib/Test/Builder/Module.pm
+SHA1 05396f287586b91c1623720b048f09df42b31752 lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 90e83d578a18b4abdf70d7cdf7dc7ea41efa2902 lib/Test/More.pm
-SHA1 2a6ac532f13d35fe03dcd5ea517bcceb563c587b lib/Test/Simple.pm
+SHA1 85d774217f9b941049c8a8409e6d5daa199f91e2 lib/Test/More.pm
+SHA1 c4307a4e996742cdca0acace738b5e85504a0807 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 0b3fe95e5cca173245f11ef2c81c55b1c7f001a5 t/00signature.t
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
-SHA1 68d30ad8e70f5f9f9f18fbb2547414991b6dc415 t/BEGIN_use_ok.t
 SHA1 809c6b08f9b1024b0cf3dde10057d625120824b2 t/Builder.t
 SHA1 407256c24805244e594c437d2fd86364ebc5c8c3 t/More.t
 SHA1 a79a3f2bd3c887679edf1c1ecd6ced1c31fc3fe1 t/bad_plan.t
@@ -58,7 +57,7 @@ SHA1 8a46b361fafc96aa86af359290fa6d1beedce453 t/has_plan2.t
 SHA1 79abdda4bc9a6f345272ea0bed532c2b014b7589 t/import.t
 SHA1 662041ec4abd5447a43f8d57b35e7f63d002adfa t/is_deeply_dne_bug.t
 SHA1 9d1f157958ae985706edafb7f0f55f053c1d41f4 t/is_deeply_fail.t
-SHA1 d6eb5b1e4fd5e529b331b601c0198363a0560c2b t/is_deeply_with_threads.t
+SHA1 84ba9ea952b8e4268acba41e0f177d89c7869622 t/is_deeply_with_threads.t
 SHA1 f6f38ce755cb3b9e34535386bb87b7289dc7f5db t/is_fh.t
 SHA1 7cb26a70d9103e775ebfd5866124d1f27cba938d t/lib/Dummy.pm
 SHA1 36d853b64b10711e162b90b3f7b76aa503bb40f1 t/lib/MyOverload.pm
@@ -118,7 +117,7 @@ SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.7 (Darwin)
 
-iD8DBQFG6gP5WMohlhD1QycRAj95AJ9COKLTyIkLLMvkCqpuL6vyKX2vLgCfYKuL
-GT+URCWnmXuNryQAi/FJs4Y=
-=wzEy
+iD8DBQFG8eTIWMohlhD1QycRAgyJAJ9tX9byBcUBXwtGaMDEjxxeeivZ0wCfYZXT
+HwsxChj8b/P1tOvsboBvZl4=
+=WaIZ
 -----END PGP SIGNATURE-----
