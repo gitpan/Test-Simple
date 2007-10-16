@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Test-Simple
-version:             0.72
+version:             0.73_01
 abstract:            ~
 license:             perl
 generated_by:        ExtUtils::MakeMaker version 6.36
