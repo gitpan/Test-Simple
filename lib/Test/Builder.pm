@@ -1,15 +1,10 @@
 package Test::Builder;
 
-use 5.004;
-
-# $^C was only introduced in 5.005-ish.  We do this to prevent
-# use of uninitialized value warnings in older perls.
-$^C ||= 0;
-
+use 5.006;
 use strict;
-use vars qw($VERSION);
-$VERSION = '0.74';
-$VERSION = eval $VERSION;    # make the alpha version come out as a number
+
+our $VERSION = '0.75';
+$VERSION = eval { $VERSION }; # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
 BEGIN {
@@ -198,7 +193,7 @@ sub reset {
 
     $self->_dup_stdhandles unless $^C;
 
-    return undef;
+    return;
 }
 
 =back
@@ -401,9 +396,7 @@ sub ok {
     Very confusing.
 ERR
 
-    my($pack, $file, $line) = $self->caller;
-
-    my $todo = $self->todo($pack);
+    my $todo = $self->todo();
     $self->_unoverload_str(\$todo);
 
     my $out;
@@ -448,13 +441,14 @@ ERR
         my $msg = $todo ? "Failed (TODO)" : "Failed";
         $self->_print_diag("\n") if $ENV{HARNESS_ACTIVE};
 
-	if( defined $name ) {
-	    $self->diag(qq[  $msg test '$name'\n]);
-	    $self->diag(qq[  at $file line $line.\n]);
-	}
-	else {
-	    $self->diag(qq[  $msg test at $file line $line.\n]);
-	}
+    my(undef, $file, $line) = $self->caller;
+        if( defined $name ) {
+            $self->diag(qq[  $msg test '$name'\n]);
+            $self->diag(qq[  at $file line $line.\n]);
+        }
+        else {
+            $self->diag(qq[  $msg test at $file line $line.\n]);
+        }
     } 
 
     return $test ? 1 : 0;
@@ -705,7 +699,8 @@ sub cmp_ok {
 
         my $code = $self->_caller_context;
 
-        # Yes, it has to look like this or 5.4.5 won't see the #line directive.
+        # Yes, it has to look like this or 5.4.5 won't see the #line 
+        # directive.
         # Don't ask me, man, I just work here.
         $test = eval "
 $code" . "\$got $type \$expect;";
@@ -956,7 +951,8 @@ sub _regex_ok {
 
         local($@, $!, $SIG{__DIE__}); # isolate eval
 
-        # Yes, it has to look like this or 5.4.5 won't see the #line directive.
+        # Yes, it has to look like this or 5.4.5 won't see the #line 
+        # directive.
         # Don't ask me, man, I just work here.
         $test = eval "
 $code" . q{$test = $this =~ /$usable_regex/ ? 1 : 0};
@@ -1145,7 +1141,7 @@ foreach my $attribute (qw(No_Header No_Ending No_Diag)) {
         return $self->{$attribute};
     };
 
-    no strict 'refs';
+    no strict 'refs';   ## no critic
     *{__PACKAGE__.'::'.$method} = $code;
 }
 
@@ -1332,10 +1328,9 @@ sub _new_fh {
         $fh = $file_or_fh;
     }
     else {
-        $fh = do { local *FH };
-        open $fh, ">$file_or_fh" or
+        open $fh, ">", $file_or_fh or
             $self->croak("Can't open test output log $file_or_fh: $!");
-	_autoflush($fh);
+        _autoflush($fh);
     }
 
     return $fh;
@@ -1574,7 +1569,7 @@ sub todo {
     $pack = $pack || $self->exported_to || $self->caller($Level);
     return 0 unless $pack;
 
-    no strict 'refs';
+    no strict 'refs';   ## no critic
     return defined ${$pack.'::TODO'} ? ${$pack.'::TODO'}
                                      : 0;
 }
