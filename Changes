@@ -1,3 +1,16 @@
+0.76_01  Sat Feb 23 20:44:32 PST 2008
+    Bug fixes
+    * Test::Builder no longer uses a __DIE__ handler.  This resolves a number
+      of problems with exit codes being swallowed or other module's handlers
+      being interfered with.  [rt.cpan.org 25294]
+    - Allow maybe_regex() to detect blessed regexes.  [bleadperl @32880]
+    - The default test output filehandles will now use utf8.
+      [rt.cpan.org 21091]
+
+    Test fixes
+    - Remove the signature test.  Adds no security and just generates failures.
+
+
 0.75  Sat Feb 23 19:03:38 PST 2008
     Incompatibilities
     * The minimum version is now 5.6.0.

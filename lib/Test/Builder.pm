@@ -3,7 +3,7 @@ package Test::Builder;
 use 5.006;
 use strict;
 
-our $VERSION = '0.75';
+our $VERSION = '0.76_01';
 $VERSION = eval { $VERSION }; # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -172,7 +172,6 @@ sub reset {
     # hash keys is just asking for pain.  Also, it was documented.
     $Level = 1;
 
-    $self->{Test_Died}    = 0;
     $self->{Have_Plan}    = 0;
     $self->{No_Plan}      = 0;
     $self->{Original_Pid} = $$;
@@ -920,7 +919,7 @@ sub maybe_regex {
     my($re, $opts);
 
     # Check for qr/foo/
-    if( ref $regex eq 'Regexp' ) {
+    if( _is_qr($regex) ) {
         $usable_regex = $regex;
     }
     # Check for '/foo/' or 'm,foo,'
@@ -932,7 +931,18 @@ sub maybe_regex {
     }
 
     return $usable_regex;
-};
+}
+
+
+sub _is_qr {
+    my $regex = shift;
+    
+    # is_regexp() checks for regexes in a robust manner, say if they're
+    # blessed.
+    return re::is_regexp($regex) if defined &re::is_regexp;
+    return ref $regex eq 'Regexp';
+}
+
 
 sub _regex_ok {
     my($self, $this, $regex, $cmp, $name) = @_;
@@ -1345,6 +1355,7 @@ sub _autoflush {
 }
 
 
+my($Testout, $Testerr);
 sub _dup_stdhandles {
     my $self = shift;
 
@@ -1352,24 +1363,33 @@ sub _dup_stdhandles {
 
     # Set everything to unbuffered else plain prints to STDOUT will
     # come out in the wrong order from our own prints.
-    _autoflush(\*TESTOUT);
+    _autoflush($Testout);
     _autoflush(\*STDOUT);
-    _autoflush(\*TESTERR);
+    _autoflush($Testerr);
     _autoflush(\*STDERR);
 
-    $self->output(\*TESTOUT);
-    $self->failure_output(\*TESTERR);
-    $self->todo_output(\*TESTOUT);
+    $self->output        ($Testout);
+    $self->failure_output($Testerr);
+    $self->todo_output   ($Testout);
 }
 
 
 my $Opened_Testhandles = 0;
 sub _open_testhandles {
+    my $self = shift;
+    
     return if $Opened_Testhandles;
+    
     # We dup STDOUT and STDERR so people can change them in their
     # test suites while still getting normal test output.
-    open(TESTOUT, ">&STDOUT") or die "Can't dup STDOUT:  $!";
-    open(TESTERR, ">&STDERR") or die "Can't dup STDERR:  $!";
+    open( $Testout, ">&STDOUT") or die "Can't dup STDOUT:  $!";
+    open( $Testerr, ">&STDERR") or die "Can't dup STDERR:  $!";
+    
+    $self->_try(sub {
+        binmode $Testout, ":utf8";
+        binmode $Testerr, ":utf8";
+    });
+    
     $Opened_Testhandles = 1;
 }
 
@@ -1666,35 +1686,27 @@ sub _my_exit {
 
 =cut
 
-$SIG{__DIE__} = sub {
-    # We don't want to muck with death in an eval, but $^S isn't
-    # totally reliable.  5.005_03 and 5.6.1 both do the wrong thing
-    # with it.  Instead, we use caller.  This also means it runs under
-    # 5.004!
-    my $in_eval = 0;
-    for( my $stack = 1;  my $sub = (CORE::caller($stack))[3];  $stack++ ) {
-        $in_eval = 1 if $sub =~ /^\(eval\)/;
-    }
-    $Test->{Test_Died} = 1 unless $in_eval;
-};
-
 sub _ending {
     my $self = shift;
 
+    my $real_exit_code = $?;
     $self->_sanity_check();
 
     # Don't bother with an ending if this is a forked copy.  Only the parent
     # should do the ending.
+    if( $self->{Original_Pid} != $$ ) {
+        return;
+    }
+    
     # Exit if plan() was never called.  This is so "require Test::Simple" 
     # doesn't puke.
+    if( !$self->{Have_Plan} ) {
+        return;
+    }
+
     # Don't do an ending if we bailed out.
-    if( ($self->{Original_Pid} != $$) 			or
-	(!$self->{Have_Plan} && !$self->{Test_Died}) 	or
-	$self->{Bailed_Out}
-      )
-    {
-	_my_exit($?);
-	return;
+    if( $self->{Bailed_Out} ) {
+        return;
     }
 
     # Figure out if we passed or failed and print helpful messages.
@@ -1744,7 +1756,7 @@ Looks like you failed $num_failed test$s of $num_tests$qualifier.
 FAIL
         }
 
-        if( $self->{Test_Died} ) {
+        if( $real_exit_code ) {
             $self->diag(<<"FAIL");
 Looks like your test died just after $self->{Curr_Test}.
 FAIL
@@ -1768,7 +1780,7 @@ FAIL
     elsif ( $self->{Skip_All} ) {
         _my_exit( 0 ) && return;
     }
-    elsif ( $self->{Test_Died} ) {
+    elsif ( $real_exit_code ) {
         $self->diag(<<'FAIL');
 Looks like your test died before it could output anything.
 FAIL
