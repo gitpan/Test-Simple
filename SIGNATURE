@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 4d37442e13dcb7c2fa7180a1d2537450f90b68e2 Changes
+SHA1 e97a7fd601c400afe5dbf6971803d582d822f329 Changes
 SHA1 ad7a3c3c7901d782c251ecabfc5ac0a7086ed04b MANIFEST
-SHA1 2d5acd191f6f034ee42de82ac801143b00a3b8fc META.yml
+SHA1 8965f595e9463f4c598c0d95cb984672f1c008c6 META.yml
 SHA1 4cd7f3208c9bb42b8d4b7c66af01188237d23f1d Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 30a63343b061925586b7670d48a655fa7b4f9ed2 lib/Test/Builder.pm
-SHA1 67eaa0a1963a1646387a681c3fbd6be234973ea6 lib/Test/Builder/Module.pm
-SHA1 aa53181c6e898026f83f4115b474b6deaff1e94f lib/Test/Builder/Tester.pm
+SHA1 a558a924ffaa1499fdce138c3a072863743f0ee5 lib/Test/Builder.pm
+SHA1 cd38d9f2ed1333e5fb80fefdb3afdc5cd0b109fd lib/Test/Builder/Module.pm
+SHA1 d52a90a9437749eae08a2ada4e0a3ea70ef3fbff lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 99df066058ae4afc199ab35b0c6a2d4f705ac5ff lib/Test/More.pm
-SHA1 99784a69f3f49ec20e05fbda8be64221857e1a49 lib/Test/Simple.pm
+SHA1 1387744227479b3ebccdf74db7ac56445cb87756 lib/Test/More.pm
+SHA1 c6092d8c21e110ba6ef976e7a4c714dcceb3505b lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 2cba9a187ac6a308b54f77dbf1ce361633e98449 t/BEGIN_require_ok.t
@@ -118,11 +118,11 @@ SHA1 b15c5d5e329e979084c800fd8b6097b80ccaf2f8 t/try.t
 SHA1 f0b131b4b35bb3dd2bbc5fbd10db04d9e5afdd8f t/undef.t
 SHA1 6b1696441b4bcac045fb8ddb371230b89be4d7a7 t/use_ok.t
 SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
-SHA1 0dbd53624efd5611e8198f34ff535b8a962822d7 t/utf8.t
+SHA1 2810f489d04301c9d89ba3a3ecab9d42dd90f591 t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.8 (Darwin)
 
-iEYEARECAAYFAkfA9lEACgkQWMohlhD1QyczQgCfWd2hqhLKHGqOHXQw9xpk3/O2
-JUYAoM9i9YZHwdHRaNaOX6XRSLD9hp+0
-=y6vx
+iEYEARECAAYFAkfB3isACgkQWMohlhD1QyegjgCeJY/Xp8jpH++X2IJHS3kDTi+d
+TS8An3zHlRlyNGGIzFdHuEHRXIfNIxqO
+=VU0S
 -----END PGP SIGNATURE-----
