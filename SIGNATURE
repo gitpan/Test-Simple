@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 000dd4718bae74f4f87bca286eb87277d90db4ee Changes
+SHA1 53ed27f6cc1a9045058ef4edece554bb5224d4c8 Changes
 SHA1 092b065e6efee04c70eda846f1a0aebde2fdcde1 MANIFEST
-SHA1 88d0444fd8c4b36482145c17ce29ad7bdeb7f1e9 META.yml
+SHA1 3f354031044f81bc7a0ace1bc36dbdb4c8b582af META.yml
 SHA1 4cd7f3208c9bb42b8d4b7c66af01188237d23f1d Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 3fc97d861f4311a5366e4dc4377b3aa4c87b2420 lib/Test/Builder.pm
-SHA1 39cc74a3448b47d9b25b401aa7193f62a64b190a lib/Test/Builder/Module.pm
+SHA1 98d6ea16180a29197fa949261c146cf3651f5996 lib/Test/Builder.pm
+SHA1 7c5c78977dd6e2efc66207d3629dfaf3c8cc0e3c lib/Test/Builder/Module.pm
 SHA1 496c448c19e0f94bfa548da9d7ea3bbad604bec2 lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 f1e38d6bfd5d5f5723f51698e7b99f408bc0191f lib/Test/More.pm
-SHA1 f57b6f66aad49b96c5a6545dbb9df41c5a5e8875 lib/Test/Simple.pm
+SHA1 423bb5c8278af7051042358e4a602f7495fc43e4 lib/Test/More.pm
+SHA1 ca32c6737c58d2ac41d17008f09a39460fecaabc lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 2cba9a187ac6a308b54f77dbf1ce361633e98449 t/BEGIN_require_ok.t
@@ -119,11 +119,11 @@ SHA1 b15c5d5e329e979084c800fd8b6097b80ccaf2f8 t/try.t
 SHA1 f0b131b4b35bb3dd2bbc5fbd10db04d9e5afdd8f t/undef.t
 SHA1 6b1696441b4bcac045fb8ddb371230b89be4d7a7 t/use_ok.t
 SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
-SHA1 32687ac0b9405d2acd1ee3a3499c11dd040904a2 t/utf8.t
+SHA1 362bab0debcb4e389158ac9698647bb264d6f23e t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.8 (Darwin)
 
-iEYEARECAAYFAkfFNUsACgkQWMohlhD1QycVIQCfaO4Q9+Sd8lOEa7gwR4SOOIaU
-2RoAmwXCk3e5txOhXCwCGJjw475f0M/8
-=c3RQ
+iEYEARECAAYFAkfFRCsACgkQWMohlhD1QyfaVQCfdu9CSFrzBmTXjKeJ9U+Blh6T
+eKkAn3fcqnqSNbDEy77AY4fYniHWSka5
+=yHFK
 -----END PGP SIGNATURE-----
