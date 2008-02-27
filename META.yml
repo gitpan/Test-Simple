@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Test-Simple
-version:             0.77
+version:             0.78
 abstract:            Basic utilities for writing tests.
 license:             perl
 author:              
