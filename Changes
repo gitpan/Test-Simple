@@ -1,3 +1,17 @@
+0.77  Wed Feb 27 01:55:55 PST 2008
+    Bug fixes
+    - "use Test::Builder::Module" no longer sets exported_to() or does
+      any other importing.
+    - Fix the $TODO finding code so it can find $TODO without the benefit
+      of exported_to(), which is often wrong.
+    - Turn off the filehandle locale stuff for the moment, there's a 
+      problem on 5.10.  We'll try it again next release.
+      
+    Doc improvements
+    - Improve the Test::Builder SYNOPSIS to use Test::Builder::Module
+      rather than write it's own import().
+
+
 0.76_02  Sun Feb 24 13:12:55 PST 2008
     Bug fixes
     * The default test output filehandles will NOT use utf8.
@@ -16,7 +30,8 @@
       [rt.cpan.org 21091]
 
     Test fixes
-    - Remove the signature test.  Adds no security and just generates failures.
+    - Remove the signature test.  Adds no security and just generates
+      failures.
 
 
 0.75  Sat Feb 23 19:03:38 PST 2008

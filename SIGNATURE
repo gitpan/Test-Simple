@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 e97a7fd601c400afe5dbf6971803d582d822f329 Changes
-SHA1 ad7a3c3c7901d782c251ecabfc5ac0a7086ed04b MANIFEST
-SHA1 8965f595e9463f4c598c0d95cb984672f1c008c6 META.yml
+SHA1 765510d450505deb02c222c6b620b73027cfbca5 Changes
+SHA1 092b065e6efee04c70eda846f1a0aebde2fdcde1 MANIFEST
+SHA1 d4c61b874e11d8f0aa08297189f1266b30e687a2 META.yml
 SHA1 4cd7f3208c9bb42b8d4b7c66af01188237d23f1d Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 a558a924ffaa1499fdce138c3a072863743f0ee5 lib/Test/Builder.pm
-SHA1 cd38d9f2ed1333e5fb80fefdb3afdc5cd0b109fd lib/Test/Builder/Module.pm
-SHA1 d52a90a9437749eae08a2ada4e0a3ea70ef3fbff lib/Test/Builder/Tester.pm
+SHA1 f526975873d87d709009d1105611dc18220c4eb8 lib/Test/Builder.pm
+SHA1 897fb4914742e85aaa94853fab77ee5ef98978ec lib/Test/Builder/Module.pm
+SHA1 289fd1de5c571bc05508f01995cb0df9c6896cf4 lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 1387744227479b3ebccdf74db7ac56445cb87756 lib/Test/More.pm
-SHA1 c6092d8c21e110ba6ef976e7a4c714dcceb3505b lib/Test/Simple.pm
+SHA1 873237813fec2aeaa445870e762ac09e65040256 lib/Test/More.pm
+SHA1 9077f194b866d08b115cacf06a0c3528e795ecf2 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 2cba9a187ac6a308b54f77dbf1ce361633e98449 t/BEGIN_require_ok.t
@@ -104,6 +104,7 @@ SHA1 c4d329031c82919b26eaff690311dfc0c5584e3a t/reset.t
 SHA1 713d0d3a3f82fe8d54f6ac57b3ff4613c5a5df20 t/simple.t
 SHA1 c7c333b6532706880f739ce11872c1392186c75d t/skip.t
 SHA1 6c7e909f400766c3c33d15bd290a2e2cf9a5c64c t/skipall.t
+SHA1 023aef429aab54c9857dc7a25a8d3f9b3bb65ade t/tbm_doesnt_set_exported_to.t
 SHA1 602fb5382444881c8dfbde73ff3c7d15b644d578 t/tbt_01basic.t
 SHA1 cf5ef5459cd57e529196783a6c6ece9de744717f t/tbt_02fhrestore.t
 SHA1 739febf92154450c5f8e302cc7fd32f14a238e1b t/tbt_03die.t
@@ -113,16 +114,16 @@ SHA1 bc60f9f7c5f824f21d83c785eede2c94bdd1ee41 t/tbt_06errormess.t
 SHA1 e74bc251dc7b404c269319f990fb53c9b5457cb1 t/tbt_07args.t
 SHA1 318802d754ad4cf97b712aada7ee2cdd5d44450a t/thread_taint.t
 SHA1 af8e075ac5a90b49cce199248c9ca1bc4ee25067 t/threads.t
-SHA1 ae188e5d3a72e96fd000448d10f0b94599427173 t/todo.t
+SHA1 84be8fe6a1ca94defe5fc25190cd53631a6697d5 t/todo.t
 SHA1 b15c5d5e329e979084c800fd8b6097b80ccaf2f8 t/try.t
 SHA1 f0b131b4b35bb3dd2bbc5fbd10db04d9e5afdd8f t/undef.t
 SHA1 6b1696441b4bcac045fb8ddb371230b89be4d7a7 t/use_ok.t
 SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
-SHA1 2810f489d04301c9d89ba3a3ecab9d42dd90f591 t/utf8.t
+SHA1 32687ac0b9405d2acd1ee3a3499c11dd040904a2 t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.8 (Darwin)
 
-iEYEARECAAYFAkfB3isACgkQWMohlhD1QyegjgCeJY/Xp8jpH++X2IJHS3kDTi+d
-TS8An3zHlRlyNGGIzFdHuEHRXIfNIxqO
-=VU0S
+iEYEARECAAYFAkfFM9oACgkQWMohlhD1QydcpwCfYcyn79lc092ncaKRpaq84yvd
+bu8AoIPUGidPkunQkXwmzKUeKjfvmWE9
+=23pT
 -----END PGP SIGNATURE-----

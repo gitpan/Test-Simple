@@ -3,7 +3,7 @@ package Test::Builder;
 use 5.006;
 use strict;
 
-our $VERSION = '0.76_02';
+our $VERSION = '0.77';
 $VERSION = eval { $VERSION }; # make the alpha version come out as a number
 
 # Make Test::Builder thread-safe for ithreads.
@@ -68,28 +68,15 @@ Test::Builder - Backend for building test libraries
 =head1 SYNOPSIS
 
   package My::Test::Module;
-  use Test::Builder;
-  require Exporter;
-  @ISA = qw(Exporter);
-  @EXPORT = qw(ok);
+  use base 'Test::Builder::Module';
 
-  my $Test = Test::Builder->new;
-  $Test->output('my_logfile');
-
-  sub import {
-      my($self) = shift;
-      my $pack = caller;
-
-      $Test->exported_to($pack);
-      $Test->plan(@_);
-
-      $self->export_to_level(1, $self, 'ok');
-  }
+  my $CLASS = __PACKAGE__;
 
   sub ok {
       my($test, $name) = @_;
+      my $tb = $CLASS->builder;
 
-      $Test->ok($test, $name);
+      $tb->ok($test, $name);
   }
 
 
@@ -190,6 +177,8 @@ sub reset {
     $self->{No_Header}  = 0;
     $self->{No_Ending}  = 0;
 
+    $self->{TODO}       = undef;
+
     $self->_dup_stdhandles unless $^C;
 
     return;
@@ -203,25 +192,6 @@ These methods are for setting up tests and declaring how many there
 are.  You usually only want to call one of these methods.
 
 =over 4
-
-=item B<exported_to>
-
-  my $pack = $Test->exported_to;
-  $Test->exported_to($pack);
-
-Tells Test::Builder what package you exported your functions to.
-This is important for getting TODO tests right.
-
-=cut
-
-sub exported_to {
-    my($self, $pack) = @_;
-
-    if( defined $pack ) {
-        $self->{Exported_To} = $pack;
-    }
-    return $self->{Exported_To};
-}
 
 =item B<plan>
 
@@ -354,6 +324,29 @@ sub skip_all {
     exit(0);
 }
 
+
+=item B<exported_to>
+
+  my $pack = $Test->exported_to;
+  $Test->exported_to($pack);
+
+Tells Test::Builder what package you exported your functions to.
+
+This method isn't terribly useful since modules which share the same
+Test::Builder object might get exported to different packages and only
+the last one will be honored.
+
+=cut
+
+sub exported_to {
+    my($self, $pack) = @_;
+
+    if( defined $pack ) {
+        $self->{Exported_To} = $pack;
+    }
+    return $self->{Exported_To};
+}
+
 =back
 
 =head2 Running tests
@@ -396,6 +389,11 @@ sub ok {
 ERR
 
     my $todo = $self->todo();
+    
+    # Capture the value of $TODO for the rest of this ok() call
+    # so it can more easily be found by other routines.
+    local $self->{TODO} = $todo;
+
     $self->_unoverload_str(\$todo);
 
     my $out;
@@ -577,6 +575,7 @@ sub _is_diag {
         }
     }
 
+    local $Level = $Level + 1;
     return $self->diag(sprintf <<DIAGNOSTIC, $got, $expect);
          got: %s
     expected: %s
@@ -724,6 +723,8 @@ sub _cmp_diag {
     
     $got    = defined $got    ? "'$got'"    : 'undef';
     $expect = defined $expect ? "'$expect'" : 'undef';
+    
+    local $Level = $Level + 1;
     return $self->diag(sprintf <<DIAGNOSTIC, $got, $type, $expect);
     %s
         %s
@@ -976,6 +977,8 @@ $code" . q{$test = $this =~ /$usable_regex/ ? 1 : 0};
     unless( $ok ) {
         $this = defined $this ? "'$this'" : 'undef';
         my $match = $cmp eq '=~' ? "doesn't match" : "matches";
+
+        local $Level = $Level + 1;
         $self->diag(sprintf <<DIAGNOSTIC, $this, $match, $regex);
                   %s
     %13s '%s'
@@ -1385,8 +1388,8 @@ sub _open_testhandles {
     open( $Testout, ">&STDOUT") or die "Can't dup STDOUT:  $!";
     open( $Testerr, ">&STDERR") or die "Can't dup STDERR:  $!";
 
-    $self->_copy_io_layers( \*STDOUT, $Testout );
-    $self->_copy_io_layers( \*STDERR, $Testerr );
+#    $self->_copy_io_layers( \*STDOUT, $Testout );
+#    $self->_copy_io_layers( \*STDERR, $Testerr );
     
     $Opened_Testhandles = 1;
 }
@@ -1582,9 +1585,10 @@ will be considered 'todo' (see Test::More and Test::Harness for
 details).  Returns the reason (ie. the value of $TODO) if running as
 todo tests, false otherwise.
 
-todo() is about finding the right package to look for $TODO in.  It
-uses the exported_to() package to find it.  If that's not set, it's
-pretty good at guessing the right package to look at based on $Level.
+todo() is about finding the right package to look for $TODO in.  It's
+pretty good at guessing the right package to look at.  It first looks for
+the caller based on C<$Level + 1>, since C<todo()> is usually called inside
+a test function.  As a last resort it will use C<exported_to()>.
 
 Sometimes there is some confusion about where todo() should be looking
 for the $TODO variable.  If you want to be sure, tell it explicitly
@@ -1595,7 +1599,9 @@ what $pack to use.
 sub todo {
     my($self, $pack) = @_;
 
-    $pack = $pack || $self->exported_to || $self->caller($Level);
+    return $self->{TODO} if defined $self->{TODO};
+
+    $pack = $pack || $self->caller(1) || $self->exported_to;
     return 0 unless $pack;
 
     no strict 'refs';   ## no critic
@@ -1610,6 +1616,8 @@ sub todo {
     my($pack, $file, $line) = $Test->caller($height);
 
 Like the normal caller(), except it reports according to your level().
+
+C<$height> will be added to the level().
 
 =cut
 
