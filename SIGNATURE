@@ -14,18 +14,18 @@ not run its Makefile.PL or Build.PL.
 -----BEGIN PGP SIGNED MESSAGE-----
 Hash: SHA1
 
-SHA1 53ed27f6cc1a9045058ef4edece554bb5224d4c8 Changes
+SHA1 aa1970a8e3e3c12175e5d501b57d1f466b97956b Changes
 SHA1 092b065e6efee04c70eda846f1a0aebde2fdcde1 MANIFEST
-SHA1 3f354031044f81bc7a0ace1bc36dbdb4c8b582af META.yml
+SHA1 3026f5f84f4984f8c5ecbccc20441010d7da7fb1 META.yml
 SHA1 4cd7f3208c9bb42b8d4b7c66af01188237d23f1d Makefile.PL
 SHA1 2e4baac155d4e4d784ea6dcf153878c9b6c66765 README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 98d6ea16180a29197fa949261c146cf3651f5996 lib/Test/Builder.pm
-SHA1 7c5c78977dd6e2efc66207d3629dfaf3c8cc0e3c lib/Test/Builder/Module.pm
+SHA1 d30443357e9daffab6e411176cbee64375f9fae5 lib/Test/Builder.pm
+SHA1 24dee4b1f807289f73cb351e110c0ccbbf0a8c04 lib/Test/Builder/Module.pm
 SHA1 496c448c19e0f94bfa548da9d7ea3bbad604bec2 lib/Test/Builder/Tester.pm
 SHA1 7bf5805fa4fa20f17dbb27290fdce7d188c68657 lib/Test/Builder/Tester/Color.pm
-SHA1 423bb5c8278af7051042358e4a602f7495fc43e4 lib/Test/More.pm
-SHA1 ca32c6737c58d2ac41d17008f09a39460fecaabc lib/Test/Simple.pm
+SHA1 1be2d7f326bc63ea3ffb9156d160f87b467e667d lib/Test/More.pm
+SHA1 1622747957fb3522ada5dfaf9a157f7afa2cbb98 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 2cba9a187ac6a308b54f77dbf1ce361633e98449 t/BEGIN_require_ok.t
@@ -51,7 +51,7 @@ SHA1 da8d8cef669f7ffddba9097296e5d6b0de549da7 t/fail-like.t
 SHA1 90bd24b71f109ab4a32be4749687773396069bdf t/fail-more.t
 SHA1 4bbd0d5bdf1ac073b81c588807dc6c768303cf43 t/fail.t
 SHA1 7070511e1b3ccd4ba98973cb6d3e330e05feaf40 t/fail_one.t
-SHA1 4f6f4f7954a67879704e12ac4e7691a14a08656a t/filehandles.t
+SHA1 8b71abe3c704986ca6ffd9a54061fd3d316e3f9e t/filehandles.t
 SHA1 0a8327db65489d8f64cc1a67d023a0a3a0ff9e22 t/fork.t
 SHA1 fa71cbc587c9a389d91029dd66a61d83c8b1b750 t/harness_active.t
 SHA1 e36e82a3a96d49e5592189af8e93b3e2a2af5e79 t/has_plan.t
@@ -119,11 +119,11 @@ SHA1 b15c5d5e329e979084c800fd8b6097b80ccaf2f8 t/try.t
 SHA1 f0b131b4b35bb3dd2bbc5fbd10db04d9e5afdd8f t/undef.t
 SHA1 6b1696441b4bcac045fb8ddb371230b89be4d7a7 t/use_ok.t
 SHA1 59a63c5dd14da4c29bd87f2e33dcda1515396253 t/useing.t
-SHA1 362bab0debcb4e389158ac9698647bb264d6f23e t/utf8.t
+SHA1 fb0fb962ea7c45c7dcb6e88f1d7cf28fc824a6ea t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.8 (Darwin)
 
-iEYEARECAAYFAkfFRCsACgkQWMohlhD1QyfaVQCfdu9CSFrzBmTXjKeJ9U+Blh6T
-eKkAn3fcqnqSNbDEy77AY4fYniHWSka5
-=yHFK
+iEYEARECAAYFAkf7V24ACgkQWMohlhD1Qyf2bgCfVsur1F+wp/qFv8fOoO8+XP2L
+29QAoIWGhNmgFQsjTh+pnMTjPnbZqf0j
+=0Dig
 -----END PGP SIGNATURE-----
