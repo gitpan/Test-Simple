@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# $Id: /mirror/googlecode/test-more/t/no_plan.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -10,7 +11,7 @@ BEGIN {
     }
 }
 
-use Test::More tests => 6;
+use Test::More tests => 8;
 
 my $tb = Test::Builder->create;
 $tb->level(0);
@@ -26,3 +27,7 @@ is($@, "You said to run 0 tests at $0 line 23.\n");
 #line 27
 ok !eval { $tb->ok(1) };
 is( $@, "You tried to run a test without a plan at $0 line 27.\n");
+
+#line 31
+ok !eval { $tb->plan(no_plan => 1) };
+is( $@, "no_plan takes no arguments at $0 line 31.\n" );

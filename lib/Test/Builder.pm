@@ -1,10 +1,12 @@
 package Test::Builder;
+# $Id: /mirror/googlecode/test-more/lib/Test/Builder.pm 60270 2008-09-06T21:42:13.834533Z schwern  $
 
 use 5.006;
 use strict;
+use warnings;
 
-our $VERSION = '0.80';
-$VERSION = eval { $VERSION }; # make the alpha version come out as a number
+our $VERSION = '0.81_01';
+$VERSION = eval $VERSION;  ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # Make Test::Builder thread-safe for ithreads.
 BEGIN {
@@ -150,9 +152,9 @@ test might be run multiple times in the same process.
 
 =cut
 
-use vars qw($Level);
+our $Level;
 
-sub reset {
+sub reset {  ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     my ($self) = @_;
 
     # We leave this a global because it has to be localized and localizing
@@ -177,7 +179,9 @@ sub reset {
     $self->{No_Header}  = 0;
     $self->{No_Ending}  = 0;
 
-    $self->{TODO}       = undef;
+    $self->{Todo}       = undef;
+    $self->{Todo_Stack} = [];
+    $self->{Start_Todo} = 0;
 
     $self->_dup_stdhandles unless $^C;
 
@@ -218,6 +222,7 @@ sub plan {
     }
 
     if( $cmd eq 'no_plan' ) {
+        $self->croak("no_plan takes no arguments") if $arg;
         $self->no_plan;
     }
     elsif( $cmd eq 'skip_all' ) {
@@ -231,7 +236,7 @@ sub plan {
         elsif( !defined $arg ) {
             $self->croak("Got an undefined number of tests");
         }
-        elsif( !$arg ) {
+        else {
             $self->croak("You said to run 0 tests");
         }
     }
@@ -259,7 +264,7 @@ sub expected_tests {
 
     if( @_ ) {
         $self->croak("Number of tests must be a positive integer.  You gave it '$max'")
-          unless $max =~ /^\+?\d+$/ and $max > 0;
+          unless $max =~ /^\+?\d+$/;
 
         $self->{Expected_Tests} = $max;
         $self->{Have_Plan}      = 1;
@@ -283,6 +288,8 @@ sub no_plan {
 
     $self->{No_Plan}   = 1;
     $self->{Have_Plan} = 1;
+
+    return 1;
 }
 
 =item B<has_plan>
@@ -383,16 +390,16 @@ sub ok {
     # In case $name is a string overloaded object, force it to stringify.
     $self->_unoverload_str(\$name);
 
-    $self->diag(<<ERR) if defined $name and $name =~ /^[\d\s]+$/;
+    $self->diag(<<"ERR") if defined $name and $name =~ /^[\d\s]+$/;
     You named your test '$name'.  You shouldn't use numbers for your test names.
     Very confusing.
 ERR
 
-    my $todo = $self->todo();
-    
     # Capture the value of $TODO for the rest of this ok() call
     # so it can more easily be found by other routines.
-    local $self->{TODO} = $todo;
+    my $todo    = $self->todo();
+    my $in_todo = $self->in_todo;
+    local $self->{Todo} = $todo if $in_todo;
 
     $self->_unoverload_str(\$todo);
 
@@ -401,7 +408,7 @@ ERR
 
     unless( $test ) {
         $out .= "not ";
-        @$result{ 'ok', 'actual_ok' } = ( ( $todo ? 1 : 0 ), 0 );
+        @$result{ 'ok', 'actual_ok' } = ( ( $self->in_todo ? 1 : 0 ), 0 );
     }
     else {
         @$result{ 'ok', 'actual_ok' } = ( 1, $test );
@@ -419,7 +426,7 @@ ERR
         $result->{name} = '';
     }
 
-    if( $todo ) {
+    if( $self->in_todo ) {
         $out   .= " # TODO $todo";
         $result->{reason} = $todo;
         $result->{type}   = 'todo';
@@ -435,8 +442,8 @@ ERR
     $self->_print($out);
 
     unless( $test ) {
-        my $msg = $todo ? "Failed (TODO)" : "Failed";
-        $self->_print_diag("\n") if $ENV{HARNESS_ACTIVE};
+        my $msg = $self->in_todo ? "Failed (TODO)" : "Failed";
+        $self->_print_to_fh($self->_diag_fh, "\n") if $ENV{HARNESS_ACTIVE};
 
     my(undef, $file, $line) = $self->caller;
         if( defined $name ) {
@@ -446,7 +453,7 @@ ERR
         else {
             $self->diag(qq[  $msg test at $file line $line.\n]);
         }
-    } 
+    }
 
     return $test ? 1 : 0;
 }
@@ -465,6 +472,8 @@ sub _unoverload {
             }
         }
     }
+
+    return;
 }
 
 
@@ -478,8 +487,8 @@ sub _is_object {
 sub _unoverload_str {
     my $self = shift;
 
-    $self->_unoverload(q[""], @_);
-}    
+    return $self->_unoverload(q[""], @_);
+}
 
 sub _unoverload_num {
     my $self = shift;
@@ -490,6 +499,8 @@ sub _unoverload_num {
         next unless $self->_is_dualvar($$val);
         $$val = $$val+0;
     }
+
+    return;
 }
 
 
@@ -497,9 +508,9 @@ sub _unoverload_num {
 sub _is_dualvar {
     my($self, $val) = @_;
 
-    local $^W = 0;
+    no warnings 'numeric';
     my $numval = $val+0;
-    return 1 if $numval != 0 and $numval ne $val;
+    return $numval != 0 and $numval ne $val ? 1 : 0;
 }
 
 
@@ -556,32 +567,50 @@ sub is_num {
     return $self->cmp_ok($got, '==', $expect, $name);
 }
 
+sub _diag_fmt {
+    my ($self, $type, $val) = @_;
+
+    if( defined $$val ) {
+        if( $type eq 'eq' or $type eq 'ne' ) {
+            # quote and force string context
+            $$val = "'$$val'"
+        }
+        else {
+            # force numeric context
+            $self->_unoverload_num($val);
+        }
+    }
+    else {
+        $$val = 'undef';
+    }
+
+    return;
+}
+
 sub _is_diag {
     my($self, $got, $type, $expect) = @_;
 
-    foreach my $val (\$got, \$expect) {
-        if( defined $$val ) {
-            if( $type eq 'eq' ) {
-                # quote and force string context
-                $$val = "'$$val'"
-            }
-            else {
-                # force numeric context
-                $self->_unoverload_num($val);
-            }
-        }
-        else {
-            $$val = 'undef';
-        }
-    }
+    $self->_diag_fmt($type, $_) for \$got, \$expect;
 
     local $Level = $Level + 1;
-    return $self->diag(sprintf <<DIAGNOSTIC, $got, $expect);
-         got: %s
-    expected: %s
+    return $self->diag(<<"DIAGNOSTIC");
+         got: $got
+    expected: $expect
 DIAGNOSTIC
 
-}    
+}
+
+sub _isnt_diag {
+    my ($self, $got, $type) = @_;
+
+    $self->_diag_fmt($type, \$got);
+
+    local $Level = $Level + 1;
+    return $self->diag(<<"DIAGNOSTIC");
+         got: $got
+    expected: anything else
+DIAGNOSTIC
+}
 
 =item B<isnt_eq>
 
@@ -608,7 +637,7 @@ sub isnt_eq {
         my $test = defined $got || defined $dont_expect;
 
         $self->ok($test, $name);
-        $self->_cmp_diag($got, 'ne', $dont_expect) unless $test;
+        $self->_isnt_diag($got, 'ne') unless $test;
         return $test;
     }
 
@@ -624,7 +653,7 @@ sub isnt_num {
         my $test = defined $got || defined $dont_expect;
 
         $self->ok($test, $name);
-        $self->_cmp_diag($got, '!=', $dont_expect) unless $test;
+        $self->_isnt_diag($got, '!=') unless $test;
         return $test;
     }
 
@@ -655,14 +684,14 @@ sub like {
     my($self, $this, $regex, $name) = @_;
 
     local $Level = $Level + 1;
-    $self->_regex_ok($this, $regex, '=~', $name);
+    return $self->_regex_ok($this, $regex, '=~', $name);
 }
 
 sub unlike {
     my($self, $this, $regex, $name) = @_;
 
     local $Level = $Level + 1;
-    $self->_regex_ok($this, $regex, '!~', $name);
+    return $self->_regex_ok($this, $regex, '!~', $name);
 }
 
 
@@ -677,7 +706,7 @@ Works just like Test::More's cmp_ok().
 =cut
 
 
-my %numeric_cmps = map { ($_, 1) } 
+my %numeric_cmps = map { ($_, 1) }
                        ("<",  "<=", ">",  ">=", "==", "!=", "<=>");
 
 sub cmp_ok {
@@ -693,6 +722,8 @@ sub cmp_ok {
 
     my $test;
     {
+        ## no critic (BuiltinFunctions::ProhibitStringyEval)
+
         local($@,$!,$SIG{__DIE__});  # isolate eval
 
         my $code = $self->_caller_context;
@@ -710,8 +741,9 @@ $code" . "\$got $type \$expect;";
     unless( $ok ) {
         if( $type =~ /^(eq|==)$/ ) {
             $self->_is_diag($got, $type, $expect);
-        }
-        else {
+        } elsif ( $type =~ /^(ne|!=)$/ ) {
+            $self->_isnt_diag($got, $type);
+        } else {
             $self->_cmp_diag($got, $type, $expect);
         }
     }
@@ -725,10 +757,10 @@ sub _cmp_diag {
     $expect = defined $expect ? "'$expect'" : 'undef';
     
     local $Level = $Level + 1;
-    return $self->diag(sprintf <<DIAGNOSTIC, $got, $type, $expect);
-    %s
-        %s
-    %s
+    return $self->diag(<<"DIAGNOSTIC");
+    $got
+        $type
+    $expect
 DIAGNOSTIC
 }
 
@@ -811,7 +843,7 @@ sub skip {
     my $out = "ok";
     $out   .= " $self->{Curr_Test}" if $self->use_numbers;
     $out   .= " # skip";
-    $out   .= " $why"       if length $why;
+    $out   .= " $why"               if length $why;
     $out   .= "\n";
 
     $self->_print($out);
@@ -895,7 +927,7 @@ Takes a quoted regular expression produced by qr//, or a string
 representing a regular expression.
 
 Returns a Perl value which may be used instead of the corresponding
-regular expression, or undef if it's argument is not recognised.
+regular expression, or undef if its argument is not recognised.
 
 For example, a version of like(), sans the useful diagnostic messages,
 could be written as:
@@ -937,7 +969,7 @@ sub maybe_regex {
 
 sub _is_qr {
     my $regex = shift;
-    
+
     # is_regexp() checks for regexes in a robust manner, say if they're
     # blessed.
     return re::is_regexp($regex) if defined &re::is_regexp;
@@ -957,6 +989,8 @@ sub _regex_ok {
     }
 
     {
+        ## no critic (BuiltinFunctions::ProhibitStringyEval)
+
         my $test;
         my $code = $self->_caller_context;
 
@@ -979,7 +1013,7 @@ $code" . q{$test = $this =~ /$usable_regex/ ? 1 : 0};
         my $match = $cmp eq '=~' ? "doesn't match" : "matches";
 
         local $Level = $Level + 1;
-        $self->diag(sprintf <<DIAGNOSTIC, $this, $match, $regex);
+        $self->diag(sprintf <<'DIAGNOSTIC', $this, $match, $regex);
                   %s
     %13s '%s'
 DIAGNOSTIC
@@ -1000,7 +1034,10 @@ DIAGNOSTIC
     my $return_from_code          = $Test->try(sub { code });
     my($return_from_code, $error) = $Test->try(sub { code });
 
-Works like eval BLOCK except it ensures it has no effect on the rest of the test (ie. $@ is not set) nor is effected by outside interference (ie. $SIG{__DIE__}) and works around some quirks in older Perls.
+Works like eval BLOCK except it ensures it has no effect on the rest
+of the test (ie. $@ is not set) nor is effected by outside
+interference (ie. $SIG{__DIE__}) and works around some quirks in older
+Perls.
 
 $error is what would normally be in $@.
 
@@ -1197,7 +1234,36 @@ Mark Fowler <mark@twoshortplanks.com>
 =cut
 
 sub diag {
-    my($self, @msgs) = @_;
+    my $self = shift;
+
+    $self->_print_comment($self->_diag_fh, @_);
+}
+
+
+=item B<note>
+
+    $Test->note(@msgs);
+
+Like diag(), but it prints to the C<output()> handle so it will not
+normally be seen by the user except in verbose mode.
+
+=cut
+
+sub note {
+    my $self = shift;
+
+    $self->_print_comment($self->output, @_);
+}
+
+sub _diag_fh {
+    my $self = shift;
+
+    local $Level = $Level + 1;
+    return $self->in_todo ? $self->todo_output : $self->failure_output;
+}
+
+sub _print_comment {
+    my($self, $fh, @msgs) = @_;
 
     return if $self->no_diag;
     return unless @msgs;
@@ -1209,17 +1275,48 @@ sub diag {
     # Convert undef to 'undef' so its readable.
     my $msg = join '', map { defined($_) ? $_ : 'undef' } @msgs;
 
-    # Escape each line with a #.
-    $msg =~ s/^/# /gm;
-
-    # Stick a newline on the end if it needs it.
-    $msg .= "\n" unless $msg =~ /\n\Z/;
+    # Escape the beginning, _print will take care of the rest.
+    $msg =~ s/^/# /;
 
     local $Level = $Level + 1;
-    $self->_print_diag($msg);
+    $self->_print_to_fh($fh, $msg);
 
     return 0;
 }
+
+
+=item B<explain>
+
+    my @dump = $Test->explain(@msgs);
+
+Will dump the contents of any references in a human readable format.
+Handy for things like...
+
+    is_deeply($have, $want) || diag explain $have;
+
+or
+
+    is_deeply($have, $want) || note explain $have;
+
+=cut
+
+sub explain {
+    my $self = shift;
+
+    return map {
+        ref $_
+          ? do {
+              require Data::Dumper;
+
+              my $dumper = Data::Dumper->new([$_]);
+              $dumper->Indent(1)->Terse(1);
+              $dumper->Sortkeys(1) if $dumper->can("Sortkeys");
+              $dumper->Dump;
+          }
+          : $_
+    } @_
+}
+
 
 =begin _private
 
@@ -1234,7 +1331,12 @@ Prints to the output() filehandle.
 =cut
 
 sub _print {
-    my($self, @msgs) = @_;
+    my $self = shift;
+    return $self->_print_to_fh($self->output, @_);
+}
+
+sub _print_to_fh {
+    my($self, $fh, @msgs) = @_;
 
     # Prevent printing headers when only compiling.  Mostly for when
     # tests are deparsed with B::Deparse
@@ -1243,7 +1345,6 @@ sub _print {
     my $msg = join '', @msgs;
 
     local($\, $", $,) = (undef, ' ', '');
-    my $fh = $self->output;
 
     # Escape each line after the first with a # so we don't
     # confuse Test::Harness.
@@ -1252,28 +1353,9 @@ sub _print {
     # Stick a newline on the end if it needs it.
     $msg .= "\n" unless $msg =~ /\n\Z/;
 
-    print $fh $msg;
+    return print $fh $msg;
 }
 
-=begin private
-
-=item B<_print_diag>
-
-    $Test->_print_diag(@msg);
-
-Like _print, but prints to the current diagnostic filehandle.
-
-=end private
-
-=cut
-
-sub _print_diag {
-    my $self = shift;
-
-    local($\, $", $,) = (undef, ' ', '');
-    my $fh = $self->todo ? $self->todo_output : $self->failure_output;
-    print $fh @_;
-}    
 
 =item B<output>
 
@@ -1355,6 +1437,8 @@ sub _autoflush {
     my $old_fh = select $fh;
     $| = 1;
     select $old_fh;
+
+    return;
 }
 
 
@@ -1374,6 +1458,8 @@ sub _dup_stdhandles {
     $self->output        ($Testout);
     $self->failure_output($Testerr);
     $self->todo_output   ($Testout);
+
+    return;
 }
 
 
@@ -1382,7 +1468,7 @@ sub _open_testhandles {
     my $self = shift;
     
     return if $Opened_Testhandles;
-    
+
     # We dup STDOUT and STDERR so people can change them in their
     # test suites while still getting normal test output.
     open( $Testout, ">&STDOUT") or die "Can't dup STDOUT:  $!";
@@ -1392,6 +1478,8 @@ sub _open_testhandles {
 #    $self->_copy_io_layers( \*STDERR, $Testerr );
     
     $Opened_Testhandles = 1;
+
+    return;
 }
 
 
@@ -1404,6 +1492,8 @@ sub _copy_io_layers {
 
         binmode $dst, join " ", map ":$_", @src_layers if @src_layers;
     });
+
+    return;
 }
 
 =item carp
@@ -1432,12 +1522,12 @@ sub _message_at_caller {
 
 sub carp {
     my $self = shift;
-    warn $self->_message_at_caller(@_);
+    return warn $self->_message_at_caller(@_);
 }
 
 sub croak {
     my $self = shift;
-    die $self->_message_at_caller(@_);
+    return die $self->_message_at_caller(@_);
 }
 
 sub _plan_check {
@@ -1447,6 +1537,8 @@ sub _plan_check {
         local $Level = $Level + 2;
         $self->croak("You tried to run a test without a plan");
     }
+
+    return;
 }
 
 =back
@@ -1475,9 +1567,8 @@ sub current_test {
 
     lock($self->{Curr_Test});
     if( defined $num ) {
-        unless( $self->{Have_Plan} ) {
-            $self->croak("Can't change the current test number without a plan!");
-        }
+        $self->croak("Can't change the current test number without a plan!")
+          unless $self->{Have_Plan};
 
         $self->{Curr_Test} = $num;
 
@@ -1487,11 +1578,11 @@ sub current_test {
             my $start = @$test_results ? @$test_results : 0;
             for ($start..$num-1) {
                 $test_results->[$_] = &share({
-                    'ok'      => 1, 
-                    actual_ok => undef, 
-                    reason    => 'incrementing test number', 
-                    type      => 'unknown', 
-                    name      => undef 
+                    'ok'      => 1,
+                    actual_ok => undef,
+                    reason    => 'incrementing test number',
+                    type      => 'unknown',
+                    name      => undef
                 });
             }
         }
@@ -1554,7 +1645,7 @@ of ''.  Type can be one of the following:
 Sometimes the Test::Builder test counter is incremented without it
 printing any test output, for example, when current_test() is changed.
 In these cases, Test::Builder doesn't know the result of the test, so
-it's type is 'unkown'.  These details for these tests are filled in.
+its type is 'unknown'.  These details for these tests are filled in.
 They are considered ok, but the name and actual_ok is left undef.
 
 For example "not ok 23 - hole count # TODO insufficient donuts" would
@@ -1580,10 +1671,13 @@ sub details {
     my $todo_reason = $Test->todo;
     my $todo_reason = $Test->todo($pack);
 
-todo() looks for a $TODO variable in your tests.  If set, all tests
-will be considered 'todo' (see Test::More and Test::Harness for
-details).  Returns the reason (ie. the value of $TODO) if running as
-todo tests, false otherwise.
+If the current tests are considered "TODO" it will return the reason,
+if any.  This reason can come from a $TODO variable or the last call
+to C<<todo_start()>>.
+
+Since a TODO test does not need a reason, this function can return an
+empty string even when inside a TODO block.  Use C<<$Test->in_todo>>
+to determine if you are currently inside a TODO block.
 
 todo() is about finding the right package to look for $TODO in.  It's
 pretty good at guessing the right package to look at.  It first looks for
@@ -1599,14 +1693,135 @@ what $pack to use.
 sub todo {
     my($self, $pack) = @_;
 
-    return $self->{TODO} if defined $self->{TODO};
+    return $self->{Todo} if defined $self->{Todo};
+
+    local $Level = $Level + 1;
+    my $todo = $self->find_TODO($pack);
+    return $todo         if defined $todo;
+
+    return '';
+}
+
+
+=item B<find_TODO>
+
+    my $todo_reason = $Test->find_TODO();
+    my $todo_reason = $Test->find_TODO($pack):
+
+Like C<<todo()>> but only returns the value of C<<$TODO>> ignoring
+C<<todo_start()>>.
+
+=cut
+
+sub find_TODO {
+    my($self, $pack) = @_;
 
     $pack = $pack || $self->caller(1) || $self->exported_to;
-    return 0 unless $pack;
+    return unless $pack;
 
     no strict 'refs';   ## no critic
-    return defined ${$pack.'::TODO'} ? ${$pack.'::TODO'}
-                                     : 0;
+    return ${$pack.'::TODO'};
+}
+
+
+=item B<in_todo>
+
+    my $in_todo = $Test->in_todo;
+
+Returns true if the test is currently inside a TODO block.
+
+=cut
+
+sub in_todo {
+    my $self = shift;
+
+    local $Level = $Level + 1;
+    return (grep { defined } $self->{Todo}, $self->find_TODO) ? 1 : 0;
+}
+
+=item B<todo_start>
+
+    $Test->todo_start();
+    $Test->todo_start($message);
+
+This method allows you declare all subsequent tests as TODO tests, up until
+the C<todo_end> method has been called.
+
+The C<TODO:> and C<$TODO> syntax is generally pretty good about figuring out
+whether or not we're in a TODO test.  However, often we find that this is not
+possible to determine (such as when we want to use C<$TODO> but
+the tests are being executed in other packages which can't be inferred
+beforehand).
+
+Note that you can use this to nest "todo" tests
+
+ $Test->todo_start('working on this');
+ # lots of code
+ $Test->todo_start('working on that');
+ # more code
+ $Test->todo_end;
+ $Test->todo_end;
+
+This is generally not recommended, but large testing systems often have weird
+internal needs.
+
+We've tried to make this also work with the TODO: syntax, but it's not
+guaranteed and its use is also discouraged:
+
+ TODO: {
+     local $TODO = 'We have work to do!';
+     $Test->todo_start('working on this');
+     # lots of code
+     $Test->todo_start('working on that');
+     # more code
+     $Test->todo_end;
+     $Test->todo_end;
+ }
+
+Pick one style or another of "TODO" to be on the safe side.
+
+=cut
+
+sub todo_start {
+    my $self = shift;
+    my $message = @_ ? shift : '';
+
+    $self->{Start_Todo}++;
+    if ( $self->in_todo ) {
+        push @{ $self->{Todo_Stack} } => $self->todo;
+    }
+    $self->{Todo} = $message;
+
+    return;
+}
+
+=item C<todo_end>
+
+ $Test->todo_end;
+
+Stops running tests as "TODO" tests.  This method is fatal if called without a
+preceding C<todo_start> method call.
+
+=cut
+
+sub todo_end {
+    my $self = shift;
+
+    if( !$self->{Start_Todo} ) {
+        $self->diag('todo_end() called without todo_start!');
+        _my_exit( 255 ) && return;
+    }
+
+    $self->{Start_Todo}--;
+
+    if( $self->{Start_Todo} && @{ $self->{Todo_Stack} } ) {
+        $self->{Todo} = pop @{ $self->{Todo_Stack} };
+    }
+    else {
+        delete $self->{Todo};
+    }
+
+    return;
 }
 
 =item B<caller>
@@ -1621,7 +1836,7 @@ C<$height> will be added to the level().
 
 =cut
 
-sub caller {
+sub caller {  ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     my($self, $height) = @_;
     $height ||= 0;
 
@@ -1652,10 +1867,12 @@ sub _sanity_check {
     my $self = shift;
 
     $self->_whoa($self->{Curr_Test} < 0,  'Says here you ran a negative number of tests!');
-    $self->_whoa(!$self->{Have_Plan} and $self->{Curr_Test}, 
+    $self->_whoa(!$self->{Have_Plan} and $self->{Curr_Test},
           'Somehow your tests ran without a plan!');
     $self->_whoa($self->{Curr_Test} != @{ $self->{Test_Results} },
           'Somehow you got a different number of results than tests ran!');
+
+    return;
 }
 
 =item B<_whoa>
@@ -1677,6 +1894,8 @@ WHOA!  $desc
 This should never happen!  Please contact the author immediately!
 WHOA
     }
+
+    return;
 }
 
 =item B<_my_exit>
@@ -1691,7 +1910,7 @@ doesn't actually exit, that's your job.
 =cut
 
 sub _my_exit {
-    $? = $_[0];
+    $? = $_[0];  ## no critic (Variables::RequireLocalizedPunctuationVars)
 
     return 1;
 }
@@ -1714,7 +1933,7 @@ sub _ending {
     if( $self->{Original_Pid} != $$ ) {
         return;
     }
-    
+
     # Exit if plan() was never called.  This is so "require Test::Simple" 
     # doesn't puke.
     if( !$self->{Have_Plan} ) {
@@ -1744,21 +1963,15 @@ sub _ending {
               unless defined $test_results->[$idx];
         }
 
-        my $num_failed = grep !$_->{'ok'}, 
+        my $num_failed = grep !$_->{'ok'},
                               @{$test_results}[0..$self->{Curr_Test}-1];
 
         my $num_extra = $self->{Curr_Test} - $self->{Expected_Tests};
 
-        if( $num_extra < 0 ) {
+        if( $num_extra != 0) {
             my $s = $self->{Expected_Tests} == 1 ? '' : 's';
             $self->diag(<<"FAIL");
-Looks like you planned $self->{Expected_Tests} test$s but only ran $self->{Curr_Test}.
-FAIL
-        }
-        elsif( $num_extra > 0 ) {
-            my $s = $self->{Expected_Tests} == 1 ? '' : 's';
-            $self->diag(<<"FAIL");
-Looks like you planned $self->{Expected_Tests} test$s but ran $num_extra extra.
+Looks like you planned $self->{Expected_Tests} test$s but ran $self->{Curr_Test}.
 FAIL
         }
 
@@ -1807,6 +2020,8 @@ FAIL
         $self->diag("No tests run!\n");
         _my_exit( 255 ) && return;
     }
+
+    $self->_whoa(1, "We fell off the end of _ending()");
 }
 
 END {
@@ -1860,8 +2075,8 @@ E<lt>schwern@pobox.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2002, 2004 by chromatic E<lt>chromatic@wgz.orgE<gt> and
-                        Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+Copyright 2002-2008 by chromatic E<lt>chromatic@wgz.orgE<gt> and
+                       Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
@@ -1871,3 +2086,5 @@ See F<http://www.perl.com/perl/misc/Artistic.html>
 =cut
 
 1;
+
+

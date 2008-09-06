@@ -1,4 +1,5 @@
 package Test::Builder::Module;
+# $Id: /mirror/googlecode/test-more/lib/Test/Builder/Module.pm 60269 2008-09-06T21:14:36.206844Z schwern  $
 
 use strict;
 
@@ -7,7 +8,7 @@ use Test::Builder;
 require Exporter;
 our @ISA = qw(Exporter);
 
-our $VERSION = '0.80';
+our $VERSION = '0.81_01';
 
 # 5.004's Exporter doesn't have export_to_level.
 my $_export_to_level = sub {

@@ -1,19 +1,21 @@
 #!/usr/bin/perl -w
+# $Id: /mirror/googlecode/test-more/Makefile.PL 60268 2008-09-06T21:08:41.841588Z schwern  $
 
 use 5.006;
 
 use Config;
 use ExtUtils::MakeMaker;
 
-$PACKAGE = 'Test::Simple';
+my $PACKAGE = 'Test::Simple';
 ($PACKAGE_FILE = $PACKAGE) =~ s|::|/|g;
-$LAST_API_CHANGE    = 0.48;
-$LAST_THREAD_CHANGE = 0.48;
+my $LAST_API_CHANGE    = 0.48;
+my $LAST_THREAD_CHANGE = 0.48;
 
 eval "require $PACKAGE";
+my $PACKAGE_VERSION = ${$PACKAGE.'::VERSION'};
 
 unless ($@) { # Make sure we did find the module.
-    if( ${$PACKAGE.'::VERSION'} < $LAST_API_CHANGE ) {
+    if( $PACKAGE_VERSION < $LAST_API_CHANGE ) {
         printf <<"CHANGE_WARN", $LAST_API_CHANGE;
 
 NOTE: There have been API changes between this version and any older
@@ -24,7 +26,7 @@ CHANGE_WARN
         sleep 5;
     }
     if( $] >= 5.008001 && $Config{useithreads} &&
-        ${$PACKAGE.'::VERSION'} < $LAST_THREAD_CHANGE 
+        $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
       ) 
     {
         printf <<"THREAD_WARN", $LAST_THREAD_CHANGE;
@@ -40,6 +42,12 @@ THREAD_WARN
 
 }
 
+my $mm_ver = $ExtUtils::MakeMaker::VERSION;
+if ($mm_ver =~ /_/) { # dev version
+    $mm_ver = eval $mm_ver;
+    die $@ if $@;
+}
+
 WriteMakefile(
     NAME            => $PACKAGE,
 
@@ -47,10 +55,22 @@ WriteMakefile(
     ABSTRACT_FROM   => "lib/$PACKAGE_FILE.pm",
     AUTHOR          => 'Michael G Schwern <schwern@pobox.com>',
 
+    ($mm_ver >= 6.31 ? (LICENSE => 'perl') : ()),
+
     PREREQ_PM       => { 
-                        Test::Harness   => 2.03,
-                       },
+        Test::Harness   => 2.03,
+    },
+
     # Added to the core in 5.7.3 and also 5.6.2.
     INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
-    ($ExtUtils::MakeMaker::VERSION >= 6.31 ? (LICENSE => 'perl') : ()),
+
+    ($mm_ver <= 6.44 ? () : (META_MERGE => {
+        resources => {
+            license     =>      'http://dev.perl.org/licenses/',
+            homepage    =>      'http://test-more.googlecode.com',
+            bugtracker  =>      'http://code.google.com/p/test-more/issues',
+            repository  =>      'http://test-more.googlecode.com/svn/',
+            MailingList =>    'http://groups.google.com/group/test-more-users',
+        },
+    }))
 );

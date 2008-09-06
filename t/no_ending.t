@@ -1,3 +1,4 @@
+# $Id: /mirror/googlecode/test-more/t/no_ending.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
 use Test::Builder;
 
 BEGIN {

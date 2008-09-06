@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# $Id: /mirror/googlecode/test-more/t/is_deeply_with_threads.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
 
 # Test to see if is_deeply() plays well with threads.
 

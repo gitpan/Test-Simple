@@ -1,15 +1,16 @@
 package Test::Simple;
+# $Id: /mirror/googlecode/test-more/lib/Test/Simple.pm 60269 2008-09-06T21:14:36.206844Z schwern  $
 
 use 5.004;
 
-use strict 'vars';
-use vars qw($VERSION @ISA @EXPORT);
-$VERSION = '0.80';
-$VERSION = eval $VERSION;    # make the alpha version come out as a number
+use strict;
+
+our $VERSION = '0.81_01';
+$VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;
-@ISA    = qw(Test::Builder::Module);
-@EXPORT = qw(ok);
+our @ISA    = qw(Test::Builder::Module);
+our @EXPORT = qw(ok);
 
 my $CLASS = __PACKAGE__;
 
@@ -77,8 +78,8 @@ will do what you mean (fail if stuff is empty)
 
 =cut
 
-sub ok ($;$) {
-    $CLASS->builder->ok(@_);
+sub ok ($;$) {                ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+    return $CLASS->builder->ok(@_);
 }
 
 
@@ -218,7 +219,7 @@ E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
 
 =head1 COPYRIGHT
 
-Copyright 2001, 2002, 2004 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.

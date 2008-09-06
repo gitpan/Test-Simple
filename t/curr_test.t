@@ -1,4 +1,5 @@
 #!/usr/bin/perl -w
+# $Id: /mirror/googlecode/test-more/t/curr_test.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
 
 # Dave Rolsky found a bug where if current_test() is used and no
 # tests are run via Test::Builder it will blow up.

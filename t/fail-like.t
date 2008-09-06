@@ -1,5 +1,6 @@
 # qr// was introduced in 5.004-devel.  Skip this test if we're not
 # of high enough version.
+# $Id: /mirror/googlecode/test-more/t/fail-like.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
 BEGIN { 
     if( $] < 5.005 ) {
         print "1..0 # Skipped Test requires qr//\n";
