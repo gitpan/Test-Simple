@@ -2,7 +2,7 @@ package Test::Builder::Tester;
 # $Id: /mirror/googlecode/test-more/lib/Test/Builder/Tester.pm 60269 2008-09-06T21:14:36.206844Z schwern  $
 
 use strict;
-our $VERSION = "1.14_01";
+our $VERSION = "1.14_02";
 
 use Test::Builder;
 use Symbol;

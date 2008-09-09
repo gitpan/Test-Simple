@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: /mirror/googlecode/test-more/Makefile.PL 60268 2008-09-06T21:08:41.841588Z schwern  $
+# $Id: /mirror/googlecode/test-more/Makefile.PL 60282 2008-09-07T18:25:36.447683Z schwern  $
 
 use 5.006;
 

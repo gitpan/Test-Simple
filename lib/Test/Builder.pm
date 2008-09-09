@@ -1,11 +1,11 @@
 package Test::Builder;
-# $Id: /mirror/googlecode/test-more/lib/Test/Builder.pm 60270 2008-09-06T21:42:13.834533Z schwern  $
+# $Id: /mirror/googlecode/test-more/lib/Test/Builder.pm 60319 2008-09-08T21:16:57.125001Z schwern  $
 
 use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.81_01';
+our $VERSION = '0.81_02';
 $VERSION = eval $VERSION;  ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # Make Test::Builder thread-safe for ithreads.
@@ -217,12 +217,11 @@ sub plan {
 
     local $Level = $Level + 1;
 
-    if( $self->{Have_Plan} ) {
-        $self->croak("You tried to plan twice");
-    }
+    $self->croak("You tried to plan twice")
+      if $self->{Have_Plan};
 
     if( $cmd eq 'no_plan' ) {
-        $self->croak("no_plan takes no arguments") if $arg;
+        $self->carp("no_plan takes no arguments") if $arg;
         $self->no_plan;
     }
     elsif( $cmd eq 'skip_all' ) {
@@ -983,6 +982,7 @@ sub _regex_ok {
     my $ok = 0;
     my $usable_regex = $self->maybe_regex($regex);
     unless (defined $usable_regex) {
+        local $Level = $Level + 1;
         $ok = $self->ok( 0, $name );
         $self->diag("    '$regex' doesn't look much like a regex to me.");
         return $ok;
@@ -1455,9 +1455,7 @@ sub _dup_stdhandles {
     _autoflush($Testerr);
     _autoflush(\*STDERR);
 
-    $self->output        ($Testout);
-    $self->failure_output($Testerr);
-    $self->todo_output   ($Testout);
+    $self->reset_outputs;
 
     return;
 }
@@ -1495,6 +1493,25 @@ sub _copy_io_layers {
 
     return;
 }
+
+=item reset_outputs
+
+  $tb->reset_outputs;
+
+Resets all the output filehandles back to their defaults.
+
+=cut
+
+sub reset_outputs {
+    my $self = shift;
+
+    $self->output        ($Testout);
+    $self->failure_output($Testerr);
+    $self->todo_output   ($Testout);
+
+    return;
+}
+
 
 =item carp
 
@@ -1808,8 +1825,7 @@ sub todo_end {
     my $self = shift;
 
     if( !$self->{Start_Todo} ) {
-        $self->diag('todo_end() called without todo_start!');
-        _my_exit( 255 ) && return;
+        $self->croak('todo_end() called without todo_start()');
     }
 
     $self->{Start_Todo}--;
@@ -1988,10 +2004,10 @@ FAIL
 
         if( $real_exit_code ) {
             $self->diag(<<"FAIL");
-Looks like your test died just after $self->{Curr_Test}.
+Looks like your test exited with $real_exit_code just after $self->{Curr_Test}.
 FAIL
 
-            _my_exit( 255 ) && return;
+            _my_exit( $real_exit_code ) && return;
         }
 
         my $exit_code;
@@ -2011,10 +2027,10 @@ FAIL
         _my_exit( 0 ) && return;
     }
     elsif ( $real_exit_code ) {
-        $self->diag(<<'FAIL');
-Looks like your test died before it could output anything.
+        $self->diag(<<"FAIL");
+Looks like your test exited with $real_exit_code before it could output anything.
 FAIL
-        _my_exit( 255 ) && return;
+        _my_exit( $real_exit_code ) && return;
     }
     else {
         $self->diag("No tests run!\n");

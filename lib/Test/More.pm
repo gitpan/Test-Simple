@@ -1,5 +1,5 @@
 package Test::More;
-# $Id: /mirror/googlecode/test-more/lib/Test/More.pm 60271 2008-09-06T22:13:40.304557Z schwern  $
+# $Id: /mirror/googlecode/test-more/lib/Test/More.pm 60284 2008-09-07T18:27:30.165824Z schwern  $
 
 use 5.006;
 use strict;
@@ -20,7 +20,7 @@ sub _carp {
 }
 
 
-our $VERSION = '0.81_01';
+our $VERSION = '0.81_02';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;
@@ -601,8 +601,10 @@ just a single object which isa C<$class>.
 =cut
 
 sub new_ok {
-    my($class, $args, $object_name) = @_;
     my $tb = Test::More->builder;
+    $tb->croak("new_ok() must be given at least a class") unless @_;
+
+    my($class, $args, $object_name) = @_;
 
     $args ||= [];
     $object_name = "The object" unless defined $object_name;

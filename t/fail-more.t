@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/fail-more.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
+# $Id: /mirror/googlecode/test-more/t/fail-more.t 60310 2008-09-07T23:47:22.837229Z schwern  $
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -25,7 +25,7 @@ package My::Test;
 # Test::Builder's own and the ending diagnostics don't come out right.
 require Test::Builder;
 my $TB = Test::Builder->create;
-$TB->plan(tests => 24);
+$TB->plan(tests => 23);
 
 sub like ($$;$) {
     $TB->like(@_);
@@ -53,7 +53,7 @@ sub main::err_like ($) {
 package main;
 
 require Test::More;
-my $Total = 37;
+my $Total = 36;
 Test::More->import(tests => $Total);
 
 # This should all work in the presence of a __DIE__ handler.
@@ -194,14 +194,6 @@ new_ok(undef);
 err_like( <<ERR );
 #   Failed test 'new\\(\\) died'
 #   at $Filename line 188.
-#     Error was:  Can't call method "new" on an undefined value at .*
-ERR
-
-#line 203
-new_ok();
-err_like( <<ERR );
-#   Failed test 'new\\(\\) died'
-#   at $Filename line 203.
 #     Error was:  Can't call method "new" on an undefined value at .*
 ERR
 
@@ -371,7 +363,6 @@ not ok - The object isa Wibble
 not ok - My Wibble isa Wibble
 not ok - Another Wibble isa Wibble
 not ok - The object isa HASH
-not ok - new() died
 not ok - new() died
 not ok - new() died
 not ok - The object isa Foo
