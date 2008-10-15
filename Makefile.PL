@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: /mirror/googlecode/test-more/Makefile.PL 60282 2008-09-07T18:25:36.447683Z schwern  $
+# $Id: /mirror/googlecode/test-more-trunk/Makefile.PL 67132 2008-10-01T01:11:04.501643Z schwern  $
 
 use 5.006;
 
@@ -59,10 +59,17 @@ WriteMakefile(
 
     PREREQ_PM       => { 
         Test::Harness   => 2.03,
+
+        # Make sure this gets removed before release.
+        Mouse           => 0.06,
     },
 
     # Added to the core in 5.7.3 and also 5.6.2.
     INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
+
+    test        => {
+        TESTS           => 't/*.t t/*/*.t',
+    },
 
     ($mm_ver <= 6.44 ? () : (META_MERGE => {
         resources => {
@@ -74,3 +81,18 @@ WriteMakefile(
         },
     }))
 );
+
+
+{
+    package MY;
+
+    sub postamble {
+        return <<'MAKE';
+
+perltidy:
+	find . -name '*.pm' | xargs perltidy -b
+	find . -name '*.pm.bak' | xargs rm
+
+MAKE
+    }
+}

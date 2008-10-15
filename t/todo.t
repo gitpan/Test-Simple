@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/todo.t 60310 2008-09-07T23:47:22.837229Z schwern  $
+# $Id: /mirror/googlecode/test-more-trunk/t/todo.t 62094 2008-09-19T07:21:50.720642Z schwern  $
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -10,7 +10,7 @@ BEGIN {
 
 use Test::More;
 
-plan tests => 34;
+plan tests => 36;
 
 
 $Why = 'Just testing the todo interface.';
@@ -142,3 +142,17 @@ eval {
     $builder->todo_end;
 };
 is $@, sprintf "todo_end() called without todo_start() at %s line %d.\n", $0, __LINE__ - 2;
+
+
+{
+    my($reason, $in_todo);
+
+    TODO: {
+        local $TODO = '';
+        $reason  = $builder->todo;
+        $in_todo = $builder->in_todo;
+    }
+
+    is $reason, '';
+    ok !$in_todo, '$TODO = "" is not considered TODO';
+}

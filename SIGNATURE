@@ -15,34 +15,53 @@ not run its Makefile.PL or Build.PL.
 Hash: SHA1
 
 SHA1 18d88718e58ff5e620e7faa1a59799bc56c80a19 .perlcriticrc
-SHA1 b1792a796e85dfbf8a74b4d1ad41ad32ddea48bb .perltidyrc
-SHA1 e6d759771f45f3a8bc87b78ca0844de1c3e99c78 Changes
-SHA1 44c27fcfb5843ea89fb218164e897737b96db3ef MANIFEST
-SHA1 8c0127a2d40a2653bedf7f55fd13d5f1bc58e714 META.yml
-SHA1 92917ff29f8b1a4193ae74622f3b8accad8c9eae Makefile.PL
+SHA1 f723872651f0cd52a4aca957af3536f931667340 .perltidyrc
+SHA1 5e26acd5b31cc4ce1d8e8ab14ad4335585baab2f Changes
+SHA1 e79518fda7707762e3feb23e8de376548975d4a0 MANIFEST
+SHA1 8a6f3940fa3314d2c0cee40f88a61abfe537614a META.yml
+SHA1 5932ad1a1b992cfadd8c8ce3ccdd543dff71c5d2 Makefile.PL
 SHA1 faf47c0dd7a39e4583ab9ef0cde8520822d632a9 README
 SHA1 a25f8dfb0f87d4c4a00629fbe99ac66a2a3d1f29 TODO
-SHA1 8b17d4135bfec10e2bcf50c3006a83641ecf3b5e lib/Test/Builder.pm
-SHA1 a38b3de94c28f3e6f78d39409167eee1b8bcb43d lib/Test/Builder/Module.pm
-SHA1 fc47a9f4bb6f8f5408aff31a79cb2503a97a24a8 lib/Test/Builder/Tester.pm
-SHA1 3024759b941e249982177fdafe06d13c2c981364 lib/Test/Builder/Tester/Color.pm
-SHA1 4e8e95596481ca3f0ec9a7f24efb6d67088c2d61 lib/Test/More.pm
-SHA1 fabed05a53fb3fe8ba904a5512d503fe67003055 lib/Test/Simple.pm
+SHA1 266ec23e4f7bb18dd78986b1708369b44afa26ce lib/Test/Builder.pm
+SHA1 a9c180fb88f7dd794c08c96034802f0bbff5e80a lib/Test/Builder/Module.pm
+SHA1 559974f049c7ec6256ce0d329b7e308c9de020e1 lib/Test/Builder/Tester.pm
+SHA1 5f464d871a85ac5ab3f86d7d9cd32ced30041483 lib/Test/Builder/Tester/Color.pm
+SHA1 c0277bbf3457624a527a242660c5c09596ab4c8c lib/Test/More.pm
+SHA1 c92a3ccf3129a8b4f28187d36c02261fca61821e lib/Test/Simple.pm
 SHA1 3f405218aea8281e9164dac1676d3ee428b1ad36 lib/Test/Tutorial.pod
 SHA1 d3b7985165a17c691456337fc4805ae4c020138f t/00test_harness_check.t
 SHA1 0300f08a31e1e1f22c8eff1bc93fb53dc2bf7c93 t/BEGIN_require_ok.t
 SHA1 1ab9ce40f97905a13267bd71743ac8e11bf8e717 t/BEGIN_use_ok.t
-SHA1 1093557cb61fd130716f08915090fd00351e2861 t/Builder.t
+SHA1 fca4b900b0cb95c283511d820d3700af0c132c80 t/Builder/Builder.t
+SHA1 97ef8eed16f88d2d8269d0e38886ca9b5d88533e t/Builder/carp.t
+SHA1 8475ff919995ddce24b70114c36fc16fbef264b9 t/Builder/create.t
+SHA1 993ef1f465222fbcfafa0f1501efd30c501f9050 t/Builder/curr_test.t
+SHA1 efbb2b180c5e4bd1637bfa3a895b52aefa58a9ad t/Builder/details.t
+SHA1 55a1df41ff6f8098a03ce8a9283d30145ed0e656 t/Builder/has_plan.t
+SHA1 243ec9f06d28c96ebd3635058a3e17da2c005f69 t/Builder/has_plan2.t
+SHA1 bc4f13df1b86ff3480699bcc98a7186bb66c0de6 t/Builder/is_fh.t
+SHA1 a725da55b47efc84128053c54da973832d8d439e t/Builder/maybe_regex.t
+SHA1 5dc6597d16dacf02cf434fcaccc5f9f48fa2d07b t/Builder/no_diag.t
+SHA1 38e8252f0f213a0a9cf9e036d1b4b99f936a767c t/Builder/no_ending.t
+SHA1 4870210bbaa61604c6d474a6982646a8f4524e5f t/Builder/no_header.t
+SHA1 51c9df0fb445a7feb59829fe39586d8729ea285f t/Builder/ok_obj.t
+SHA1 c4468200bcd2c45d7a9fd7271e38f5eece1128e5 t/Builder/output.t
+SHA1 6935bf5ebe5e8b61bc5a8b5e586e5d230ce10fd9 t/Builder/reset.t
+SHA1 3bd0679fc562bbac936eef3c12b985af7771b15c t/Builder/reset_outputs.t
+SHA1 1026c6084eaa6b44f3487e2760d7af533bbcff8d t/Builder/try.t
 SHA1 7ff8da9fec429b13de5492436dd30322e511b9d8 t/More.t
+SHA1 7fc1a9a0660ab5ab64ac62ea73ede898e475a569 t/Tester/tbt_01basic.t
+SHA1 22981c2e09ae98d840b7bbf032210975234e3b0d t/Tester/tbt_02fhrestore.t
+SHA1 d90923b0b65d3846b9a44d3efaed090e51641d59 t/Tester/tbt_03die.t
+SHA1 a74bdb3c09080e0b36af1f2adaff23874586bb86 t/Tester/tbt_04line_num.t
+SHA1 112035ba391503606ef7016a826a6235652ba1c9 t/Tester/tbt_05faildiag.t
+SHA1 da87b8f54de21dc2e368f16b4aa088714e3441d7 t/Tester/tbt_06errormess.t
+SHA1 0bdf28815c3afcbf87f39f9c89a47e8149fa750b t/Tester/tbt_07args.t
 SHA1 a288a8425f7f88e0ff29d277b5d76b0a823cad44 t/bad_plan.t
 SHA1 2e2bfd002c0f9a5f4d1353151208f12f00f3ca55 t/bail_out.t
 SHA1 12d48892049a02b135e212a4a0f9b707b1e41075 t/buffer.t
-SHA1 de666beee765382e32cbf085cc5a29e422255122 t/carp.t
 SHA1 c172fdead513e62cea2ec0f4d36f5f2851cf83e9 t/circular_data.t
 SHA1 ed78ccf51d9ba430eee7f2d9955bb5cc6475f2f8 t/cmp_ok.t
-SHA1 341d803bb4d53fdbe7e4e8a3eaea9052ccd95848 t/create.t
-SHA1 db1bd0c571d53e3006b1760f3c0a83d95b64f0ee t/curr_test.t
-SHA1 6847da8f6ca1868c6ba1021d4185bb52a69a1ed5 t/details.t
 SHA1 9766741d682d9ca68ae1fb5164cb49561853eb35 t/diag.t
 SHA1 7c5434ebd7fa36976fdde4c854b78dcf9456170b t/died.t
 SHA1 36b3ec118893a1fc662d2b14b4d8f97b77a90122 t/dont_overwrite_die_handler.t
@@ -58,19 +77,16 @@ SHA1 a85e78d9b6fe5eae11565ffe0bf1e0896234a192 t/fail_one.t
 SHA1 09e8292413da79b7f1856969b781167fd6d95a1a t/filehandles.t
 SHA1 6b4d7461c46e32badafb1d6dcccae2d3373ef135 t/fork.t
 SHA1 094c5e9cb7b8032995ec61c1f1f57589df3da9a4 t/harness_active.t
-SHA1 ab14eaee529f08efdd78489d6d460034580245a3 t/has_plan.t
-SHA1 8f13dd81035bc1715de78ac2583b0dd585f076a1 t/has_plan2.t
 SHA1 3ca650df8ee363af5fd10da6407f4e220b54f110 t/import.t
 SHA1 4e547bf2484ac91f3203a0fa9cfefc0ab512a401 t/is_deeply_dne_bug.t
 SHA1 79851dabf47c61f2c143adb257f96e22a34d0d1f t/is_deeply_fail.t
-SHA1 3696883cbd248e1a31a1e921b35684ec009161a1 t/is_deeply_with_threads.t
-SHA1 a1905e183220018a93701ed6cf84d552368fdf37 t/is_fh.t
+SHA1 2a911ee0f0278ae50d6c4499115b85e7df57711c t/is_deeply_with_threads.t
 SHA1 feba97138c644478ffc4eb25e48642efd86f10e4 t/lib/Dev/Null.pm
 SHA1 fbe022d2173786222ef78b74ca5c89cf792b86d0 t/lib/Dummy.pm
-SHA1 2e98f4c2b705bef6b68dd4b26f56efdaeb6fee13 t/lib/MyOverload.pm
-SHA1 dbb0203b38a49321dc992d2ee7c5ea84815d182d t/lib/NoExporter.pm
+SHA1 2af2edc9091a0e9a6dfa1a3912ab75efd01e6087 t/lib/MyOverload.pm
+SHA1 9e008267f2054b642dc06bf14ddb6dea676b329d t/lib/NoExporter.pm
 SHA1 3f946519ab98f64e7ec8be0f8bc8964daed54fcf t/lib/SigDie.pm
-SHA1 0e8dca96363551df166484b04c8099fd8ae2177d t/lib/Test/Simple/Catch.pm
+SHA1 74c0089e508ecbc070d42e665df35905a116e848 t/lib/Test/Simple/Catch.pm
 SHA1 59ed234ef52118ffd070fb3954c8e974353f8070 t/lib/Test/Simple/sample_tests/death.plx
 SHA1 99f6a5b3f9748bccf4dd59037839ef3adca5a281 t/lib/Test/Simple/sample_tests/death_in_eval.plx
 SHA1 e3119bee5fc99464352b51beeb8e0abcad0a64e9 t/lib/Test/Simple/sample_tests/death_with_handler.plx
@@ -85,18 +101,12 @@ SHA1 a192e297f0c268ca069a428e63aa6d4cd9bd63d2 t/lib/Test/Simple/sample_tests/suc
 SHA1 38de2cf792339bf8c629ac02ef5c76b25202f257 t/lib/Test/Simple/sample_tests/too_few.plx
 SHA1 242b7f506a1d6f139811139c713d3f05964e0160 t/lib/Test/Simple/sample_tests/too_few_fail.plx
 SHA1 360fab25b9cad5cf8ed598862d0df7b5be71ada2 t/lib/Test/Simple/sample_tests/two_fail.plx
-SHA1 eefebdc1e527ded93d7c81ae09900ae92f468aac t/lib/TieOut.pm
-SHA1 976480fdde1480cca2e5fa0bb0a8c839441b6055 t/maybe_regex.t
+SHA1 915088c8d1c650f0fc6b6f7067bcff8b494fbdb8 t/lib/TieOut.pm
 SHA1 2683678e2f559fb90b042d50859a26847c789764 t/missing.t
 SHA1 a3b8aebf9b48916b7e01174ff6be9b5624f67362 t/new_ok.t
-SHA1 38f1dcfefcd05e78dc396175e24de9abfa792692 t/no_diag.t
-SHA1 1c443dd06a4a652494a28124e2dd3cc496d10fca t/no_ending.t
-SHA1 36920bc786ec5f6a909159f2bf130b8e11387bd4 t/no_header.t
 SHA1 1a490a457941afb20b8d9f8cb18086fba701ae42 t/no_plan.t
 SHA1 f29e4cb97b6361a1d8b6cb53bd32e57490cc0e71 t/no_tests.t
 SHA1 cc2156847a892769f08d73208abf4e5997c79f58 t/note.t
-SHA1 554e0497ed913e49e21b38fe77fda677369c72bf t/ok_obj.t
-SHA1 add5d8b8659479340c3a324473643bc86fb55070 t/output.t
 SHA1 6e71529f3e6a166ec5501955a6128d266e94d674 t/overload.t
 SHA1 6f03a972c3697659739208d1e0179c2225d2f9de t/overload_threads.t
 SHA1 99a259cd00777000410bd353072c29f18cd5eab3 t/plan.t
@@ -108,23 +118,13 @@ SHA1 9142eb3f35df3f561debad3a4234bdb62a87b539 t/plan_skip_all.t
 SHA1 c1bd3cce7d14cf4ed3356010d8c3b501df9f5c71 t/pod-coverage.t
 SHA1 e825d4beada88975d344522584a6c79d3c7ca146 t/pod.t
 SHA1 561fdb0ac92f05c3bf9d864ebc16423eb4a0bd0a t/require_ok.t
-SHA1 7dadceedbbb458ac47bbbf4ad348fa6bb9da772f t/reset.t
-SHA1 1e931b23aa62aa401d9f2070d98bf06e7cc367f0 t/reset_outputs.t
 SHA1 f8dda0528bf2c6cf5fbe7389af90264d4bc38406 t/simple.t
 SHA1 6dfe3f2d3f372e7b32312ffeef2de7786759c208 t/skip.t
 SHA1 1ec95c0f0ab20e256bfa92f677202c985ffeaf7e t/skipall.t
 SHA1 0ee089c780da6d189842bbf2b0812782efc2ea2a t/tbm_doesnt_set_exported_to.t
-SHA1 dd1203677dd47d01756f2cb70f93c93dac076e98 t/tbt_01basic.t
-SHA1 487eed489f83b15b84797e6ff9630eea0ad80bef t/tbt_02fhrestore.t
-SHA1 8f60a39185255c2d26652bdf2f995876b81b160e t/tbt_03die.t
-SHA1 194428de062e8023fae30b9469813d974cf4d9d9 t/tbt_04line_num.t
-SHA1 3b582c92ee02d59a4c9eb082bc112adbfd6a2d76 t/tbt_05faildiag.t
-SHA1 9cf16c046166814dac5e05fc079f151295718b65 t/tbt_06errormess.t
-SHA1 391a0a5f58a6c80abac7d876320047feb4b9b593 t/tbt_07args.t
 SHA1 ca18f1cb40d3ade4af15d56ccc16e6943a1bfc43 t/thread_taint.t
 SHA1 efd48ad01d141507fed90b429dd394c37e38afb3 t/threads.t
-SHA1 a3b959cfc189365e88b2db47bf9c60c8dfa44e32 t/todo.t
-SHA1 f087b287f6838a8082e4adbdfec789e53a42b54a t/try.t
+SHA1 213e22f7597f8987e18ac887e4a7db10c2b584d0 t/todo.t
 SHA1 325af65063ee2086e3bcab54cc7db795f8f76d44 t/undef.t
 SHA1 d31d79ab882fce83959c4515ecadb0b13d7d7931 t/use_ok.t
 SHA1 529899de45b59e14a3d359b4aef612aeca95f239 t/useing.t
@@ -132,7 +132,7 @@ SHA1 cf1506cb9eb41d547a873d968db3b72576ae1a67 t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (Darwin)
 
-iEYEARECAAYFAkjGX/AACgkQWMohlhD1QyfaWACgu52GfyjufUvUd/MhhfaAwCDL
-bJYAn3tyvdzVBjcIDIDzxiSQ0KYzl+WV
-=cKPm
+iEYEARECAAYFAkj1XoMACgkQWMohlhD1QycqUgCgm4tGfTv9TBh9jZnABoIB7qtY
+uT0AoNHCFnBXJIdaWoQpiG6qLOBYXvjE
+=5xvf
 -----END PGP SIGNATURE-----

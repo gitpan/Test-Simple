@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: /mirror/googlecode/test-more/t/reset.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
+# $Id: /mirror/googlecode/test-more/t/Builder/reset.t 60332 2008-09-09T12:24:03.060291Z schwern  $
 
 # Test Test::Builder->reset;
 

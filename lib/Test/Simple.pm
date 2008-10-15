@@ -1,11 +1,11 @@
 package Test::Simple;
-# $Id: /mirror/googlecode/test-more/lib/Test/Simple.pm 60269 2008-09-06T21:14:36.206844Z schwern  $
+# $Id: /mirror/googlecode/test-more-trunk/lib/Test/Simple.pm 67223 2008-10-15T03:08:18.888155Z schwern  $
 
 use 5.004;
 
 use strict;
 
-our $VERSION = '0.81_02';
+our $VERSION = '0.82';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;
@@ -13,7 +13,6 @@ our @ISA    = qw(Test::Builder::Module);
 our @EXPORT = qw(ok);
 
 my $CLASS = __PACKAGE__;
-
 
 =head1 NAME
 
@@ -78,10 +77,9 @@ will do what you mean (fail if stuff is empty)
 
 =cut
 
-sub ok ($;$) {                ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
     return $CLASS->builder->ok(@_);
 }
-
 
 =back
 
@@ -192,23 +190,9 @@ Test::More.  Test::Simple is 100% forward compatible with Test::More
 (i.e. you can just use Test::More instead of Test::Simple in your
 programs and things will still work).
 
-=item L<Test>
-
-The original Perl testing module.
-
-=item L<Test::Unit>
-
-Elaborate unit testing.
-
-=item L<Test::Inline>, L<SelfTest>
-
-Embed tests in your code!
-
-=item L<Test::Harness>
-
-Interprets the output of your test program.
-
 =back
+
+Look in Test::More's SEE ALSO for more testing modules.
 
 
 =head1 AUTHORS

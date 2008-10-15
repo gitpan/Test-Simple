@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/reset_outputs.t 60308 2008-09-07T22:36:18.175234Z schwern  $
+# $Id: /mirror/googlecode/test-more/t/Builder/reset_outputs.t 60332 2008-09-09T12:24:03.060291Z schwern  $
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {

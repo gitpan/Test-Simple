@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:               Test-Simple
-version:            0.81_02
-abstract:           Basic utilities for writing tests.
+version:            0.82
+abstract:           ~
 author:
     - Michael G Schwern <schwern@pobox.com>
 license:            perl
@@ -9,6 +9,7 @@ distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
 requires:
+    Mouse:          0.06
     Test::Harness:  2.03
 resources:
     bugtracker:   http://code.google.com/p/test-more/issues
@@ -20,7 +21,7 @@ no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.45_01
+generated_by:       ExtUtils::MakeMaker version 6.46
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4
