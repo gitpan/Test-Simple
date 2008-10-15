@@ -1,7 +1,7 @@
 --- #YAML:1.0
 name:               Test-Simple
-version:            0.82
-abstract:           ~
+version:            0.84
+abstract:           Basic utilities for writing tests.
 author:
     - Michael G Schwern <schwern@pobox.com>
 license:            perl
@@ -9,7 +9,6 @@ distribution_type:  module
 configure_requires:
     ExtUtils::MakeMaker:  0
 requires:
-    Mouse:          0.06
     Test::Harness:  2.03
 resources:
     bugtracker:   http://code.google.com/p/test-more/issues

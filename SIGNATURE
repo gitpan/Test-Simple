@@ -16,18 +16,18 @@ Hash: SHA1
 
 SHA1 18d88718e58ff5e620e7faa1a59799bc56c80a19 .perlcriticrc
 SHA1 f723872651f0cd52a4aca957af3536f931667340 .perltidyrc
-SHA1 5e26acd5b31cc4ce1d8e8ab14ad4335585baab2f Changes
+SHA1 945cf43b7d8321805c075e70dd6853c4ecec6eec Changes
 SHA1 e79518fda7707762e3feb23e8de376548975d4a0 MANIFEST
-SHA1 8a6f3940fa3314d2c0cee40f88a61abfe537614a META.yml
-SHA1 5932ad1a1b992cfadd8c8ce3ccdd543dff71c5d2 Makefile.PL
+SHA1 7cb1d014ebdd239425dd36fe96cd1a0fe23f6838 META.yml
+SHA1 ecef206cdd3ea94ffa52dbd64c0e55e3538a7ab4 Makefile.PL
 SHA1 faf47c0dd7a39e4583ab9ef0cde8520822d632a9 README
 SHA1 a25f8dfb0f87d4c4a00629fbe99ac66a2a3d1f29 TODO
-SHA1 266ec23e4f7bb18dd78986b1708369b44afa26ce lib/Test/Builder.pm
-SHA1 a9c180fb88f7dd794c08c96034802f0bbff5e80a lib/Test/Builder/Module.pm
-SHA1 559974f049c7ec6256ce0d329b7e308c9de020e1 lib/Test/Builder/Tester.pm
+SHA1 b2cd5a15e26a63a5af919ba3dd3cc44dc20ef05b lib/Test/Builder.pm
+SHA1 3bb2c129f2b732717030016db78b08a55abb067d lib/Test/Builder/Module.pm
+SHA1 83033e0865e9c49f0290399d7271623b4ecdc5df lib/Test/Builder/Tester.pm
 SHA1 5f464d871a85ac5ab3f86d7d9cd32ced30041483 lib/Test/Builder/Tester/Color.pm
-SHA1 c0277bbf3457624a527a242660c5c09596ab4c8c lib/Test/More.pm
-SHA1 c92a3ccf3129a8b4f28187d36c02261fca61821e lib/Test/Simple.pm
+SHA1 b403f59db103e943cf3c3208d5fa3856f5f7fa08 lib/Test/More.pm
+SHA1 860116e682aa5853c41f5ccac3ed833dda6e68a1 lib/Test/Simple.pm
 SHA1 3f405218aea8281e9164dac1676d3ee428b1ad36 lib/Test/Tutorial.pod
 SHA1 d3b7985165a17c691456337fc4805ae4c020138f t/00test_harness_check.t
 SHA1 0300f08a31e1e1f22c8eff1bc93fb53dc2bf7c93 t/BEGIN_require_ok.t
@@ -132,7 +132,7 @@ SHA1 cf1506cb9eb41d547a873d968db3b72576ae1a67 t/utf8.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.9 (Darwin)
 
-iEYEARECAAYFAkj1XoMACgkQWMohlhD1QycqUgCgm4tGfTv9TBh9jZnABoIB7qtY
-uT0AoNHCFnBXJIdaWoQpiG6qLOBYXvjE
-=5xvf
+iEYEARECAAYFAkj16xcACgkQWMohlhD1QyeibACeITzNC+Uj47bPxmebY8ji1DCO
+jKwAnRKGT4ISKsp2zH/wS38fCqB+9xnm
+=n0vr
 -----END PGP SIGNATURE-----
