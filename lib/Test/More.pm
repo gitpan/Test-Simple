@@ -1,5 +1,5 @@
 package Test::More;
-# $Id: /mirror/googlecode/test-more-trunk/lib/Test/More.pm 67223 2008-10-15T03:08:18.888155Z schwern  $
+# $Id$
 
 use 5.006;
 use strict;
@@ -18,7 +18,7 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '0.84';
+our $VERSION = '0.85_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;

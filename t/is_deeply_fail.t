@@ -1,5 +1,5 @@
 #!/usr/bin/perl -w
-# $Id: /mirror/googlecode/test-more/t/is_deeply_fail.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
+# $Id$
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -318,7 +318,8 @@ ERR
 ERR
 
 
-    if( eval { require overload } ) {
+    # Overloaded object tests
+    {
 	my $foo = bless [], "Foo";
 	my $bar = bless {}, "Bar";
 
@@ -337,9 +338,6 @@ ERR
 #     \$expected->[0] = 'wibble'
 ERR
 
-    }
-    else {
-	$TB->skip("Needs overload.pm") for 1..3;
     }
 }
 

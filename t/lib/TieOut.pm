@@ -1,5 +1,5 @@
 package TieOut;
-# $Id: /mirror/googlecode/test-more-trunk/t/lib/TieOut.pm 67132 2008-10-01T01:11:04.501643Z schwern  $
+# $Id$
 
 sub TIEHANDLE {
     my $scalar = '';

@@ -1,11 +1,11 @@
 package Test::Simple;
-# $Id: /mirror/googlecode/test-more-trunk/lib/Test/Simple.pm 67223 2008-10-15T03:08:18.888155Z schwern  $
+# $Id$
 
 use 5.004;
 
 use strict;
 
-our $VERSION = '0.84';
+our $VERSION = '0.85_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;

@@ -1,10 +1,10 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/More.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
+# $Id$
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
         chdir 't';
-        @INC = '../lib';
+        @INC = qw(../lib ../lib/Test/Simple/t/lib);
     }
 }
 

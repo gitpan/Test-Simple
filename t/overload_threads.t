@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/overload_threads.t 57943 2008-08-18T02:09:22.275428Z brooklyn.kid51  $
+# $Id$
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -18,16 +18,7 @@ BEGIN {
     eval { require threads; 'threads'->import; 1; };
 }
 
-use Test::More;
-
-BEGIN {
-    if( !eval "require overload" ) {
-        plan skip_all => "needs overload.pm";
-    }
-    else {
-        plan tests => 5;
-    }
-}
+use Test::More tests => 5;
 
 
 package Overloaded;

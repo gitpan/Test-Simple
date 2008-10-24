@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Test-Simple
-version:            0.84
+version:            0.85_01
 abstract:           Basic utilities for writing tests.
 author:
     - Michael G Schwern <schwern@pobox.com>
@@ -20,7 +20,7 @@ no_index:
     directory:
         - t
         - inc
-generated_by:       ExtUtils::MakeMaker version 6.46
+generated_by:       ExtUtils::MakeMaker version 6.48
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html
     version:  1.4

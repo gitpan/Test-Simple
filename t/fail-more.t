@@ -1,5 +1,5 @@
 #!perl -w
-# $Id: /mirror/googlecode/test-more/t/fail-more.t 60310 2008-09-07T23:47:22.837229Z schwern  $
+# $Id$
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -291,7 +291,7 @@ ERR
 #     expected: foo
 ERR
     My::Test::like $warnings,
-     qq[/^Argument "foo" isn't numeric in .* at $Filename line 211\\\.\n\$/];
+     qr/^Argument "foo" isn't numeric in .* at cmp_ok \[from $Filename line 211\] line 1\.\n$/;
 
 }
 
