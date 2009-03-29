@@ -1,11 +1,10 @@
 package Test::Simple;
-# $Id$
 
 use 5.004;
 
 use strict;
 
-our $VERSION = '0.86';
+our $VERSION = '0.87_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;
