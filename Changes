@@ -1,3 +1,12 @@
+0.87_02  Sat Apr 11 12:54:14 PDT 2009
+    Test Fixes
+    * Some filesystems don't like it when you open a file for writing multiple
+      times.  Fixes t/Builder/reset.t. [rt.cpan.org 17298]
+    * Check how an operating system is going to map exit codes.  Some OS'
+      will map them... sometimes.  [rt.cpan.org 42148]
+    * Fix Test::Builder::NoOutput on 5.6.2.
+
+
 0.87_01  Sun Mar 29 09:56:52 BST 2009
     New Features
     * done_testing() allows you to declare that you have finished running tests,
