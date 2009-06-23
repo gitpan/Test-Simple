@@ -1,3 +1,15 @@
+0.89_01
+    New Features
+    * subtest() allows you to run more tests in their own plan.
+      (Thanks Ovid!)
+    * Test::Builder->is_passing() will let you check if the test is
+      currently passing.
+
+    Docs
+    * Finally added a note about the "Wide character in print" warning and
+      how to work around it.
+
+
 0.88  Sat May 30 12:31:24 PDT 2009
     Turing 0.87_03 into a stable release.
 
@@ -21,6 +33,8 @@
     * done_testing() allows you to declare that you have finished running tests,
       and how many you ran.  It is a safer no_plan and effectively replaces it.
     * output() now supports scalar references.
+    * Experimental support for nested TAP.
+    * Test::More now exports a 'subtest' function to allow nested TAP.
 
     Feature Changes
     * You can now run a test without first declaring a plan.  This allows
