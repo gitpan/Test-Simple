@@ -16,29 +16,27 @@ Hash: SHA1
 
 SHA1 18d88718e58ff5e620e7faa1a59799bc56c80a19 .perlcriticrc
 SHA1 f723872651f0cd52a4aca957af3536f931667340 .perltidyrc
-SHA1 61f0ddeb5e2885ea5f29d0f016e838d7a0558d37 Changes
-SHA1 95eab9f03b3fdfa82820c8166a233f4f3eb5050d MANIFEST
+SHA1 b49253f374c4833b374d1eeddfb4e4d420c78efe Changes
+SHA1 cbf9ee5335cd156f5f4ed34943b05d146c4f9b5b MANIFEST
 SHA1 553943846ee39d1f8a38b493fbf166536d3dbf02 MANIFEST.SKIP
-SHA1 2d0e93f7ba9093096a4c50bd813b988d15834b9b META.yml
-SHA1 75bc196836d1a6411d58b4a84e6069ed3738f7c6 Makefile.PL
+SHA1 b81ad9b0f37f628eec58b1a3fe0c7d96172b50fe META.yml
+SHA1 96d85715c8e82471c2904e6a0ba861ed8b149f8d Makefile.PL
 SHA1 2588ca185fcf4403281a880f4b9465caa9171c1b README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 27c7d1e50553bb5dc39bb423d61edb0a0187bc7a examples/indent.pl
-SHA1 fd87f6123ae88f381aec4f8eaa6261366f331f43 examples/subtest.t
-SHA1 be00226e84c5a96de755639d24d381936401ad34 lib/Test/Builder.pm
-SHA1 c46fa000feb53a249b146eb5af70341c94ef7924 lib/Test/Builder/IO/Scalar.pm
-SHA1 203c63ee60e37d40038949a92842d13da0d78508 lib/Test/Builder/Module.pm
+SHA1 64bad41cc20428efcd5f842faa6cc49e2e979753 lib/Test/Builder.pm
+SHA1 fbf99e4ff748177d23fe57609c2e8d040591a87a lib/Test/Builder/IO/Scalar.pm
+SHA1 b244933b961e18496ab0b6a90575453f049fb365 lib/Test/Builder/Module.pm
 SHA1 260f4acf7d71eea20dffa4dc2f01692d61642f79 lib/Test/Builder/Tester.pm
 SHA1 a14b53e986060cd1771ed0a1d096037f40e0f9c0 lib/Test/Builder/Tester/Color.pm
-SHA1 55eaa4fac4617fc4ce238741cff9a50c9f9c7e8c lib/Test/More.pm
-SHA1 ef9d3f5864d59c61fffab2a529b42404a0e65035 lib/Test/Simple.pm
+SHA1 f05eb6d7dcc5710fa8008f895f38e04b989a196b lib/Test/More.pm
+SHA1 85920f2d619df865dd08aec85e90b1b3c7e28679 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 4508d8237a1086902c6b238a3c30f67095fbc6c3 t/BEGIN_require_ok.t
 SHA1 7cef375d6e1d7a2b5faac55a33a80fddeff645fb t/BEGIN_use_ok.t
 SHA1 809c6b08f9b1024b0cf3dde10057d625120824b2 t/Builder/Builder.t
 SHA1 8ed1e9e38e80ce877e2014df1bba002147ec2148 t/Builder/carp.t
-SHA1 07c7f9f8bff45235d364122f617dc2433cd4aa3e t/Builder/create.t
+SHA1 bedab6187ce00606033afb7d99c2e691f9d9a04b t/Builder/create.t
 SHA1 a35e5244565a255c65f35ba7a46ba44fb0520332 t/Builder/current_test.t
 SHA1 e07ec5e4e6f9b3209d6d349c968cb1931d4a31c5 t/Builder/current_test_without_plan.t
 SHA1 be5243b396653bdd48c40ad6a5638de8f334032b t/Builder/details.t
@@ -52,7 +50,6 @@ SHA1 dc9878994024d9af2e91c1dd0095b3a3a22b08e6 t/Builder/fork_with_new_stdout.t
 SHA1 e36e82a3a96d49e5592189af8e93b3e2a2af5e79 t/Builder/has_plan.t
 SHA1 8a46b361fafc96aa86af359290fa6d1beedce453 t/Builder/has_plan2.t
 SHA1 f6f38ce755cb3b9e34535386bb87b7289dc7f5db t/Builder/is_fh.t
-SHA1 68e77eb162436aced46f6088f4d4f102790e5891 t/Builder/is_passing.t
 SHA1 729597ac98950167bfa9b3f5aef4729f13541833 t/Builder/maybe_regex.t
 SHA1 f2ab26f4e820604b5349e3ccac7624d1bb4c5a57 t/Builder/no_diag.t
 SHA1 ccb9c184d8165c76e9bc2189b26533a9ceafda2b t/Builder/no_ending.t
@@ -103,13 +100,13 @@ SHA1 c4c260c711c678b9c8e5704ffffe52283e23dd5e t/lib/NoExporter.pm
 SHA1 d94c421d7e0c2018933bc85eb9eb77b941b34f08 t/lib/SigDie.pm
 SHA1 443ab6929d939fa2612972c0bd90c1abab1e6197 t/lib/Test/Builder/NoOutput.pm
 SHA1 f684fff62c4fc8d0408db62b0ce8f9f0bf1fa028 t/lib/Test/Simple/Catch.pm
-SHA1 94bb4bb25cfe2738dfdc4c7da6823fb58250ed10 t/lib/Test/Simple/sample_tests/death.plx
+SHA1 91aec9fdc25078def12ca83c24c83498c85e63b3 t/lib/Test/Simple/sample_tests/death.plx
 SHA1 549c1c54634ef5bd571063020a3f7de174336666 t/lib/Test/Simple/sample_tests/death_in_eval.plx
-SHA1 eb8588f466c887097bdc349fe62d2ad2806ffef8 t/lib/Test/Simple/sample_tests/death_with_handler.plx
+SHA1 b96a296e3e558b5e1f7c26ebaaf26079abe89322 t/lib/Test/Simple/sample_tests/death_with_handler.plx
 SHA1 0fd68054c332c60cba7604c7d287160becbcf55e t/lib/Test/Simple/sample_tests/exit.plx
 SHA1 903f1435e64b90b6e329d29bede6065798d8c9a4 t/lib/Test/Simple/sample_tests/extras.plx
 SHA1 0f9b45b394534597c7dada5b106ea2c0aab23e0c t/lib/Test/Simple/sample_tests/five_fail.plx
-SHA1 2c4eb127a1a83526cabaa6563393491e30b2374c t/lib/Test/Simple/sample_tests/last_minute_death.plx
+SHA1 4345d33d32a50edbc495ea3c87687c721ec0c19e t/lib/Test/Simple/sample_tests/last_minute_death.plx
 SHA1 d39a078aeb36026521c10f9db8638ec6a8264516 t/lib/Test/Simple/sample_tests/one_fail.plx
 SHA1 bb56732e2c05a4060809261fb703580560076670 t/lib/Test/Simple/sample_tests/pre_plan_death.plx
 SHA1 dd45a6273288a07866e18ea380c777678bdf944b t/lib/Test/Simple/sample_tests/require.plx
@@ -137,12 +134,6 @@ SHA1 303196fd295c075dcb1d72fbc70e143e3befa316 t/require_ok.t
 SHA1 713d0d3a3f82fe8d54f6ac57b3ff4613c5a5df20 t/simple.t
 SHA1 1aed9f7e7a5a90248c125b2469fe8a0204a795af t/skip.t
 SHA1 10dc5434ce94eff1b15f289d2e8b161274d13b2a t/skipall.t
-SHA1 7e4d1bd7f6a16fa089f7055564fa278b6d1f661b t/subtest/args.t
-SHA1 c61a505369f8f99078f335f03037330cae50b019 t/subtest/basic.t
-SHA1 f19b2d17bd127d0fffcf76b6a726e8d2f3589ff7 t/subtest/die.t
-SHA1 e94560a32cf0b84ef7327b94220cc7855d77bbc6 t/subtest/do.t
-SHA1 55dcb5a68f5eeedab1217f2d7f0a311e7df2b2c3 t/subtest/exceptions.t
-SHA1 49dd4737630740e44763c90253d45eb688ae071d t/subtest/for_do_t.test
 SHA1 3d2fd1a30a65543620bb02c6ec0f3090e4a1a7a3 t/tbm_doesnt_set_exported_to.t
 SHA1 e36b2716599b785cf65c14b842908547770ecaa1 t/thread_taint.t
 SHA1 af8e075ac5a90b49cce199248c9ca1bc4ee25067 t/threads.t
@@ -155,7 +146,7 @@ SHA1 be2964253bf6d7256108819e4d2b670348cfda70 t/versions.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2.0.11 (Darwin)
 
-iEYEARECAAYFAkpBKSEACgkQWMohlhD1Qyf69QCePmMtEidUWgg0wAkBMQ406wGz
-kPsAnAxN+iybzOX95GH61V2KzWGxVAnV
-=5k3i
+iEYEARECAAYFAkpNHxMACgkQWMohlhD1QyeX3wCgi8I0zFbCK9uc30StLTpBPVmm
+7BUAn3LRRNgsk54K2QCXWYyLdirI8tjj
+=RnKM
 -----END PGP SIGNATURE-----

@@ -1,5 +1,7 @@
 #!/usr/bin/perl -w
 
+#!perl -w
+
 BEGIN {
     if( $ENV{PERL_CORE} ) {
         chdir 't';

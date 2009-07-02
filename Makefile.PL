@@ -91,18 +91,8 @@ WriteMakefile(
 {
     package MY;
 
-    sub postamble {
-        return <<'MAKE';
 
-perltidy:
-	find . -name '*.pm' | xargs perltidy -b
-	find . -name '*.pm.bak' | xargs rm
-
-MAKE
-    }
-
-
-    # Test with multiple versions of perl before releasing
+    # Test with multiple versions of perl
     sub dist_test {
         my $self = shift;
 
@@ -128,5 +118,16 @@ END
         $make .= "\n";
 
         return $make;
+    }
+
+
+    sub postamble {
+        return <<'MAKE';
+
+perltidy:
+	find . -name '*.pm' | xargs perltidy -b
+	find . -name '*.pm.bak' | xargs rm
+
+MAKE
     }
 }
