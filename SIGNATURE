@@ -16,20 +16,20 @@ Hash: SHA1
 
 SHA1 18d88718e58ff5e620e7faa1a59799bc56c80a19 .perlcriticrc
 SHA1 f723872651f0cd52a4aca957af3536f931667340 .perltidyrc
-SHA1 b49253f374c4833b374d1eeddfb4e4d420c78efe Changes
+SHA1 9d49e8560891587fc27ea81fce9cba306da424e5 Changes
 SHA1 cbf9ee5335cd156f5f4ed34943b05d146c4f9b5b MANIFEST
 SHA1 553943846ee39d1f8a38b493fbf166536d3dbf02 MANIFEST.SKIP
-SHA1 b81ad9b0f37f628eec58b1a3fe0c7d96172b50fe META.yml
+SHA1 52065a83fb6d748d12b8a74a6fc3d9ef00461f70 META.yml
 SHA1 96d85715c8e82471c2904e6a0ba861ed8b149f8d Makefile.PL
 SHA1 2588ca185fcf4403281a880f4b9465caa9171c1b README
 SHA1 4d39888e6742ff5dc92bbf53e8915415607acfa8 TODO
-SHA1 64bad41cc20428efcd5f842faa6cc49e2e979753 lib/Test/Builder.pm
+SHA1 8a20cfdfd6d3c47455d253d363cb2eeadae97fec lib/Test/Builder.pm
 SHA1 fbf99e4ff748177d23fe57609c2e8d040591a87a lib/Test/Builder/IO/Scalar.pm
-SHA1 b244933b961e18496ab0b6a90575453f049fb365 lib/Test/Builder/Module.pm
+SHA1 74ebe16432f28416cded18b79fbc9a71863cb401 lib/Test/Builder/Module.pm
 SHA1 260f4acf7d71eea20dffa4dc2f01692d61642f79 lib/Test/Builder/Tester.pm
 SHA1 a14b53e986060cd1771ed0a1d096037f40e0f9c0 lib/Test/Builder/Tester/Color.pm
-SHA1 f05eb6d7dcc5710fa8008f895f38e04b989a196b lib/Test/More.pm
-SHA1 85920f2d619df865dd08aec85e90b1b3c7e28679 lib/Test/Simple.pm
+SHA1 5b415cbbaab2a0e02f6ca127203d033be433f0a1 lib/Test/More.pm
+SHA1 9b19f305f84958c2db56de7bb61e6297640bc058 lib/Test/Simple.pm
 SHA1 6d44791354100fb372b081c6e32c0aabb4fdc255 lib/Test/Tutorial.pod
 SHA1 deae108daf1a5899905d681130afc3c7aab7a1b9 t/00test_harness_check.t
 SHA1 4508d8237a1086902c6b238a3c30f67095fbc6c3 t/BEGIN_require_ok.t
@@ -46,7 +46,7 @@ SHA1 170ca955eaa8429bb0f452383821b63a938bc366 t/Builder/done_testing_plan_mismat
 SHA1 56623529e6d7072dacb589154ddcef13e81726a9 t/Builder/done_testing_with_no_plan.t
 SHA1 0b9b4931a46929710a559319330eef92f488a643 t/Builder/done_testing_with_number.t
 SHA1 5583e078c2d3513281bffbeac8e7748effe5ebb7 t/Builder/done_testing_with_plan.t
-SHA1 dc9878994024d9af2e91c1dd0095b3a3a22b08e6 t/Builder/fork_with_new_stdout.t
+SHA1 4a00fa7d637097bd48c6d9ac9f309d993191f373 t/Builder/fork_with_new_stdout.t
 SHA1 e36e82a3a96d49e5592189af8e93b3e2a2af5e79 t/Builder/has_plan.t
 SHA1 8a46b361fafc96aa86af359290fa6d1beedce453 t/Builder/has_plan2.t
 SHA1 f6f38ce755cb3b9e34535386bb87b7289dc7f5db t/Builder/is_fh.t
@@ -78,7 +78,7 @@ SHA1 bb1dd4528bf070f17f1a88023270ce8189025b93 t/diag.t
 SHA1 5b2fe545e54cff54f5166dcd290042f288178377 t/died.t
 SHA1 65e3dcbe538d908c72e4bec96306ba7a3f6b841f t/dont_overwrite_die_handler.t
 SHA1 90596c5b30b0cdc3145765c541f4cf397662597d t/eq_set.t
-SHA1 3a3ba481a8077a7ada3b67602cc3c79cddad5b0b t/exit.t
+SHA1 a6fd3660c5f90a8e42486b1cb29bacd87f7bb86e t/exit.t
 SHA1 00f27b0a2d1983739097ea5000b6205125ecc262 t/explain.t
 SHA1 59a2bf2de5baef5aac588a9f174a093f73f3bb22 t/extra.t
 SHA1 12bc02a56e295b3a73066eb113bf899a80928b3c t/extra_one.t
@@ -146,7 +146,7 @@ SHA1 be2964253bf6d7256108819e4d2b670348cfda70 t/versions.t
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG/MacGPG2 v2.0.11 (Darwin)
 
-iEYEARECAAYFAkpNHxMACgkQWMohlhD1QyeX3wCgi8I0zFbCK9uc30StLTpBPVmm
-7BUAn3LRRNgsk54K2QCXWYyLdirI8tjj
-=RnKM
+iEYEARECAAYFAkpOSaMACgkQWMohlhD1QyfmpACfX4QLDIKnJKZhSeFRClmRClxY
+2fIAn2VfZe8fUEVhKHg9DkQckpiAzUl4
+=tiuR
 -----END PGP SIGNATURE-----
