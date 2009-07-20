@@ -76,7 +76,9 @@ WriteMakefile(
         TESTS           => 't/*.t t/*/*.t',
     },
 
-    ($mm_ver <= 6.45 ? () : (META_MERGE => {
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
+
+    ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://test-more.googlecode.com',
@@ -92,7 +94,18 @@ WriteMakefile(
     package MY;
 
 
-    # Test with multiple versions of perl
+    sub postamble {
+        return <<'MAKE';
+
+perltidy:
+	find . -name '*.pm' | xargs perltidy -b
+	find . -name '*.pm.bak' | xargs rm
+
+MAKE
+    }
+
+
+    # Test with multiple versions of perl before releasing
     sub dist_test {
         my $self = shift;
 
@@ -118,16 +131,5 @@ END
         $make .= "\n";
 
         return $make;
-    }
-
-
-    sub postamble {
-        return <<'MAKE';
-
-perltidy:
-	find . -name '*.pm' | xargs perltidy -b
-	find . -name '*.pm.bak' | xargs rm
-
-MAKE
     }
 }
