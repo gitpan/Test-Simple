@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Test-Simple
-version:            0.93_01
+version:            0.94
 abstract:           Basic utilities for writing tests.
 author:
     - Michael G Schwern <schwern@pobox.com>
