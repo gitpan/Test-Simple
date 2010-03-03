@@ -25,7 +25,7 @@ package main;
 
 
 my $TB = Test::Builder->create;
-$TB->plan(tests => 73);
+$TB->plan(tests => 76);
 
 # Utility testing functions.
 sub ok ($;$) {
@@ -369,3 +369,19 @@ ERR
 ERR
 
 }
+
+
+# rt.cpan.org 53469
+{
+#line 377
+    ok !is_deeply( qr/a/, qr/b/, "different regexes" );
+    is( $out, "not ok 29 - different regexes\n" );
+    is( $err, <<ERR,          '  right diagnostic' );
+#   Failed test 'different regexes'
+#   at $0 line 377.
+#     Structures begin differing at:
+#          \$got = (?-xism:a)
+#     \$expected = (?-xism:b)
+ERR
+}
+

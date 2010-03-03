@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.94';
+our $VERSION = '0.95_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 BEGIN {
@@ -90,7 +90,7 @@ Test::Builder - Backend for building test libraries
 =head1 DESCRIPTION
 
 Test::Simple and Test::More have proven to be popular testing modules,
-but they're not always flexible enough.  Test::Builder provides the a
+but they're not always flexible enough.  Test::Builder provides a
 building block upon which to write your own test libraries I<which can
 work together>.
 
@@ -156,7 +156,7 @@ sub create {
   $child->finalize;
 
 Returns a new instance of C<Test::Builder>.  Any output from this child will
-indented four spaces more than the parent's indentation.  When done, the
+be indented four spaces more than the parent's indentation.  When done, the
 C<finalize> method I<must> be called explicitly.
 
 Trying to create a new child with a previous child still active (i.e.,
@@ -210,13 +210,25 @@ sub subtest {
 
     # Turn the child into the parent so anyone who has stored a copy of
     # the Test::Builder singleton will get the child.
-    my $child = $self->child($name);
-    my %parent = %$self;
-    %$self = %$child;
+    my($error, $child, %parent);
+    {
+        # child() calls reset() which sets $Level to 1, so we localize
+        # $Level first to limit the scope of the reset to the subtest.
+        local $Test::Builder::Level = $Test::Builder::Level;
 
-    my $error;
-    if( !eval { $subtests->(); 1 } ) {
-        $error = $@;
+        $child  = $self->child($name);
+        %parent = %$self;
+        %$self  = %$child;
+
+        my $run_the_subtests = sub {
+            $subtests->();
+            $self->done_testing unless $self->_plan_handled;
+            1;
+        };
+
+        if( !eval { $run_the_subtests->() } ) {
+            $error = $@;
+        }
     }
 
     # Restore the parent and the copied child.
@@ -226,7 +238,38 @@ sub subtest {
     # Die *after* we restore the parent.
     die $error if $error and !eval { $error->isa('Test::Builder::Exception') };
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     return $child->finalize;
+}
+
+=begin _private
+
+=item B<_plan_handled>
+
+    if ( $Test->_plan_handled ) { ... }
+
+Returns true if the developer has explicitly handled the plan via:
+
+=over 4
+
+=item * Explicitly setting the number of tests
+
+=item * Setting 'no_plan'
+
+=item * Set 'skip_all'.
+
+=back
+
+This is currently used in subtests when we implicitly call C<< $Test->done_testing >>
+if the developer has not set a plan.
+
+=end _private
+
+=cut
+
+sub _plan_handled {
+    my $self = shift;
+    return $self->{Have_Plan} || $self->{No_Plan} || $self->{Skip_All};
 }
 
 
@@ -261,6 +304,7 @@ sub finalize {
     # XXX This will only be necessary for TAP envelopes (we think)
     #$self->_print( $self->is_passing ? "PASS\n" : "FAIL\n" );
 
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $ok = 1;
     $self->parent->{Child_Name} = undef;
     if ( $self->{Skip_All} ) {
@@ -458,7 +502,6 @@ sub _plan_tests {
     return;
 }
 
-
 =item B<expected_tests>
 
     my $max = $Test->expected_tests;
@@ -504,7 +547,6 @@ sub no_plan {
     return 1;
 }
 
-
 =begin private
 
 =item B<_output_plan>
@@ -542,6 +584,7 @@ sub _output_plan {
 
     return;
 }
+
 
 =item B<done_testing>
 
@@ -879,8 +922,6 @@ sub is_eq {
     my( $self, $got, $expect, $name ) = @_;
     local $Level = $Level + 1;
 
-    $self->_unoverload_str( \$got, \$expect );
-
     if( !defined $got || !defined $expect ) {
         # undef only matches undef and nothing else
         my $test = !defined $got && !defined $expect;
@@ -896,8 +937,6 @@ sub is_eq {
 sub is_num {
     my( $self, $got, $expect, $name ) = @_;
     local $Level = $Level + 1;
-
-    $self->_unoverload_num( \$got, \$expect );
 
     if( !defined $got || !defined $expect ) {
         # undef only matches undef and nothing else
@@ -1059,8 +1098,9 @@ sub cmp_ok {
 
         my($pack, $file, $line) = $self->caller();
 
+        # This is so that warnings come out at the caller's level
         $test = eval qq[
-#line 1 "cmp_ok [from $file line $line]"
+#line $line "(eval in cmp_ok) $file"
 \$got $type \$expect;
 ];
         $error = $@;

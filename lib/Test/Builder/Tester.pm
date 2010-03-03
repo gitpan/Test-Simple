@@ -1,7 +1,7 @@
 package Test::Builder::Tester;
 
 use strict;
-our $VERSION = "1.18";
+our $VERSION = "1.19_01";
 
 use Test::Builder;
 use Symbol;
@@ -124,7 +124,7 @@ sub _start_testing {
     # switch out to our own handles
     $t->output($output_handle);
     $t->failure_output($error_handle);
-    $t->todo_output($error_handle);
+    $t->todo_output($output_handle);
 
     # clear the expected list
     $out->reset();
