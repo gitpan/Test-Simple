@@ -17,7 +17,7 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '0.95_01';
+our $VERSION = '0.95_02';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Module;
@@ -718,7 +718,7 @@ Returns true if the subtest passed, false otherwise.
 
 Due to how subtests work, you may omit a plan if you desire.  This adds an
 implicit C<done_testing()> to the end of your subtest.  The following two
-subtests are equivant:
+subtests are equivalent:
 
   subtest 'subtest with implicit done_testing()', sub {
       ok 1, 'subtests with an implicit done testing should work';
@@ -897,7 +897,7 @@ sub require_ok ($) {
 
     my $pack = caller;
 
-    # Try to deterine if we've been given a module name or file.
+    # Try to determine if we've been given a module name or file.
     # Module names must be barewords, files not.
     $module = qq['$module'] unless _is_module_name($module);
 
@@ -1347,7 +1347,7 @@ but want to put tests in your testing script (always a good idea).
     BAIL_OUT($reason);
 
 Indicates to the harness that things are going so badly all testing
-should terminate.  This includes the running any additional test scripts.
+should terminate.  This includes the running of any additional test scripts.
 
 This is typically used when testing cannot continue such as a critical
 module failing to compile or a necessary external utility not being
@@ -1459,9 +1459,6 @@ sub _deep_check {
     local %Refs_Seen = %Refs_Seen;
 
     {
-        # Quiet uninitialized value warnings when comparing undefs.
-        no warnings 'uninitialized';
-
         $tb->_unoverload_str( \$e1, \$e2 );
 
         # Either they're both references or both not.
@@ -1472,7 +1469,7 @@ sub _deep_check {
             $ok = 0;
         }
         elsif( !defined $e1 and !defined $e2 ) {
-            # Shortcut if they're both defined.
+            # Shortcut if they're both undefined.
             $ok = 1;
         }
         elsif( _dne($e1) xor _dne($e2) ) {

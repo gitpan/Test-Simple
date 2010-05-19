@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.95_01';
+our $VERSION = '0.95_02';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 BEGIN {
@@ -23,7 +23,7 @@ BEGIN {
         require threads::shared;
 
         # Hack around YET ANOTHER threads::shared bug.  It would
-        # occassionally forget the contents of the variable when sharing it.
+        # occasionally forget the contents of the variable when sharing it.
         # So we first copy the data, then share, then put our copy back.
         *share = sub (\[$@%]) {
             my $type = ref $_[0];
@@ -174,18 +174,28 @@ sub child {
         $self->croak("You already have a child named ($self->{Child_Name}) running");
     }
 
+    my $parent_in_todo = $self->in_todo;
+
+    # Clear $TODO for the child.
+    my $orig_TODO = $self->find_TODO(undef, 1, undef);
+
     my $child = bless {}, ref $self;
     $child->reset;
 
     # Add to our indentation
     $child->_indent( $self->_indent . '    ' );
+    
     $child->{$_} = $self->{$_} foreach qw{Out_FH Todo_FH Fail_FH};
+    if ($parent_in_todo) {
+        $child->{Fail_FH} = $self->{Todo_FH};
+    }
 
     # This will be reset in finalize. We do this here lest one child failure
     # cause all children to fail.
     $child->{Child_Error} = $?;
     $?                    = 0;
     $child->{Parent}      = $self;
+    $child->{Parent_TODO} = $orig_TODO;
     $child->{Name}        = $name || "Child of " . $self->name;
     $self->{Child_Name}   = $child->name;
     return $child;
@@ -214,7 +224,7 @@ sub subtest {
     {
         # child() calls reset() which sets $Level to 1, so we localize
         # $Level first to limit the scope of the reset to the subtest.
-        local $Test::Builder::Level = $Test::Builder::Level;
+        local $Test::Builder::Level = $Test::Builder::Level + 1;
 
         $child  = $self->child($name);
         %parent = %$self;
@@ -234,6 +244,9 @@ sub subtest {
     # Restore the parent and the copied child.
     %$child = %$self;
     %$self = %parent;
+
+    # Restore the parent's $TODO
+    $self->find_TODO(undef, 1, $child->{Parent_TODO});
 
     # Die *after* we restore the parent.
     die $error if $error and !eval { $error->isa('Test::Builder::Exception') };
@@ -359,7 +372,7 @@ sub name { shift->{Name} }
 
 sub DESTROY {
     my $self = shift;
-    if ( $self->parent ) {
+    if ( $self->parent and $$ == $self->{Original_Pid} ) {
         my $name = $self->name;
         $self->diag(<<"FAIL");
 Child ($name) exited without calling finalize()
@@ -1725,17 +1738,18 @@ sub _print_to_fh {
     return if $^C;
 
     my $msg = join '', @msgs;
+    my $indent = $self->_indent;
 
     local( $\, $", $, ) = ( undef, ' ', '' );
 
     # Escape each line after the first with a # so we don't
     # confuse Test::Harness.
-    $msg =~ s{\n(?!\z)}{\n# }sg;
+    $msg =~ s{\n(?!\z)}{\n$indent# }sg;
 
     # Stick a newline on the end if it needs it.
     $msg .= "\n" unless $msg =~ /\n\z/;
 
-    return print $fh $self->_indent, $msg;
+    return print $fh $indent, $msg;
 }
 
 =item B<output>
@@ -2131,21 +2145,28 @@ sub todo {
 =item B<find_TODO>
 
     my $todo_reason = $Test->find_TODO();
-    my $todo_reason = $Test->find_TODO($pack):
+    my $todo_reason = $Test->find_TODO($pack);
 
 Like C<todo()> but only returns the value of C<$TODO> ignoring
 C<todo_start()>.
 
+Can also be used to set C<$TODO> to a new value while returning the
+old value:
+
+    my $old_reason = $Test->find_TODO($pack, 1, $new_reason);
+
 =cut
 
 sub find_TODO {
-    my( $self, $pack ) = @_;
+    my( $self, $pack, $set, $new_value ) = @_;
 
     $pack = $pack || $self->caller(1) || $self->exported_to;
     return unless $pack;
 
     no strict 'refs';    ## no critic
-    return ${ $pack . '::TODO' };
+    my $old_value = ${ $pack . '::TODO' };
+    $set and ${ $pack . '::TODO' } = $new_value;
+    return $old_value;
 }
 
 =item B<in_todo>
@@ -2498,7 +2519,7 @@ Test::Builder.
 
 =head1 MEMORY
 
-An informative hash, accessable via C<<details()>>, is stored for each
+An informative hash, accessible via C<<details()>>, is stored for each
 test you perform.  So memory usage will scale linearly with each test
 run. Although this is not a problem for most test suites, it can
 become an issue if you do large (hundred thousands to million)
