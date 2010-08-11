@@ -1,3 +1,11 @@
+0.96  Tue Aug 10 21:13:04 PDT 2010
+    Bug Fixes
+    * You can call done_testing() again after reset() [googlecode 59]
+
+    Other
+    * Bug tracker moved to github
+
+
 0.95_02  Wed May 19 15:46:52 PDT 2010
     Bug Fixes
     * Correct various typos and spelling errors (Nick Cleaton)
@@ -23,6 +31,13 @@
       added to them.
     * is_deeply() performance boost for large structures consisting of
       mostly non-refs (Nick Cleaton)
+
+    Feature Changes
+    * is() and others will no longer stringify its arguments before
+      comparing.  Overloaded objects will make use of their eq
+      overload rather than their "" overload.  This can break tests of
+      impolitely string overloaded objects.  DateTime prior to 0.54 is
+      the biggest example.
 
 
 0.94  Wed Sep  2 11:17:47 PDT 2009
