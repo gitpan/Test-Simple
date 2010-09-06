@@ -22,7 +22,7 @@ $ENV{HARNESS_ACTIVE} = 0;
 
 {
     ok defined &subtest, 'subtest() should be exported to our namespace';
-    is prototype('subtest'), undef, '... has no prototype';
+    is prototype('subtest'), '$&', '... with the appropriate prototype';
 
     subtest 'subtest with plan', sub {
         plan tests => 2;

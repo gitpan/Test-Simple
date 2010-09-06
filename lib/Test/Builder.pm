@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.97_01';
+our $VERSION = '2.00_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 BEGIN {
@@ -13,60 +13,9 @@ BEGIN {
     }
 }
 
+# Conditionally loads threads::shared and fixes up old versions
+use Test::Builder2::threads::shared;
 
-# Make Test::Builder thread-safe for ithreads.
-BEGIN {
-    use Config;
-    # Load threads::shared when threads are turned on.
-    # 5.8.0's threads are so busted we no longer support them.
-    if( $] >= 5.008001 && $Config{useithreads} && $INC{'threads.pm'} ) {
-        require threads::shared;
-
-        # Hack around YET ANOTHER threads::shared bug.  It would
-        # occasionally forget the contents of the variable when sharing it.
-        # So we first copy the data, then share, then put our copy back.
-        *share = sub (\[$@%]) {
-            my $type = ref $_[0];
-            my $data;
-
-            if( $type eq 'HASH' ) {
-                %$data = %{ $_[0] };
-            }
-            elsif( $type eq 'ARRAY' ) {
-                @$data = @{ $_[0] };
-            }
-            elsif( $type eq 'SCALAR' ) {
-                $$data = ${ $_[0] };
-            }
-            else {
-                die( "Unknown type: " . $type );
-            }
-
-            $_[0] = &threads::shared::share( $_[0] );
-
-            if( $type eq 'HASH' ) {
-                %{ $_[0] } = %$data;
-            }
-            elsif( $type eq 'ARRAY' ) {
-                @{ $_[0] } = @$data;
-            }
-            elsif( $type eq 'SCALAR' ) {
-                ${ $_[0] } = $$data;
-            }
-            else {
-                die( "Unknown type: " . $type );
-            }
-
-            return $_[0];
-        };
-    }
-    # 5.8.0's threads::shared is busted when threads are off
-    # and earlier Perls just don't have that module at all.
-    else {
-        *share = sub { return $_[0] };
-        *lock  = sub { 0 };
-    }
-}
 
 =head1 NAME
 
@@ -181,9 +130,11 @@ sub child {
 
     my $child = bless {}, ref $self;
     $child->reset;
+    $child->$_( $self->$_() ) for qw(output failure_output todo_output);
 
     # Add to our indentation
     $child->_indent( $self->_indent . '    ' );
+    $child->{Formatter}->nesting_level( $self->{Formatter}->nesting_level + 1 );
     
     $child->{$_} = $self->{$_} foreach qw{Out_FH Todo_FH Fail_FH};
     if ($parent_in_todo) {
@@ -323,7 +274,7 @@ sub finalize {
     if ( $self->{Skip_All} ) {
         $self->parent->skip($self->{Skip_All});
     }
-    elsif ( not @{ $self->{Test_Results} } ) {
+    elsif ( not @{ $self->{History}->results } ) {
         $self->parent->ok( 0, sprintf q[No tests run for subtest "%s"], $self->name );
     }
     else {
@@ -407,15 +358,17 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     $self->{Have_Plan}    = 0;
     $self->{No_Plan}      = 0;
     $self->{Have_Output_Plan} = 0;
-    $self->{Done_Testing} = 0;
 
     $self->{Original_Pid} = $$;
     $self->{Child_Name}   = undef;
     $self->{Indent}     ||= '';
 
-    share( $self->{Curr_Test} );
-    $self->{Curr_Test} = 0;
-    $self->{Test_Results} = &share( [] );
+    require Test::Builder2::History;
+    require Test::Builder2::Result;
+    $self->{History} = shared_clone(Test::Builder2::History->create);
+
+    require Test::Builder::Formatter::TAP;
+    $self->{Formatter} = Test::Builder::Formatter::TAP->new();
 
     $self->{Exported_To}    = undef;
     $self->{Expected_Tests} = 0;
@@ -667,10 +620,10 @@ sub done_testing {
     $self->{Have_Plan} = 1;
 
     # The wrong number of tests were run
-    $self->is_passing(0) if $self->{Expected_Tests} != $self->{Curr_Test};
+    $self->is_passing(0) if $self->{Expected_Tests} != $self->current_test;
 
     # No tests were run
-    $self->is_passing(0) if $self->{Curr_Test} == 0;
+    $self->is_passing(0) if $self->current_test == 0;
 
     return 1;
 }
@@ -770,8 +723,7 @@ sub ok {
     # store, so we turn it into a boolean.
     $test = $test ? 1 : 0;
 
-    lock $self->{Curr_Test};
-    $self->{Curr_Test}++;
+    lock $self->{History};
 
     # In case $name is a string overloaded object, force it to stringify.
     $self->_unoverload_str( \$name );
@@ -786,52 +738,30 @@ ERR
     my $todo    = $self->todo();
     my $in_todo = $self->in_todo;
     local $self->{Todo} = $todo if $in_todo;
-
     $self->_unoverload_str( \$todo );
 
-    my $out;
-    my $result = &share( {} );
+    # Turn the test into a Result
+    my( $pack, $file, $line ) = $self->caller;
+    my $result = Test::Builder2::Result->new_result(
+        pass            => $test ? 1 : 0,
+        location        => $file,
+        id              => $line,
+        description     => $name,
+        test_number     => $self->use_numbers ? $self->{History}->next_count : undef,
+        directives      => $in_todo ? ["todo"] : [],
+        reason          => $in_todo ? $todo : undef,
+    );
+
+    # Store the Result in history making sure to make it thread safe
+    $result = shared_clone($result);
+    $self->{History}->add_test_history( $result );
+
+    $self->{Formatter}->result($result);
 
     unless($test) {
-        $out .= "not ";
-        @$result{ 'ok', 'actual_ok' } = ( ( $self->in_todo ? 1 : 0 ), 0 );
-    }
-    else {
-        @$result{ 'ok', 'actual_ok' } = ( 1, $test );
-    }
-
-    $out .= "ok";
-    $out .= " $self->{Curr_Test}" if $self->use_numbers;
-
-    if( defined $name ) {
-        $name =~ s|#|\\#|g;    # # in a name can confuse Test::Harness.
-        $out .= " - $name";
-        $result->{name} = $name;
-    }
-    else {
-        $result->{name} = '';
-    }
-
-    if( $self->in_todo ) {
-        $out .= " # TODO $todo";
-        $result->{reason} = $todo;
-        $result->{type}   = 'todo';
-    }
-    else {
-        $result->{reason} = '';
-        $result->{type}   = '';
-    }
-
-    $self->{Test_Results}[ $self->{Curr_Test} - 1 ] = $result;
-    $out .= "\n";
-
-    $self->_print($out);
-
-    unless($test) {
-        my $msg = $self->in_todo ? "Failed (TODO)" : "Failed";
+        my $msg = $result->is_todo ? "Failed (TODO)" : "Failed";
         $self->_print_to_fh( $self->_diag_fh, "\n" ) if $ENV{HARNESS_ACTIVE};
 
-        my( undef, $file, $line ) = $self->caller;
         if( defined $name ) {
             $self->diag(qq[  $msg test '$name'\n]);
             $self->diag(qq[  at $file line $line.\n]);
@@ -858,7 +788,7 @@ sub _check_is_passing_plan {
     my $plan = $self->has_plan;
     return unless defined $plan;        # no plan yet defined
     return unless $plan !~ /\D/;        # no numeric plan
-    $self->is_passing(0) if $plan < $self->{Curr_Test};
+    $self->is_passing(0) if $plan < $self->current_test;
 }
 
 
@@ -1230,26 +1160,21 @@ sub skip {
     $why ||= '';
     $self->_unoverload_str( \$why );
 
-    lock( $self->{Curr_Test} );
-    $self->{Curr_Test}++;
+    lock( $self->{History} );
 
-    $self->{Test_Results}[ $self->{Curr_Test} - 1 ] = &share(
-        {
-            'ok'      => 1,
-            actual_ok => 1,
-            name      => '',
-            type      => 'skip',
-            reason    => $why,
-        }
+    my($pack, $file, $line) = $self->caller;
+    my $result = Test::Builder2::Result->new_result(
+        pass      => 1,
+        directives=> ['skip'],
+        reason    => $why,
+        id        => $line,
+        location  => $file,
+        test_number => $self->use_numbers ? $self->{History}->next_count : undef,
     );
+    $result = shared_clone($result);
+    $self->{History}->add_test_history( $result );
 
-    my $out = "ok";
-    $out .= " $self->{Curr_Test}" if $self->use_numbers;
-    $out .= " # skip";
-    $out .= " $why"               if length $why;
-    $out .= "\n";
-
-    $self->_print($out);
+    $self->{Formatter}->result($result);
 
     return 1;
 }
@@ -1270,24 +1195,21 @@ sub todo_skip {
     my( $self, $why ) = @_;
     $why ||= '';
 
-    lock( $self->{Curr_Test} );
-    $self->{Curr_Test}++;
+    lock( $self->{History} );
 
-    $self->{Test_Results}[ $self->{Curr_Test} - 1 ] = &share(
-        {
-            'ok'      => 1,
-            actual_ok => 0,
-            name      => '',
-            type      => 'todo_skip',
-            reason    => $why,
-        }
+    my($pack, $file, $line) = $self->caller;
+    my $result = Test::Builder2::Result->new_result(
+        pass            => 0,
+        directives      => ["todo", "skip"],
+        reason          => $why,
+        location        => $file,
+        id              => $line,
+        test_number     => $self->use_numbers ? $self->{History}->next_count : undef,
     );
+    $result = shared_clone($result);
+    $self->{History}->add_test_history( $result );
 
-    my $out = "not ok";
-    $out .= " $self->{Curr_Test}" if $self->use_numbers;
-    $out .= " # TODO & SKIP $why\n";
-
-    $self->_print($out);
+    $self->{Formatter}->result($result);
 
     return 1;
 }
@@ -1790,7 +1712,9 @@ sub output {
     my( $self, $fh ) = @_;
 
     if( defined $fh ) {
-        $self->{Out_FH} = $self->_new_fh($fh);
+        $fh = $self->_new_fh($fh);
+        $self->{Out_FH} = $fh;
+        $self->{Formatter}->streamer->output_fh($fh);
     }
     return $self->{Out_FH};
 }
@@ -1799,7 +1723,9 @@ sub failure_output {
     my( $self, $fh ) = @_;
 
     if( defined $fh ) {
-        $self->{Fail_FH} = $self->_new_fh($fh);
+        $fh = $self->_new_fh($fh);
+        $self->{Fail_FH} = $fh;
+        $self->{Formatter}->streamer->error_fh($fh);
     }
     return $self->{Fail_FH};
 }
@@ -1880,8 +1806,8 @@ sub _open_testhandles {
     open( $Testout, ">&STDOUT" ) or die "Can't dup STDOUT:  $!";
     open( $Testerr, ">&STDERR" ) or die "Can't dup STDERR:  $!";
 
-    $self->_copy_io_layers( \*STDOUT, $Testout );
-    $self->_copy_io_layers( \*STDERR, $Testerr );
+    #    $self->_copy_io_layers( \*STDOUT, $Testout );
+    #    $self->_copy_io_layers( \*STDERR, $Testerr );
 
     $self->{Opened_Testhandles} = 1;
 
@@ -1896,20 +1822,12 @@ sub _copy_io_layers {
             require PerlIO;
             my @src_layers = PerlIO::get_layers($src);
 
-            _apply_layers($dst, @src_layers) if @src_layers;
+            binmode $dst, join " ", map ":$_", @src_layers if @src_layers;
         }
     );
 
     return;
 }
-
-sub _apply_layers {
-    my ($fh, @layers) = @_;
-    my %seen;
-    my @unique = grep { $_ ne 'unix' and !$seen{$_}++ } @layers;
-    binmode($fh, join(":", "", "raw", @unique));
-}
-
 
 =item reset_outputs
 
@@ -1988,32 +1906,35 @@ can erase history if you really want to.
 sub current_test {
     my( $self, $num ) = @_;
 
-    lock( $self->{Curr_Test} );
-    if( defined $num ) {
-        $self->{Curr_Test} = $num;
+    lock( $self->{History} );
 
+    if( defined $num ) {
         # If the test counter is being pushed forward fill in the details.
-        my $test_results = $self->{Test_Results};
-        if( $num > @$test_results ) {
-            my $start = @$test_results ? @$test_results : 0;
+        my $history = $self->{History};
+        my $counter = $history->counter;
+        my $results = $history->results;
+
+        if( $num > @$results ) {
+            my $start = @$results ? @$results : 0;
+            $counter->set($start);
             for( $start .. $num - 1 ) {
-                $test_results->[$_] = &share(
-                    {
-                        'ok'      => 1,
-                        actual_ok => undef,
-                        reason    => 'incrementing test number',
-                        type      => 'unknown',
-                        name      => undef
-                    }
+                my $result = Test::Builder2::Result->new_result(
+                    pass        => 1,
+                    directives  => [qw(unknown)],
+                    reason      => 'incrementing test number',
+                    test_number => $_
                 );
+                $history->add_test_history( shared_clone($result) );
             }
         }
         # If backward, wipe history.  Its their funeral.
-        elsif( $num < @$test_results ) {
-            $#{$test_results} = $num - 1;
+        elsif( $num < @$results ) {
+            $#{$results} = $num - 1;
         }
+
+        $counter->set($num);
     }
-    return $self->{Curr_Test};
+    return $self->{History}->counter->get;
 }
 
 =item B<is_passing>
@@ -2058,7 +1979,7 @@ Of course, test #1 is $tests[0], etc...
 sub summary {
     my($self) = shift;
 
-    return map { $_->{'ok'} } @{ $self->{Test_Results} };
+    return $self->{History}->summary;
 }
 
 =item B<details>
@@ -2112,7 +2033,29 @@ result in this structure:
 
 sub details {
     my $self = shift;
-    return @{ $self->{Test_Results} };
+    return map { $self->_result_to_hash($_) } @{$self->{History}->results};
+}
+
+sub _result_to_hash {
+    my $self = shift;
+    my $result = shift;
+
+    my $types = $result->types;
+    my $type = $result->type eq 'todo_skip' ? "todo_skip"        :
+               $types->{unknown}            ? "unknown"          :
+               $types->{todo}               ? "todo"             :
+               $types->{skip}               ? "skip"             :
+                                            ""                 ;
+
+    my $actual_ok = $types->{unknown} ? undef : $result->literal_pass;
+
+    return {
+        'ok'       => $result->is_fail ? 0 : 1,
+        actual_ok  => $actual_ok,
+        name       => $result->description || "",
+        type       => $type,
+        reason     => $result->reason || "",
+    };
 }
 
 =item B<todo>
@@ -2326,8 +2269,8 @@ error message.
 sub _sanity_check {
     my $self = shift;
 
-    $self->_whoa( $self->{Curr_Test} < 0, 'Says here you ran a negative number of tests!' );
-    $self->_whoa( $self->{Curr_Test} != @{ $self->{Test_Results} },
+    $self->_whoa( $self->current_test < 0, 'Says here you ran a negative number of tests!' );
+    $self->_whoa( $self->current_test != @{ $self->{History}->results },
         'Somehow you got a different number of results than tests ran!' );
 
     return;
@@ -2393,7 +2336,7 @@ sub _ending {
     }
 
     # Ran tests but never declared a plan or hit done_testing
-    if( !$self->{Have_Plan} and $self->{Curr_Test} ) {
+    if( !$self->{Have_Plan} and $self->current_test ) {
         $self->is_passing(0);
         $self->diag("Tests were run but no plan was declared and done_testing() was not seen.");
     }
@@ -2410,37 +2353,28 @@ sub _ending {
         return;
     }
     # Figure out if we passed or failed and print helpful messages.
-    my $test_results = $self->{Test_Results};
+    my $test_results = $self->{History}->results;
     if(@$test_results) {
         # The plan?  We have no plan.
         if( $self->{No_Plan} ) {
-            $self->_output_plan($self->{Curr_Test}) unless $self->no_header;
-            $self->{Expected_Tests} = $self->{Curr_Test};
+            $self->_output_plan($self->current_test) unless $self->no_header;
+            $self->{Expected_Tests} = $self->current_test;
         }
 
-        # Auto-extended arrays and elements which aren't explicitly
-        # filled in with a shared reference will puke under 5.8.0
-        # ithreads.  So we have to fill them in by hand. :(
-        my $empty_result = &share( {} );
-        for my $idx ( 0 .. $self->{Expected_Tests} - 1 ) {
-            $test_results->[$idx] = $empty_result
-              unless defined $test_results->[$idx];
-        }
+        my $num_failed = grep $_->is_fail, @{$test_results}[ 0 .. $self->current_test - 1 ];
 
-        my $num_failed = grep !$_->{'ok'}, @{$test_results}[ 0 .. $self->{Curr_Test} - 1 ];
-
-        my $num_extra = $self->{Curr_Test} - $self->{Expected_Tests};
+        my $num_extra = $self->current_test - $self->{Expected_Tests};
 
         if( $num_extra != 0 ) {
             my $s = $self->{Expected_Tests} == 1 ? '' : 's';
             $self->diag(<<"FAIL");
-Looks like you planned $self->{Expected_Tests} test$s but ran $self->{Curr_Test}.
+Looks like you planned $self->{Expected_Tests} test$s but ran @{[ $self->current_test ]}.
 FAIL
             $self->is_passing(0);
         }
 
         if($num_failed) {
-            my $num_tests = $self->{Curr_Test};
+            my $num_tests = $self->current_test;
             my $s = $num_failed == 1 ? '' : 's';
 
             my $qualifier = $num_extra == 0 ? '' : ' run';
@@ -2453,7 +2387,7 @@ FAIL
 
         if($real_exit_code) {
             $self->diag(<<"FAIL");
-Looks like your test exited with $real_exit_code just after $self->{Curr_Test}.
+Looks like your test exited with $real_exit_code just after @{[ $self->current_test ]}.
 FAIL
             $self->is_passing(0);
             _my_exit($real_exit_code) && return;

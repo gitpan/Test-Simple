@@ -97,17 +97,12 @@ END { 1 while unlink($tmpfile) }
     $tb->skip("wibble\nmoof");
     $tb->todo_skip("todo\nskip\n");
 
-    $Test->is_eq( $fakeout, <<OUTPUT ) || print STDERR $fakeout;
+    $Test->is_eq( $fakeout, <<'OUTPUT' );
 1..5
 ok 1 - ok
-ok 2 - ok
-# 
-ok 3 - ok, like
-# ok
-ok 4 # skip wibble
-# moof
-not ok 5 # TODO & SKIP todo
-# skip
-# 
+ok 2 - ok\n
+ok 3 - ok, like\nok
+ok 4 # SKIP wibble\nmoof
+not ok 5 # TODO SKIP todo\nskip\n
 OUTPUT
 }

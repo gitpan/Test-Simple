@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:               Test-Simple
-version:            0.97_01
+version:            2.00_01
 abstract:           Basic utilities for writing tests.
 author:
     - Michael G Schwern <schwern@pobox.com>
@@ -11,18 +11,21 @@ configure_requires:
 build_requires:
     ExtUtils::MakeMaker:  0
 requires:
-    perl:           5.006
+    perl:           5.008001
     Test::Harness:  2.03
 resources:
     bugtracker:   http://github.com/schwern/test-more/issues
     homepage:     http://test-more.googlecode.com
     license:      http://dev.perl.org/licenses/
     MailingList:  http://groups.google.com/group/test-more-users
-    repository:   http://github.com/schwern/test-more/tree/master
+    repository:   http://github.com/schwern/test-more/tree/Test-Builder2
 no_index:
     directory:
         - t
         - inc
+        - lib/Test/Builder2/Mouse/
+    file:
+        - lib/Test/Builder2/Mouse.pm
 generated_by:       ExtUtils::MakeMaker version 6.56
 meta-spec:
     url:      http://module-build.sourceforge.net/META-spec-v1.4.html

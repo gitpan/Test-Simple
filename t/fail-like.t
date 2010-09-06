@@ -44,28 +44,25 @@ Test::More->import(tests => 1);
 not ok 1 - is foo like that
 OUT
 
-    # Accept both old and new-style stringification
-    my $modifiers = (qr/foobar/ =~ /\Q(?^/) ? '\\^' : '-xism';
-
     my $err_re = <<ERR;
 #   Failed test 'is foo like that'
 #   at .* line 1\.
 #                   'foo'
-#     doesn't match '\\(\\?$modifiers:that\\)'
+#     doesn't match '\\(\\?-xism:that\\)'
 ERR
 
     $TB->like($err->read, qr/^$err_re$/, 'failing errors');
 }
 
 {
-    # line 62
+    # line 59 
     like("foo", "not a regex");
     $TB->is_eq($out->read, <<OUT);
 not ok 2
 OUT
 
     $TB->is_eq($err->read, <<OUT);
-#   Failed test at $0 line 62.
+#   Failed test at $0 line 59.
 #     'not a regex' doesn't look much like a regex to me.
 OUT
 

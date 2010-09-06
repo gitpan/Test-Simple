@@ -11,7 +11,6 @@ BEGIN {
     plan skip_all => "Dependents only tested when releasing" unless $ENV{PERL_RELEASING};
 }
 
-require File::Spec;
 use CPAN;
 
 CPAN::HandleConfig->load;
@@ -36,7 +35,6 @@ my %Broken = map { $_ => 1 } qw(
 TODO: for my $name (@ARGV ? @ARGV : @Modules) {
     local $TODO = "$name known to be broken" if $Broken{$name};
 
-    local $ENV{PERL5LIB} = File::Spec->rel2abs("blib/lib");
     my $module = CPAN::Shell->expand("Module", $name);
     $module->test;
     ok( !$module->distribution->{make_test}->failed, $name );

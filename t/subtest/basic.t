@@ -178,7 +178,8 @@ END
         plan skip_all => 'subtest with skip_all';
         ok 0, 'This should never be run';
     };
-    is +Test::Builder->new->{Test_Results}[-1]{type}, 'skip',
+    my @details = Test::More->builder->details;
+    is $details[-1]{type}, 'skip',
         'Subtests which "skip_all" are reported as skipped tests';
 }
 

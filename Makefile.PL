@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.006;
+use 5.008001;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -69,22 +69,25 @@ WriteMakefile(
         %Prereqs
     },
 
-    # Added to the core in 5.7.3 and also 5.6.2.
-    INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
+    INSTALLDIRS     => 'perl',
 
     test        => {
         TESTS           => 't/*.t t/*/*.t',
     },
 
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => '5.8.1')),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://test-more.googlecode.com',
             bugtracker  =>      'http://github.com/schwern/test-more/issues',
-            repository  =>      'http://github.com/schwern/test-more/tree/master',
+            repository  =>      'http://github.com/schwern/test-more/tree/Test-Builder2',
             MailingList =>      'http://groups.google.com/group/test-more-users',
+        },
+        no_index => {
+            directory => ["lib/Test/Builder2/Mouse/"],
+            file      => ["lib/Test/Builder2/Mouse.pm"],
         },
     }))
 );
@@ -116,10 +119,11 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
-            perl5.12.1
-            perl5.10.1
             perl5.8.9
-            perl5.6.2
+            perl5.10.0
+            perl5.10.1
+            perl5.12.0
+            perl5.12.1
         );
 
         for my $perl (@perls) {
@@ -127,13 +131,6 @@ MAKE
 	cd $(DISTVNAME) && $(MAKE) clean && %s Makefile.PL && PERL_RELEASING=0 $(MAKE) test $(PASTHRU)
 END
         }
-
-        # Rebuild so subsequent make commands work
-        $make .= <<'END';
-	$(MAKE) realclean
-	$(FULLPERLRUN) Makefile.PL
-	$(MAKE)
-END
 
         $make .= "\n";
 
