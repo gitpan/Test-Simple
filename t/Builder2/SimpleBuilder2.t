@@ -5,17 +5,21 @@ use Test::Builder2;
 use Test::Builder2::Result;
 use lib 't/lib';
 
-use Test::More;
+BEGIN { require 't/test.pl' }
 
 use Test::Builder2::Formatter::TAP;
-my $tap = Test::Builder2::Formatter::TAP->new({
-  streamer_class => 'Test::Builder2::Streamer::Debug',
+my $tap = Test::Builder2::Formatter::TAP->create({
+    streamer_class => 'Test::Builder2::Streamer::Debug',
 });
 
-my $builder = new_ok("Test::Builder2", [ formatter => $tap ]);
+my $builder = Test::Builder2->create;
+isa_ok $builder, "Test::Builder2";
+
+$builder->event_coordinator->formatters([$tap]);
 
 {
-    $builder->stream_start(tests => 3);
+    $builder->stream_start;
+    $builder->set_plan( tests => 3 );
     is($tap->streamer->read('out'), "TAP version 13\n1..3\n", 'Simple builder output');
 }
 
@@ -35,8 +39,8 @@ my $builder = new_ok("Test::Builder2", [ formatter => $tap ]);
     {
         $result->diagnostic([error => "we really made a fine mess this time"]);
     }
-    is_deeply($result->diagnostic, [error => "we really made a fine mess this time"], 
-            "diagnostic check");
+    is_deeply $result->diagnostic, [error => "we really made a fine mess this time"], 
+            "diagnostic check";
     is($tap->streamer->read('out'), "not ok 3 - should fail, and add diagnostics\n", 
             'diagnostic output');
 }
@@ -60,6 +64,15 @@ my $builder = new_ok("Test::Builder2", [ formatter => $tap ]);
 {
     my $ok = $builder->ok(0);
     isa_ok $ok, "Test::Builder2::Result::Base";
+}
+
+
+# TB2 has a singleton
+{
+    my $builder1 = Test::Builder2->singleton;
+    my $builder2 = Test::Builder2->singleton;
+
+    is $builder1, $builder2, "TB2 has a singleton";
 }
 
 done_testing();

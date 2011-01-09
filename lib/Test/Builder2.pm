@@ -3,9 +3,10 @@ package Test::Builder2;
 use 5.008001;
 use Test::Builder2::Mouse;
 use Test::Builder2::Types;
+use Test::Builder2::Events;
 
-use Test::Builder2::Result;
-use Test::Builder2::AssertRecord;
+with 'Test::Builder2::Singleton';
+with 'Test::Builder2::CanTry';
 
 use Carp qw(confess);
 sub sanity ($) { confess "Assert failed" unless $_[0] };
@@ -64,87 +65,71 @@ Test::Builder2::Mouse in your TB2 derived classes or use Mouse
 directly.
 
 
-=head2 METHODS
+=head1 METHODS
+
+=head3 event_coordinator
+
+    my $event_coordinator = $builder->event_coordinator;
+    $builder->event_coordinator($event_coordinator);
+
+Get/set the L<Test::Builder2::EventCoordinator> associated with this C<$builder>.
+
+By default it creates a new EventCoordinator detached from other builders.
+
+The singleton contains the EventCoordinator singleton.
+
+=cut
+
+has event_coordinator =>
+  is            => 'rw',
+  isa           => 'Test::Builder2::EventCoordinator',
+  default       => sub {
+      require Test::Builder2::EventCoordinator;
+      return Test::Builder2::EventCoordinator->create;
+  }
+;
+
+sub make_singleton {
+    my $class = shift;
+
+    require Test::Builder2::EventCoordinator;
+    return $class->create(
+        event_coordinator => Test::Builder2::EventCoordinator->singleton
+    );
+}
+
 
 =head3 history
 
     my $history = $builder->history;
 
-Contains the Test::Builder2::History object recording results.
+A convenience method to access the first History object associated
+with the C<event_coordinator>.
+
+Note that there can be more than one.
 
 =cut
 
-has history_class => (
-  is            => 'ro',
-  isa           => 'Test::Builder2::LoadableClass',
-  coerce        => 1,
-  default       => 'Test::Builder2::History',
-);
-
-has history => (
-  reader        => 'history',
-  writer        => 'set_history',
-  isa           => 'Test::Builder2::History',
-  builder       => '_build_history',
-  lazy          => 1,
-);
-
-sub _build_history {
-    my $self = shift;
-    $self->history_class->singleton;
+sub history {
+    return $_[0]->event_coordinator->histories->[0];
 }
 
-
-=head3 planned_tests
-
-    my $num_tests = $builder->planned_tests;
-
-Number of tests planned, if at all.
-
-Unlike Test::Builder, TB2 does not assume your test needs a plan.
-
-This may be moved into a role in the future.
-
-=cut
-
-has planned_tests =>
-  is            => 'rw',
-  isa           => 'Int',
-  default       => 0;
 
 =head3 formatter
 
     my $formatter = $builder->formatter;
 
-A L<Test::Builder2::Formatter> object used to format results for
-output.
+A convenience method to access the first Formatter associated
+with the C<event_coordinator>.
 
-Defaults to L<Test::Builder2::Formatter::TAP>.
+Note that there can be more than one.
 
 =cut
 
-has formatter_class => (
-  is            => 'ro',
-  isa           => 'Test::Builder2::LoadableClass',
-  coerce        => 1,
-  default       => 'Test::Builder2::Formatter::TAP',
-);
-
-has formatter => (
-  reader        => 'formatter',
-  writer        => 'set_formatter',
-  isa           => 'Test::Builder2::Formatter',
-  builder       => '_build_formatter',
-  lazy          => 1,
-);
-
-sub _build_formatter {
-    my $self = shift;
-    $self->formatter_class->new;
+sub formatter {
+    return $_[0]->event_coordinator->formatters->[0];
 }
 
-
-=head3 top
 
 =head3 top_stack
 
@@ -166,124 +151,43 @@ has top_stack =>
 
 =head3 stream_start
 
-  $tb->stream_start(%options);
+  $tb->stream_start;
 
-Inform the builder that testing is about to begin.  This will allow
-the builder to output any necessary headers.
+Inform the builder that testing is about to begin.
 
-Extension authors are encouraged to put method modifiers around
-stream_start().
+This should be called before any set of asserts is run.
+
+It should eventually be followed by a call to L<stream_end>.
+
+You can indicate nested sets of asserts by calling C<stream_start>
+before C<stream_end>.
 
 =cut
 
 sub stream_start {
     my $self = shift;
-    my %options = @_;
 
-    %options = $self->set_plan( %options );
-
-    $self->formatter->begin(%options);
+    $self->event_coordinator->post_event(
+        Test::Builder2::Event::StreamStart->new
+    );
 
     return;
 }
 
 =head3 stream_end
 
-  $tb->stream_end(%options);
+  $tb->stream_end;
 
-Inform the Builder that testing is complete.  This will allow the builder to
-perform any end of testing checks and actions, such as outputting a plan, and
-inform any other objects, such as the formatter.
-
-Extension authors are encouraged to put method modifiers on
-stream_end().
+Inform the Builder that a set of asserts is complete.
 
 =cut
 
 sub stream_end {
-    my $self    = shift;
-    my %options = @_;
-
-    $self->set_plan( %options );
-
-    $self->formatter->end(%options);
-}
-
-
-=head3 assert_start
-
-  $tb->assert_start;
-
-Called just before a user written test function begins, an assertion.
-
-By default it records the caller at this point in C<< $self->top_stack >>
-for the purposes of reporting test file and line numbers properly.
-
-Extension authors are encouraged to put method modifiers on
-assert_start()
-
-This will be called when *any* assertion begins.  If you want to
-know when the assertion is called from the user's point of view, check
-C<< $self->top_stack >>.  It will be empty before and have a single
-assert after.
-
-=cut
-
-sub assert_start {
     my $self = shift;
 
-    my $record = Test::Builder2::AssertRecord->new_from_caller(1);
-    sanity $record;
-
-    $self->top_stack->push($record);
-
-    return;
-}
-
-=head3 assert_end
-
-  $tb->assert_end($result);
-
-Like C<assert_start> but for just after a user written assert function
-finishes.
-
-By default it pops C<< $self->top_stack >> and if this is the last
-assert in the stack it formats the result.
-
-Extension authors are encouraged to put method modifiers on
-assert_end().
-
-This will be called when *any* assertion ends.  If you want to know
-when the assertion is complete from the user's point of view, check
-C<< $self->top_stack >>.  It will have a single element before and be
-empty after.
-
-    # Here's how you'd implement "die on fail", ignoring turning this
-    # into a role and applying it to the TB2 object.
-    after assert_end => sub {
-        my $self = shift;
-        my $result = shift;
-
-        # It passed, you live... for now.
-        return if $result;
-
-        # If there's asserts in the stack, let them have a chance
-        # to process before dying.
-        return if $self->top_stack->in_assert;
-
-        die "Assert failed.\n";
-    };
-
-=cut
-
-sub assert_end {
-    my $self   = shift;
-    my $result = shift;
-
-    $self->formatter->result($result) if
-      $self->top_stack->at_top and defined $result;
-
-    sanity $self->top_stack->pop;
+    $self->event_coordinator->post_event(
+        Test::Builder2::Event::StreamEnd->new
+    );
 
     return;
 }
@@ -299,18 +203,100 @@ For example, Perl tests would say:
 
     $tb->set_plan( tests => $number_of_tests );
 
-Extension authors are encouraged to put method modifiers on
-set_plan().
-
 =cut
 
 sub set_plan {
     my $self = shift;
-    my %plan = @_;
+    my %input = @_;
 
-    $self->planned_tests($plan{tests}) if $plan{tests};
+    my %plan;
+    $plan{asserts_expected} = delete $input{tests} if exists $input{tests};
 
-    return %plan;
+    my @keys = qw(no_plan skip skip_reason);
+    for my $key (@keys) {
+        $plan{$key} = delete $input{$key} if exists $input{$key};
+    }
+
+    # Whatever's left
+    $plan{plan} = \%input if keys %input;
+
+    my $plan = Test::Builder2::Event::SetPlan->new(
+        %plan
+    );
+
+    $self->event_coordinator->post_event($plan);
+
+    return;
+}
+
+
+=head3 assert_start
+
+  $tb->assert_start;
+
+Called just before a user written test function begins, an assertion.
+
+Most users should call C<ok> instead.
+
+By default it records the caller at this point in C<< $self->top_stack >>
+for the purposes of reporting test file and line numbers properly.
+
+This will be called when *any* assertion begins.  If you want to
+know when the assertion is called from the user's point of view, check
+C<< $self->top_stack >>.  It will be empty before and have a single
+assert after.
+
+=cut
+
+sub assert_start {
+    my $self = shift;
+
+    require Test::Builder2::AssertRecord;
+    my $record = Test::Builder2::AssertRecord->new_from_caller(1);
+    sanity $record;
+
+    $self->top_stack->push($record);
+
+    return;
+}
+
+=head3 assert_end
+
+  $tb->assert_end($result);
+
+Like C<assert_start> but for just after a user written assert function
+finishes.
+
+Most users should call C<ok> instead.
+
+By default it pops C<< $self->top_stack >> and if this is the last
+assert in the stack it formats the result.
+
+This will be called when *any* assertion ends.  If you want to know
+when the assertion is complete from the user's point of view, check
+C<< $self->top_stack >>.  It will have a single element before and be
+empty after.
+
+=cut
+
+sub assert_end {
+    my $self   = shift;
+    my $result = shift;
+
+    # Trap an error from a watcher...
+    my($ret, $error) = $self->try( sub {
+        $self->event_coordinator->post_result($result) if
+          $self->top_stack->at_top and defined $result;
+        1;
+    });
+
+    # ...because we have to pop the stack no matter what...
+    sanity $self->top_stack->pop;
+
+    # ...then rethrow it.
+    die $error if $error;
+
+    return;
 }
 
 
@@ -322,16 +308,14 @@ sub set_plan {
 The most basic assertion that all other assertions should use.
 
 This handles things like calling C<assert_start> and C<assert_end>,
-creating a test result, recording the result and incrementing the test
-counter.  Everything you want an assert to do and nothing else.
+creating a test result and recording the result.  Everything you 
+want an assert to do and nothing else.
 
 $test is simple true for success, false for failure.
 
 $name is a description of the test.
 
 Returns a Test::Builder2::Result object representing the test.
-
-For even more control, ass L<accept_result>.
 
 =cut
 
@@ -350,40 +334,18 @@ sub ok {
 
     $self->assert_start();
 
-    my $num = $self->history->counter->get + 1;
-
     my $result = $self->result_class->new_result(
-        test_number     => $num,
         description     => $name,
         pass            => $test,
     );
 
-    $self->accept_result($result);
+    my $top = $self->top_stack->top;
+    $result->file($top->filename);
+    $result->line($top->line);
 
     $self->assert_end($result);
 
     return $result;
-}
-
-
-=head3 accept_result
-
-  $tb->accept_result( $result );
-
-Records a test $result (a Test::Builder2::Result object) to C<<
-$tb->history >> AND DOES NOTHING ELSE.
-
-You probably want to use L<ok>.
-
-=cut
-
-sub accept_result {
-    my $self = shift;
-    my $result = shift;
-
-    $self->history->add_test_history( $result );
-
-    return;
 }
 
 
@@ -422,7 +384,7 @@ Copyright 2008-2010 by Michael G Schwern E<lt>schwernE<0x40>pobox.comE<gt>.
 This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
 
-See L<http://www.perl.com/perl/misc/Artistic.html>
+See L<http://dev.perl.org/licenses/artistic.html>
 
 
 =head1 SEE ALSO
@@ -435,6 +397,8 @@ L<Test::Builder2::History> for the object storing result history.
 
 L<Test::Builder2::Formatter> for the object handling printing results.
 
-L<Test::Buidler2::Module> for writing your own test libraries.
+L<Test::Builder2::EventCoordinator> for the object coordinating between builders.
+
+L<Test::Builder2::Module> for writing your own test libraries.
 
 =cut

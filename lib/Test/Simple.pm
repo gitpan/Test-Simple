@@ -1,13 +1,13 @@
 package Test::Simple;
 
-use 5.006;
+use 5.008001;
 use strict;
 
-our $VERSION = '2.00_01';
+our $VERSION = '2.00_02';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder2::Module;
-our @EXPORT = qw(ok);
+our @EXPORT = qw(ok done_testing);
 
 
 =head1 NAME
@@ -74,9 +74,12 @@ will do what you mean (fail if stuff is empty)
 =cut
 
 install_test(ok => sub ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
-    return $Builder->ok(@_);
+    return Builder->ok(@_);
 });
 
+sub done_testing {
+    Builder->stream_end;
+}
 
 =back
 

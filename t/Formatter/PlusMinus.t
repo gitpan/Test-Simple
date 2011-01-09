@@ -3,15 +3,13 @@
 use strict;
 use lib 't/lib';
 
-use Test::More;
-
-use Test::Builder2;
-use Test::Builder2::Result;
+BEGIN { require "t/test.pl" }
+use Test::Builder2::Events;
 
 use_ok 'Test::Builder2::Formatter::PlusMinus';
 
 sub new_formatter {
-    return Test::Builder2::Formatter::PlusMinus->new(
+    return Test::Builder2::Formatter::PlusMinus->create(
         streamer_class => 'Test::Builder2::Streamer::Debug'
     );
 }
@@ -21,7 +19,9 @@ my $formatter = new_formatter();
 
 # Begin
 {
-    $formatter->begin;
+    $formatter->accept_event(
+        Test::Builder2::Event::StreamStart->new
+    );
     is $formatter->streamer->read, "";
 }
 
@@ -32,7 +32,7 @@ my $formatter = new_formatter();
         pass            => 1,
         description     => "basset hounds got long ears",
     );
-    $formatter->result($result);
+    $formatter->accept_result($result);
     is(
       $formatter->streamer->read,
       "+",
@@ -47,7 +47,7 @@ my $formatter = new_formatter();
         pass            => 0,
         description     => "basset hounds got long ears",
     );
-    $formatter->result($result);
+    $formatter->accept_result($result);
     is(
       $formatter->streamer->read,
       "-",
@@ -63,7 +63,7 @@ my $formatter = new_formatter();
         directives      => [qw(skip)],
         description     => "basset hounds got long ears",
     );
-    $formatter->result($result);
+    $formatter->accept_result($result);
     is(
       $formatter->streamer->read,
       "+",
@@ -74,16 +74,20 @@ my $formatter = new_formatter();
 
 # End
 {
-    $formatter->end();
+    $formatter->accept_event(
+        Test::Builder2::Event::StreamEnd->new
+    );
     is $formatter->streamer->read, "\n";
 }
 
 
 # Test out PlusMinus inside TB2.
 {
-    my $tb = Test::Builder2->new;
-    $tb->set_formatter( new_formatter() );
+    require Test::Builder2;
+    my $tb = Test::Builder2->create;
+    $tb->event_coordinator->formatters([ new_formatter ]);
 
+    $tb->stream_start();
     $tb->ok(1);
     $tb->ok(0);
     $tb->stream_end();

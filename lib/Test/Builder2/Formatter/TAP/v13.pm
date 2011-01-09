@@ -6,13 +6,9 @@ use Test::Builder2::Mouse;
 use Carp;
 use Test::Builder2::Types;
 
-extends 'Test::Builder2::Formatter';
+use Test::Builder2::threads::shared;
 
-has nesting_level =>
-  is            => 'rw',
-  isa           => 'Test::Builder2::Positive_Int',
-  default       => 0
-;
+extends 'Test::Builder2::Formatter';
 
 has indent_nesting_with =>
   is            => 'rw',
@@ -21,6 +17,17 @@ has indent_nesting_with =>
 ;
 
 sub default_streamer_class { 'Test::Builder2::Streamer::TAP' }
+
+
+sub make_singleton {
+    my $class = shift;
+
+    require Test::Builder2::Counter;
+    $class->create(
+        counter => shared_clone( Test::Builder2::Counter->create )
+    );
+}
+
 
 =head1 NAME
 
@@ -31,9 +38,8 @@ Test::Builder2::Formatter::TAP::v13 - Formatter as TAP version 13
   use Test::Builder2::Formatter::TAP::v13;
 
   my $formatter = Test:::Builder2::Formatter::TAP::v13->new;
-  $formatter->begin();
-  $formatter->result($result);
-  $formatter->end($plan);
+  $formatter->accept_event($event);
+  $formatter->accept_result($result);
 
 
 =head1 DESCRIPTION
@@ -55,14 +61,28 @@ These methods are just shorthand for:
 
 =cut
 
+
+sub _prepend {
+    my($self, $msg, $prefix) = @_;
+
+    # Put '# ' at the beginning of each line
+    $msg =~ s{^}{$prefix};
+    $msg =~ s{\n(?!\z)}{\n$prefix}g;
+
+    return $msg;
+}
+
 sub _add_indentation {
     my $self = shift;
     my $output = shift;
 
-    my $level = $self->nesting_level;
+    my $level = $self->stream_depth - 1;
     return unless $level;
 
-    unshift @$output, $self->indent_nesting_with x $level;
+    my $indent = $self->indent_nesting_with x $level;
+    for my $idx (0..$#{$output}) {
+        $output->[$idx] = $self->_prepend($output->[$idx], $indent);
+    }
 
     return;
 }
@@ -79,54 +99,298 @@ sub err {
     $self->write(err => @_);
 }
 
-=head3 begin
+sub diag {
+    my $self = shift;
+    $self->err($self->comment(@_));
+}
 
-The %plan can be one and only one of...
 
-  tests => $number_of_tests
+=head3 counter
 
-  no_plan => 1
+    my $counter = $formatter->counter;
+    $formatter->counter($counter);
 
-  skip_all => $reason
+Gets/sets the Test::Builder2::Counter for this formatter keeping track of
+the test number.
 
 =cut
 
-sub INNER_begin {
+has counter => 
+   is => 'rw',
+   isa => 'Test::Builder2::Counter',
+   default => sub {
+      require Test::Builder2::Counter;
+      return Test::Builder2::Counter->create;
+   },
+;
+
+=head3 use_numbers
+
+    my $use_numbers = $formatter->use_numbers;
+    $formatter->use_numbers($use_numbers);
+
+Get/sets if the TAP output should include the test number. Defaults to true.
+NOTE: the counter will still incrememnt this only toggles if the number should
+be used in the display.
+
+=cut
+
+has use_numbers => 
+   is => 'rw',
+   isa => 'Bool',
+   default => 1,
+;
+
+my %event_dispatch = (
+    "stream start"      => "accept_stream_start",
+    "stream end"        => "accept_stream_end",
+    "set plan"          => "accept_set_plan",
+);
+
+sub INNER_accept_event {
+    my $self  = shift;
+    my $event = shift;
+    my $ec    = shift;
+
+    my $type = $event->event_type;
+    my $method = $event_dispatch{$type};
+    return unless $method;
+
+    $self->$method($event, $ec);
+
+    return;
+}
+
+
+has show_header =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+has show_footer =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+has show_ending =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+has show_tap_version =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+has show_plan =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+has show_ending_commentary =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 1
+;
+
+
+sub accept_stream_start {
     my $self = shift;
-    my %args = @_;
 
-    croak "begin() takes only one pair of arguments" if keys %args > 1;
+    # Only output the TAP version in the first stream
+    # and if we're showing the version
+    # and if we're showing header information
+    $self->out("TAP version 13\n") if
+      $self->stream_depth == 1 and
+      $self->show_tap_version  and
+      $self->show_header;
 
-    $self->out("TAP version 13\n");
+    return;
+}
 
-    if( exists $args{tests} ) {
-        $self->out("1..$args{tests}\n");
+
+sub accept_stream_end {
+    my $self  = shift;
+    my $event = shift;
+    my $ec    = shift;
+
+    $self->output_plan if $self->show_footer;
+
+    $self->output_ending_commentary($ec);
+
+    # New counter
+    $self->counter( Test::Builder2::Counter->create );
+
+    return;
+}
+
+
+has plan =>
+  is            => 'rw',
+  isa           => 'Object'
+;
+
+sub accept_set_plan {
+    my $self  = shift;
+    my $event = shift;
+
+    croak "'set plan' event outside of a stream" if !$self->stream_depth;
+
+    $self->plan( $event );
+
+    # TAP only allows a plan at the very start or the very end.
+    # If we've already seen some results, or it's "no_plan", save it for the end.
+    $self->output_plan if !$self->seen_results and $self->show_header and !$event->no_plan;
+
+    return;
+}
+
+
+has did_output_plan =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 0
+;
+
+sub output_plan {
+    my $self = shift;
+
+    return unless $self->show_plan;
+    return if $self->did_output_plan;
+
+    return if !$self->plan;
+
+    $self->_output_plan;
+
+    $self->did_output_plan(1);
+
+    return 1;
+}
+
+sub _output_plan {
+    my $self  = shift;
+    my $plan = $self->plan;
+
+    if( $plan->skip ) {
+        my $reason = $plan->skip_reason;
+        my $out = "1..0 # SKIP";
+        $out .= " $reason" if length $reason;
+        $out .= "\n";
+        $self->out($out);
     }
-    elsif( exists $args{skip_all} ) {
-        $self->out("1..0 # skip $args{skip_all}");
+    elsif( $plan->no_plan ) {
+        my $seen = $self->counter->get;
+        $self->out("1..$seen\n");
     }
-    elsif( exists $args{no_plan} ) {
-        # ...do nothing...
-    }
-    elsif( keys %args == 1 ) {
-        croak "Unknown argument @{[ keys %args ]} to begin()";
-    }
-    else {
-        # ...do nothing...
+    elsif( my $expected = $plan->asserts_expected ) {
+        $self->out("1..$expected\n");
     }
 
     return;
 }
 
-=head3 result
+
+my %inflections = (
+    test        => "tests",
+    was         => "were"
+);
+sub _inflect {
+    my($word, $num) = @_;
+
+    return $word if $num == 1;
+
+    my $plural = $inflections{$word};
+    return $plural ? $plural : $word;
+}
+
+sub output_ending_commentary {
+    my $self = shift;
+    my $ec   = shift;
+
+    return unless $self->show_ending_commentary;
+
+    my $plan = $self->plan;
+
+    my $tests_run = $self->counter->get;
+    my $w_test    = _inflect("test", $tests_run);
+
+    my $tests_failed   = $ec->histories->[0]->fail_count;
+    my $tests_planned  = !$plan                         ? 0
+                       : $plan->no_plan                 ? $tests_run
+                       :                                  $plan->asserts_expected
+                       ;
+    my $tests_extra    = $tests_planned - $tests_run;
+
+
+    # No plan was seen
+    if( !$plan ) {
+        # Ran tests but never declared a plan
+        if( $tests_run ) {
+            $self->diag("$tests_run $w_test ran, but no plan was declared.");
+        }
+        # No plan is ok if nothing happened
+        else {
+            return;
+        }
+    }
+
+
+    # Skip
+    if( $plan && $plan->skip ) {
+        # It was supposed to be a skip, but tests were run
+        if( $tests_run ) {
+            $self->diag("The test was skipped, but $tests_run $w_test ran.");
+        }
+        # A proper skip
+        else {
+            return;
+        }
+    }
+
+    # Saw a plan, but no tests.
+    if( !$tests_run ) {
+        $self->diag("No tests run!");
+        return;
+    }
+
+
+    # Saw a plan, and tests, but not the right amount.
+    if( $plan && $tests_planned && $tests_extra ) {
+        my $w_tests_p = _inflect("test", $tests_planned);
+        $self->diag("$tests_planned $w_tests_p planned, but $tests_run ran.");
+    }
+
+
+    # Right amount, but some failed.
+    if( $tests_failed ) {
+        my $w_tests_f = _inflect("test", $tests_failed);
+        $self->diag("$tests_failed $w_tests_f of $tests_run failed.");
+    }
+
+    return;
+}
+
+
+=head3 INNER_accept_result
 
 Takes a C<Test::Builder2::Result> as an argument and displays the
 result details.
 
 =cut
 
-sub INNER_result {
-    my $self = shift;
+has seen_results =>
+  is            => 'rw',
+  isa           => 'Bool',
+  default       => 0
+;
+
+sub INNER_accept_result {
+    my $self  = shift;
     my $result = shift;
 
     # FIXME: there is a lot more detail in the 
@@ -136,7 +400,8 @@ sub INNER_result {
     $out .= "not " if !$result->literal_pass;
     $out .= "ok";
 
-    $out .= " ".$result->test_number   if defined $result->test_number;
+    my $num = $result->test_number || $self->counter->increment;
+    $out .= " ".$num if $self->use_numbers;
 
     my $name = $result->description;
     $self->_escape(\$name);
@@ -154,7 +419,75 @@ sub INNER_result {
 
     $self->out($out);
 
+    if(!$result->literal_pass and !$result->is_skip) {
+        # XXX This should also emit structured diagnostics
+        $self->_comment_diagnostics($result);
+    }
+
+    $self->seen_results(1);
+
     return;
+}
+
+
+# Emit old style comment failure diagnostics
+sub _comment_diagnostics {
+    my($self, $result) = @_;
+
+    my $msg = '  ';
+
+    $msg .= $result->is_todo ? "Failed (TODO) test" : "Failed test";
+
+    # Failing TODO tests are not displayed to the user.
+    my $out_method = $result->is_todo ? "out" : "err";
+
+    my($file, $line, $name) = map { $result->$_ } qw(file line name);
+
+    if( defined $name ) {
+        $msg .= " '$name'\n ";
+    }
+    if( defined $file ) {
+        $msg .= " at $file";
+    }
+    if( defined $line ) {
+        $msg .= " line $line";
+    }
+
+    # Start on a new line if we're being output by Test::Harness.
+    # Makes it easier to read
+    $self->$out_method("\n") if $ENV{HARNESS_ACTIVE};
+    $self->$out_method($self->comment("$msg.\n"));
+
+    return;
+}
+
+
+=head3 comment
+
+  my $comment = $self->comment(@message);
+
+Will turn the given @message into a TAP comment.
+
+    # returns "# Basset houndsgot long ears"
+    $self->comment("Basset hounds", "got long ears");
+
+=cut
+
+sub comment {
+    my $self = shift;
+
+    return unless @_;
+
+    # Smash args together like print does.
+    # Convert undef to 'undef' so its readable.
+    my $msg = join '', map { defined($_) ? $_ : 'undef' } @_;
+
+    $msg = $self->_prepend($msg, "# ");
+
+    # Stick a newline on the end if it needs it.
+    $msg .= "\n" unless $msg =~ /\n\z/;
+
+    return $msg;
 }
 
 
@@ -164,37 +497,11 @@ sub _escape {
 
     return if !defined $$string;
 
+    $$string =~ s{#}{\\#}g;
     $$string =~ s{\n}{\\n}g;
 
     return;
 }
 
-=head3 end
-
-Similar to C<begin()>, it takes either no or one and only one pair of arguments.
-
-  tests => $number_of_tests
-
-=cut
-
-sub INNER_end {
-    my $self = shift;
-
-    my %args = @_;
-
-    croak "end() takes only one pair of arguments" if keys %args > 1;
-
-    if( exists $args{tests} ) {
-        $self->out("1..$args{tests}\n");
-    }
-    elsif( keys %args == 1 ) {
-        croak "Unknown argument @{[ keys %args ]} to end()";
-    }
-    else {
-        # ...do nothing...
-    }
-
-    return;    
-}
 
 1;

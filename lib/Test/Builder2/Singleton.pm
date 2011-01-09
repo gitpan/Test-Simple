@@ -28,6 +28,9 @@ B<FOR INTERNAL USE ONLY>
 
 A role implementing singleton for Test::Builder2 classes.
 
+Strictly speaking, this isn't a singleton because you can create more
+instances.  Its more like giving the class a default.
+
 =head1 METHODS
 
 =head2 Constructors
@@ -55,7 +58,7 @@ If there is no singleton one will be created by calling create().
             $singletons{$class} = shift;
         }
         elsif( !$singletons{$class} ) {
-            $singletons{$class} = $class->create;
+            $singletons{$class} = $class->make_singleton;
         }
 
         return $singletons{$class};
@@ -91,5 +94,27 @@ sub create {
 
     return $class->Test::Builder2::Mouse::Object::new(@_);
 }
+
+
+=head3 make_singleton
+
+    my $singleton = $class->make_singleton;
+
+Creates the object used as the singleton.
+
+Defaults to calling C<< $class->create >>.  You can override.
+
+One of the reasons to override is to ensure your singleton contains
+other singletons.  Like a Builder will want to use the singleton
+History and Formatter objects.
+
+=cut
+
+sub make_singleton {
+    my $class = shift;
+    return $class->create;
+}
+
+no Test::Builder2::Mouse::Role;
 
 1;

@@ -3,14 +3,14 @@
 use strict;
 use warnings;
 
-use Test::Simple tests => 4;
+BEGIN { require 't/test.pl' }
 
-ok( defined Test::Simple->builder );
-ok( Test::Simple->builder->isa("Test::Builder2") );
+use Test::Simple ();
 
-my $orig_builder = Test::Simple->builder;
-my $new_builder  = Test::Builder2->new;
-Test::Simple->builder($new_builder);
-ok( Test::Simple->builder == $new_builder );
+ok( defined Test::Simple->Builder );
+ok( Test::Simple->Builder->isa("Test::Builder2") );
 
-ok( $Test::Simple::Builder == $new_builder );
+my $orig_builder = Test::Simple->Builder;
+is $orig_builder, Test::Builder2->singleton;
+
+done_testing;

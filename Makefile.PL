@@ -72,7 +72,7 @@ WriteMakefile(
     INSTALLDIRS     => 'perl',
 
     test        => {
-        TESTS           => 't/*.t t/*/*.t',
+        TESTS           => 't/*.t t/*/*.t t/*/*/*.t',
     },
 
     ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => '5.8.1')),
@@ -81,7 +81,7 @@ WriteMakefile(
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://test-more.googlecode.com',
-            bugtracker  =>      'http://github.com/schwern/test-more/issues',
+            bugtracker  =>      'http://github.com/schwern/test-more/issues/labels/Test-Builder2',
             repository  =>      'http://github.com/schwern/test-more/tree/Test-Builder2',
             MailingList =>      'http://groups.google.com/group/test-more-users',
         },
@@ -131,6 +131,13 @@ MAKE
 	cd $(DISTVNAME) && $(MAKE) clean && %s Makefile.PL && PERL_RELEASING=0 $(MAKE) test $(PASTHRU)
 END
         }
+
+        # Rebuild so subsequent make commands work
+        $make .= <<'END';
+	$(MAKE) realclean
+	$(FULLPERLRUN) Makefile.PL
+	$(MAKE)
+END
 
         $make .= "\n";
 

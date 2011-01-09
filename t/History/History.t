@@ -3,7 +3,7 @@
 use strict;
 use warnings;
 
-use Test::More 'no_plan';
+BEGIN { require 't/test.pl' }
 
 use Test::Builder2::Result;
 
@@ -31,9 +31,7 @@ my $create_ok = sub {
 {
     my $history = $create_ok->();
 
-    is $history->counter->get,          0;
     is_deeply $history->results,        [];
-    ok $history->should_keep_history;
 }
 
 
@@ -45,11 +43,6 @@ my $create_ok = sub {
     isa_ok $history2, $CLASS;
 
     is $history1, $history2,            "new() is a singleton";
-    is $history1, $CLASS->singleton,    "singleton() get";
-
-    $history1->add_test_history($Pass, $Fail);
-
-    is_deeply $history1->results, $history2->results;
 
     my $new_history = $create_ok->();
     $CLASS->singleton($new_history);
@@ -57,60 +50,36 @@ my $create_ok = sub {
 }
 
 
-# add_test_history
+# accept_result
 {
     my $history = $create_ok->();
 
-    $history->add_test_history( $Pass );
+    $history->accept_result( $Pass );
     is_deeply $history->results, [$Pass];
-    is_deeply [$history->summary], [1];
 
-    is $history->counter->get, 1;
     ok $history->is_passing;
 
-    $history->add_test_history( $Pass, $Fail );
+    $history->accept_results( $Pass, $Fail );
     is_deeply $history->results, [
         $Pass, $Pass, $Fail
     ];
-    is_deeply [$history->summary], [1, 1, 0];
 
-    is $history->counter->get, 3;
     ok !$history->is_passing;
 
     # Try a history replacement
-    $history->counter->set(2);
-    $history->add_test_history( $Pass, $Pass );
-    is_deeply [$history->summary], [1, 1, 1, 1];
+    $history->accept_results( $Pass, $Pass );
 }
 
 
-# add_test_history argument checks
+# accept_results argument checks
 {
     my $history = $create_ok->();
 
     ok !eval {
-        $history->add_test_history($Pass, { passed => 1 }, $Fail);
+        $history->accept_results($Pass, { passed => 1 }, $Fail);
     };
     like $@, qr/takes Result objects/;
 }
 
 
-# should_keep_history
-{
-    my $history = $create_ok->();
-
-    $history->should_keep_history(0);
-    $history->add_test_history( $Pass );
-    is $history->counter->get, 1;
-    is_deeply $history->results, [];
-}
-
-
-# create() has its own Counter
-{
-    my $history = $CLASS->singleton;
-    my $other   = $CLASS->create;
-
-    $history->counter->set(22);
-    is $other->counter->get, 0,         "create() comes with its own Counter";
-}
+done_testing;

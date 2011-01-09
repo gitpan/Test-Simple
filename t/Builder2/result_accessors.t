@@ -1,7 +1,8 @@
 #!/usr/bin/perl -w
 
 use strict;
-use Test::More;
+
+BEGIN { require 't/test.pl' }
 
 use_ok "Test::Builder2::Result";
 

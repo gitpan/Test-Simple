@@ -1,14 +1,13 @@
 package Test::Builder2::Module;
 
 use 5.008001;
-use strict;
+use Test::Builder2::Mouse;
+with 'Test::Builder2::CanTry';
 
-our $VERSION = '2.00_01';
+our $VERSION = '2.00_02';
 our $CLASS = __PACKAGE__;
 
-use Test::Builder2;
 use base 'Exporter';
-
 our @EXPORT = qw(install_test builder);
 
 sub import {
@@ -17,7 +16,7 @@ sub import {
 
     $class->export_to_level(1, $class, @EXPORT);
 
-    $caller->builder(Test::Builder2->new);
+    require Test::Builder2;
 
     no strict 'refs';
 
@@ -26,6 +25,11 @@ sub import {
 
     # Give them the import() routine for modules.
     *{$caller .'::import'} = \&_module_import;
+
+    # And their own Builder convenience function
+    *{$caller .'::Builder'} = sub () {
+        return Test::Builder2->singleton;
+    };
 }
 
 
@@ -33,7 +37,13 @@ sub _module_import {
     my $class  = shift;
     my $caller = caller;
 
-    $class->builder->stream_start(@_) if @_;
+    my @input = @_;
+    push @input, 1 if defined $input[0] and $input[0] eq 'no_plan';
+
+    if( @input ) {
+        $class->Builder->stream_start;
+        $class->Builder->set_plan(@input);
+    }
 
     $class->export_to_level(1, $class);
 }
@@ -52,7 +62,7 @@ Test::Builder2::Module - Write a test module
     install_test( is => sub ($$;$) {
         my($have, $want, $name) = @_;
 
-        my $result = $Builder->ok($have eq $want, $name);
+        my $result = Builder->ok($have eq $want, $name);
         $result->diagnostic([
             have => $have,
             want => $want
@@ -77,8 +87,8 @@ writing C<< sub name { ... } >> with two differences.
 1. Declaring the test in this manner enables the assert_start and
    assert_end hooks, such as aborting the test on failure.
 2. It takes care of displaying the test result for you.
-3. The $Builder object is available inside your $code which is just a
-   shortcut for C<< $class->builder >>
+3. The C<< Builder >> object is available inside your $code which is just
+   a shortcut for C<< Test::Builder2->singleton >>.
 
 The prototype of the $code is honored.
 
@@ -109,12 +119,19 @@ sub install_test {
     my $code = eval sprintf <<'CODE', $proto;
     sub %s {
         # Fire any before-test actions.
-        $caller->builder->assert_start();
+        $caller->Builder->assert_start();
 
-        my $result = $test_code->(@_);
+        # Guard against an assert dying...
+        my @args = @_;
+        my($result, $error) = $CLASS->try( sub {
+            return $test_code->(@args);
+        });
 
-        # And after-test.
-        $caller->builder->assert_end($result);
+        # ...because we have to pop the assert stack on matter what
+        $caller->Builder->assert_end($result);
+
+        # ...then rethrow the error
+        die $error if $error;
 
         return $result;
     };
@@ -128,28 +145,22 @@ CODE
 }
 
 
-=head2 METHODS
+# End the stream if it has been started (or if someone else started it)
+END {
+    my $builder = eval { Test::Builder2->singleton; };
 
-=head3 builder
+    _do_ending($builder) if $builder;
+}
 
-    my $builder = Your::Test->builder;
-    Your::Test->builder($builder);
 
-Gets/sets the Test::Builder2 for Your::Test.  Also changes C<$Builder> for Your::Test.
+sub _do_ending {
+    my $builder = shift;
 
-=cut
+    my $formatter = $builder->formatter;
 
-sub builder {
-    my $proto = shift;
-    my $class = ref $proto || $proto;
-
-    no strict 'refs';
-    if( @_ ) {
-        my $builder = shift;
-        *{$class . '::Builder'} = \$builder;
-    }
-
-    return ${$class . '::Builder'};
+    # Really we should be asking history, but history doesn't have that
+    # functionality yet
+    $builder->stream_end if $formatter->stream_depth;
 }
 
 1;

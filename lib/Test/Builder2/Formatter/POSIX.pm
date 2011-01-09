@@ -1,13 +1,18 @@
 package Test::Builder2::Formatter::POSIX;
 
-use strict;
 use Test::Builder2::Mouse;
 
 extends 'Test::Builder2::Formatter';
 
-sub INNER_begin {
-    my $self = shift;
-    $self->write(output => "Running $0\n");
+sub INNER_accept_event {
+    my $self  = shift;
+    my $event = shift;
+
+    if( $event->event_type eq 'stream start' ) {
+        $self->write(output => "Running $0\n");
+    }
+
+    return;
 }
 
 # Map Result types to POSIX types
@@ -20,16 +25,13 @@ my %type_map = (
     todo_skip   => 'UNTESTED',
 );
 
-sub INNER_result {
+sub INNER_accept_result {
     my($self, $result) = @_;
 
     my $type = $type_map{$result->type};
     $self->write(output => "$type: @{[$result->description]}\n");
 
     return;
-}
-
-sub INNER_end {
 }
 
 1;

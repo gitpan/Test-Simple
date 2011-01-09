@@ -2,6 +2,10 @@ package Test::Builder2::Formatter;
 
 use Carp;
 use Test::Builder2::Mouse;
+use Test::Builder2::Types;
+
+with 'Test::Builder2::Singleton',
+     'Test::Builder2::EventWatcher';
 
 
 =head1 NAME
@@ -62,111 +66,134 @@ sub _build_streamer {
 }
 
 
-=head3 new
+=head3 singleton
+
+  my $default_formatter = Test::Builder2::Formatter->singleton;
+
+Returns the default shared formatter object.
+
+The default Formatter is a Test::Builder2::Formatter::TAP object.
+
+=cut
+
+sub make_singleton {
+    require Test::Builder2::Formatter::TAP;
+    return Test::Builder2::Formatter::TAP->make_singleton;
+}
+
+
+=head3 create
 
   my $formatter = Test::Builder2::Formatter->new(%args);
 
-Sets up a new formatter object to feed results.
+Creates a new formatter object to feed results to.
 
-=head3 begin
+You want to call this on a subclass.
 
-  $formatter->begin;
-  $formatter->begin(%plan);
 
-Indicates that testing is going to begin.  Gives $formatter the
-opportunity to formatter a plan, do setup or formatter opening tags and
-headers.
+=head3 stream_depth
 
-A %plan can be given, but there are currently no common attributes.
+  my $stream_depth = $formatter->stream_depth;
 
-C<begin()> will only happen once per formatter instance.  Subsequent
-calls will be ignored.  This helps coordinating multiple clients all
-using the same formatter, they can all call C<begin()>.
+Returns how many C<stream start> events without C<stream end> events
+have been seen.
 
-Do not override C<begin()>.  Override C<INNER_begin()>.
+For example...
 
-=head3 has_begun
+    stream start
 
-  my $has_begun = $formatter->has_begun;
+Would indicate a level of 1.
 
-Returns whether begin() has been called.
+    stream start
+      stream start
+      stream end
+      stream start
+
+Would indicate a level of 2.
+
+A value of 0 indiciates the Formatter is not in a stream.
+
+A negative value will throw an exception.
 
 =cut
 
-has has_begun =>
+has stream_depth =>
   is            => 'rw',
-  isa           => 'Bool',
+  isa           => 'Test::Builder2::Positive_Int',
   default       => 0
 ;
 
-sub begin {
+
+=head3 stream_depth_inc
+
+=head3 stream_depth_dec
+
+Increment and decrement the C<stream_depth>.
+
+=cut
+
+sub stream_depth_inc {
     my $self = shift;
 
-    return if $self->has_begun;
+    $self->stream_depth( $self->stream_depth + 1 );
+}
 
-    $self->INNER_begin(@_);
-    $self->has_begun(1);
+sub stream_depth_dec {
+    my $self = shift;
+
+    $self->stream_depth( $self->stream_depth - 1 );
+}
+
+
+=head3 accept_event
+
+  $formatter->accept_event($event);
+
+Accept Events as they happen.
+
+It will increment and decrement C<stream_depth> as C<stream start> and
+C<stream end> events are seen.
+
+Do not override C<accept_event()>.  Override C<INNER_accept_event()>.
+
+=cut
+
+sub accept_event {
+    my $self  = shift;
+    my $event = shift;
+    my $ec    = shift;
+
+    my $type = $event->event_type;
+    if( $type eq 'stream start' ) {
+        $self->stream_depth_inc;
+    }
+    elsif( $type eq 'stream end' ) {
+        $self->stream_depth_dec;
+    }
+
+    $self->INNER_accept_event($event, $ec);
 
     return;
 }
 
+=head3 accept_result
 
-=head3 result
-
-  $formatter->result($result);
+  $formatter->accept_result($result);
 
 Formats a $result (an instance of L<Test::Builder2::Result>).
 
-It is an error to call result() after end().
+It is an error to call accept_result() outside a stream.
 
-Do not override C<result()>.  Override C<INNER_result()>.
-
-=cut
-
-sub result {
-    my $self = shift;
-
-    croak "result() called after end()" if $self->has_ended;
-
-    $self->INNER_result(@_);
-
-    return;
-}
-
-
-=head3 end
-
-  $formatter->end;
-  $formatter->end(%plan);
-
-Indicates that testing is done.  Gives $formatter the opportunity to
-clean up, output closing tags, save the results or whatever.
-
-No further results should be formatted after end().
-
-Do not override C<end()>.  Override C<INNER_end()>.
-
-=head3 has_ended
-
-  my $has_ended = $formatter->has_ended;
-
-Returns whether end() has been called.
+Do not override C<accept_result()>.  Override C<INNER_accept_result()>.
 
 =cut
 
-has has_ended =>
-  is            => 'rw',
-  isa           => 'Bool',
-  default       => 0
-;
-
-sub end {
+sub accept_result {
     my $self = shift;
 
-    return if $self->has_ended;
+    croak "accept_result() called outside a stream" if !$self->stream_depth;
 
-    $self->INNER_end(@_);
-    $self->has_ended(1);
+    $self->INNER_accept_result(@_);
 
     return;
 }
@@ -181,21 +208,6 @@ Outputs C<@text> to the named $destination.
 C<@text> is treated like C<print>, so it is simply concatenated.
 
 In reality, this is a hand off to C<< $formatter->streamer->write >>.
-
-
-=head2 Virtual Methods
-
-These methods must be defined by the subclasser.
-
-Do not override begin, result and end.  Override these instead.
-
-=head3 INNER_begin
-
-=head3 INNER_result
-
-=head3 INNER_end
-
-These implement the guts of begin, result and end.
 
 =cut
 

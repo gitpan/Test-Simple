@@ -6,6 +6,13 @@
 use strict;
 use warnings;
 
+use lib 't/lib';
+use absINC;
+BEGIN { require 't/test.pl'; }
+
+# Consistent formatting
+local $ENV{HARNESS_ACTIVE} = 0;
+
 {
     package TB2::More;
 
@@ -15,7 +22,7 @@ use warnings;
 
     install_test is => sub ($$;$) {
         my($have, $want, $name) = @_;
-        my $ok = $Builder->ok($have eq $want, $name);
+        my $ok = Builder->ok($have eq $want, $name);
 
         $ok->name( $ok->name . " from is" );
 
@@ -28,23 +35,30 @@ use warnings;
     };
 }
 
-my $tb = TB2::More->builder;
+my $tb = TB2::More->Builder;
 
 {
     package Local::Test;
 
-    $tb->formatter->streamer_class("Test::Builder2::Streamer::Debug");
+    # Isolate the builder
+    require Test::Builder2::Streamer::Debug;
+    $tb->event_coordinator->histories([Test::Builder2::History->create]);
+    $tb->formatter->streamer( Test::Builder2::Streamer::Debug->new );
 
     TB2::More->import( tests => 1 );
+
+#line 44
     is( 23, 42, "is 23 eq 42" );
 }
 
-use Test::More;
 
-is $tb->formatter->streamer->read_all, <<'END';
+
+is $tb->formatter->streamer->read_all, <<"END", "proper failure output from is()";
 TAP version 13
 1..1
 not ok 1 - is 23 eq 42 from is
+#   Failed test 'is 23 eq 42 from is'
+#   at $0 line 44.
 END
 
 done_testing();

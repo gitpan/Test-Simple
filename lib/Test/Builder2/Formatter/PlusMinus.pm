@@ -4,9 +4,18 @@ use Test::Builder2::Mouse;
 
 extends 'Test::Builder2::Formatter';
 
-sub INNER_begin {}
+sub INNER_accept_event {
+    my $self  = shift;
+    my $event = shift;
 
-sub INNER_result {
+    if( $event->event_type eq 'stream end' ) {
+        $self->write(output => "\n");
+    }
+
+    return;
+}
+
+sub INNER_accept_result {
     my($self, $result) = @_;
 
     my $out = $result->is_fail ? "-" : "+";
@@ -14,12 +23,5 @@ sub INNER_result {
 
     return;
 }
-
-sub INNER_end {
-    my $self = shift;
-
-    $self->write(output => "\n");
-}
-
 
 1;
