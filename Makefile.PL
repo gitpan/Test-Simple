@@ -104,6 +104,11 @@ perltidy:
 	find . -name '*.pm' | xargs perltidy -b
 	find . -name '*.pm.bak' | xargs rm
 
+.PHONY: Mouse
+
+Mouse:
+	$(PERL) "-MMousse::Maker" -e make_mousse 'Test::Builder2::Mouse' > lib/Test/Builder2/Mouse.pm
+
 MAKE
     }
 
@@ -119,6 +124,7 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
+            perl5.8.8
             perl5.8.9
             perl5.10.0
             perl5.10.1

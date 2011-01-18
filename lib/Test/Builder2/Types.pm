@@ -1,5 +1,6 @@
 package Test::Builder2::Types;
 
+use Test::Builder2::Mouse ();
 use Test::Builder2::Mouse::Util qw(load_class);
 use Test::Builder2::Mouse::Util::TypeConstraints;
 
@@ -39,6 +40,16 @@ A class name.  It will be loaded.
 subtype 'Test::Builder2::LoadableClass', as 'ClassName';
 coerce 'Test::Builder2::LoadableClass', from 'Str', via { load_class($_); $_ };
 
+
+=head3 Test::Builder2::LogLevel
+
+A valid level for a L<Test::Builder2::Event::Log>
+
+=cut
+
+subtype 'Test::Builder2::LogLevel' =>
+  as 'Int',
+  where { 0 <= $_ && $_ <= 7 };
 
 no Test::Builder2::Mouse::Util::TypeConstraints;
 
