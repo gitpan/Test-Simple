@@ -4,7 +4,7 @@ use 5.008001;
 use Test::Builder2::Mouse;
 use Test::Builder2::Types;
 
-our $VERSION = '2.00_04';
+our $VERSION = '2.00_05';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # Conditionally loads threads::shared and fixes up old versions
@@ -357,7 +357,7 @@ test might be run multiple times in the same process.
 =cut
 
 our $Level;
-
+my $Opened_Testhandles = 0;
 sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     my($self, %overrides) = @_;
 
@@ -395,6 +395,7 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     $self->{Todo_Stack} = [];
     $self->{Start_Todo} = 0;
 
+    $Opened_Testhandles = 0;
     $self->_dup_stdhandles;
 
     $self->last_test_seen(0);
@@ -1834,7 +1835,7 @@ sub _dup_stdhandles {
     return;
 }
 
-my $Opened_Testhandles = 0;
+
 sub _open_testhandles {
     my $self = shift;
 
@@ -1842,8 +1843,8 @@ sub _open_testhandles {
 
     # We dup STDOUT and STDERR so people can change them in their
     # test suites while still getting normal test output.
-    $Testout = $self->dup_filehandle(*STDOUT);
-    $Testerr = $self->dup_filehandle(*STDERR);
+    $Testout = $self->dup_filehandle(*STDOUT, $Testout);
+    $Testerr = $self->dup_filehandle(*STDERR, $Testerr);
 
     $Opened_Testhandles = 1;
 
