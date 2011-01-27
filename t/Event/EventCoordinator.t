@@ -18,11 +18,10 @@ note("EC->singleton initialization"); {
 
     my $formatters = $ec->formatters;
     is @$formatters, 1;
-    is $formatters->[0], Test::Builder2::Formatter->singleton, "formatters";
+    isa_ok $formatters->[0], "Test::Builder2::Formatter::TAP";
 
-    my $histories = $ec->histories;
-    is @$histories, 1;
-    is $histories->[0],  Test::Builder2::History->singleton, "histories";
+    my $history = $ec->history;
+    isa_ok $history, "Test::Builder2::History";
 }
 
 
@@ -33,13 +32,10 @@ note("EC->create init"); {
 
     my $formatters = $ec->formatters;
     is @$formatters, 1;
-    isa_ok $formatters->[0], "Test::Builder2::Formatter", "formatters";
-    isnt $formatters->[0], Test::Builder2::Formatter->singleton, "  not the singleton";
+    isa_ok $formatters->[0], "Test::Builder2::Formatter::TAP", "formatters";
 
-    my $histories = $ec->histories;
-    is @$histories, 1;
-    isa_ok $histories->[0], "Test::Builder2::History", "histories";
-    isnt $histories->[0], Test::Builder2::History->singleton, "  not the singleton";
+    my $history = $ec->history;
+    isa_ok $history, "Test::Builder2::History", "history";
 }
 
 
@@ -47,7 +43,7 @@ note("EC->create takes args"); {
     my %args = (
         early_watchers  => [MyEventCollector->new],
         late_watchers   => [MyEventCollector->new],
-        histories       => [MyEventCollector->new],
+        history         => MyEventCollector->new,
         formatters      => [MyEventCollector->new]
     );
 
@@ -56,13 +52,13 @@ note("EC->create takes args"); {
     );
 
     is $ec->early_watchers->[0], $args{early_watchers}->[0];
-    is $ec->late_watchers->[0], $args{late_watchers}->[0];
-    is $ec->histories->[0], $args{histories}->[0];
-    is $ec->formatters->[0], $args{formatters}->[0];
+    is $ec->late_watchers->[0],  $args{late_watchers}->[0];
+    is $ec->history,             $args{history};
+    is $ec->formatters->[0],     $args{formatters}->[0];
 
     my @want = (@{$args{early_watchers}},
                 @{$args{formatters}},
-                @{$args{histories}},
+                $args{history},
                 @{$args{late_watchers}}
                );
 
@@ -73,10 +69,9 @@ note("EC->create takes args"); {
 note("add and clear"); {
     my $ec = $CLASS->create(
         formatters => [],
-        histories  => []
     );
 
-    for my $getter (qw(early_watchers formatters histories late_watchers)) {
+    for my $getter (qw(early_watchers formatters late_watchers)) {
         note("  $getter");
         my $adder       = "add_$getter";
         my $clearer     = "clear_$getter";
@@ -99,7 +94,7 @@ note("posting"); {
     my %args = (
         early_watchers  => [MyEventCollector->new, MyEventCollector->new],
         late_watchers   => [MyEventCollector->new],
-        histories       => [MyEventCollector->new],
+        history         => MyEventCollector->new,
         formatters      => [MyEventCollector->new]
     );
 
@@ -114,7 +109,7 @@ note("posting"); {
 
     my @watchers = (@{$args{early_watchers}},
                     @{$args{late_watchers}},
-                    @{$args{histories}},
+                    $args{history},
                     @{$args{formatters}}
                    );
     for my $watcher (@watchers) {

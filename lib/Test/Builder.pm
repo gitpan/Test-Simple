@@ -4,7 +4,7 @@ use 5.008001;
 use Test::Builder2::Mouse;
 use Test::Builder2::Types;
 
-our $VERSION = '2.00_05';
+our $VERSION = '2.00_06';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # Conditionally loads threads::shared and fixes up old versions
@@ -13,7 +13,9 @@ use Test::Builder2::threads::shared;
 use Test::Builder2::Events;
 use Test::Builder2::EventCoordinator;
 
-with 'Test::Builder2::CanDupFilehandles', 'Test::Builder2::CanTry';
+with 'Test::Builder2::CanDupFilehandles',
+     'Test::Builder2::CanTry',
+     'Test::Builder2::CanLoad';
 
 
 =head1 NAME
@@ -200,9 +202,7 @@ sub subtest {
             1;
         };
 
-        if( !eval { $run_the_subtests->() } ) {
-            $error = $@;
-        }
+        (undef, $error) = $self->try(sub { $run_the_subtests->(); 1 });
     }
 
     # Restore the parent and the copied child.
@@ -213,7 +213,7 @@ sub subtest {
     $self->find_TODO(undef, 1, $child->{Parent_TODO});
 
     # Die *after* we restore the parent.
-    die $error if $error and !eval { $error->isa('Test::Builder::Exception') };
+    die $error if $error and !$self->try(sub { $error->isa('Test::Builder::Exception') });
 
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     return $child->finalize;
@@ -246,7 +246,7 @@ if the developer has not set a plan.
 
 sub _plan_handled {
     my $self = shift;
-    return $self->{Have_Plan} || $self->{No_Plan} || $self->{Skip_All};
+    return grep { $_->event_type eq 'set plan' } @{$self->history->events};
 }
 
 
@@ -284,8 +284,8 @@ sub finalize {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
     my $ok = 1;
     $self->parent->{Child_Name} = undef;
-    if ( $self->{Skip_All} ) {
-        $self->parent->skip($self->{Skip_All});
+    if ( $self->history->plan->skip ) {
+        $self->parent->skip($self->history->plan->skip_reason);
     }
     elsif ( not @{ $self->history->results } ) {
         $self->parent->ok( 0, sprintf q[No tests run for subtest "%s"], $self->name );
@@ -368,9 +368,6 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     $self->{Name}         = $0;
     $self->is_passing(1);
     $self->{Ending}       = 0;
-    $self->{Have_Plan}    = 0;
-    $self->{No_Plan}      = 0;
-    $self->{Have_Output_Plan} = 0;
     $self->{Done_Testing} = 0;
 
     $self->{Original_Pid} = $$;
@@ -378,13 +375,10 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     $self->{Indent}     ||= '';
 
     $self->{Exported_To}    = undef;
-    $self->{Expected_Tests} = 0;
 
-    $self->{Skip_All} = 0;
-
-    require Test::Builder2::Formatter::TAP;
+    $self->load("Test::Builder2::Formatter::TAP");
     $self->{EventCoordinator} = Test::Builder2::EventCoordinator->create(
-        formatters => [Test::Builder2::Formatter::TAP->create]
+        formatters => [Test::Builder2::Formatter::TAP->new]
     );
     $self->formatter->use_numbers(1);
 
@@ -398,9 +392,6 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     $Opened_Testhandles = 0;
     $self->_dup_stdhandles;
 
-    $self->last_test_seen(0);
-    $self->stream_started(0);
-
     return;
 }
 
@@ -408,14 +399,29 @@ sub event_coordinator {
     return $_[0]->{EventCoordinator};
 }
 
+use Test::Builder2::BlackHole;
+my $blackhole = Test::Builder2::BlackHole->new;
 sub formatter {
-    return $_[0]->event_coordinator->formatters->[0];
+    return $_[0]->event_coordinator->formatters->[0] || $blackhole;
 }
 
 sub history {
-    return $_[0]->event_coordinator->histories->[0];
+    return $_[0]->event_coordinator->history;
 }
 
+sub counter {
+    my $self = shift;
+
+    my $counter = $self->try(sub { $self->formatter->counter; });
+    return $counter if $counter;
+
+    # Fake a counter from the history object.
+    # This will not remember changes to the current_test()
+    $counter = Test::Builder2::Counter->new;
+    $counter->set($self->history->results_count);
+
+    return $counter;
+}
 
 =back
 
@@ -464,7 +470,7 @@ sub plan {
 
     local $Level = $Level + 1;
 
-    $self->croak("You tried to plan twice") if $self->{Have_Plan};
+    $self->croak("You tried to plan twice") if $self->_plan_handled;
 
     if( my $method = $plan_cmds{$cmd} ) {
         local $Level = $Level + 1;
@@ -514,16 +520,16 @@ sub expected_tests {
         $self->croak("Number of tests must be a positive integer.  You gave it '$max'")
           unless $max =~ /^\+?\d+$/;
 
-        $self->{Expected_Tests} = $max;
-
-        $self->stream_start;
+        $self->stream_start unless $self->stream_started;
 
         $self->set_plan(
             asserts_expected => $max
         );
     }
 
-    return $self->{Expected_Tests};
+    my $plan = $self->history->plan;
+    return 0 unless $plan;
+    return $plan->asserts_expected;
 }
 
 =item B<no_plan>
@@ -539,8 +545,6 @@ sub no_plan {
 
     $self->carp("no_plan takes no arguments") if $arg;
 
-    $self->{No_Plan}   = 1;
-
     $self->stream_start;
 
     $self->set_plan(
@@ -548,44 +552,6 @@ sub no_plan {
     );
 
     return 1;
-}
-
-=begin private
-
-=item B<_output_plan>
-
-  $tb->_output_plan($max);
-  $tb->_output_plan($max, $directive);
-  $tb->_output_plan($max, $directive => $reason);
-
-Handles displaying the test plan.
-
-If a C<$directive> and/or C<$reason> are given they will be output with the
-plan.  So here's what skipping all tests looks like:
-
-    $tb->_output_plan(0, "SKIP", "Because I said so");
-
-It sets C<< $tb->{Have_Output_Plan} >> and will croak if the plan was already
-output.
-
-=end private
-
-=cut
-
-sub _output_plan {
-    my($self, $max, $directive, $reason) = @_;
-
-    $self->carp("The plan was already output") if $self->{Have_Output_Plan};
-
-    my $plan = "1..$max";
-    $plan .= " # $directive" if defined $directive;
-    $plan .= " $reason"      if defined $reason;
-
-    $self->_print("$plan\n");
-
-    $self->{Have_Output_Plan} = 1;
-
-    return;
 }
 
 
@@ -627,11 +593,6 @@ Or to plan a variable number of tests:
 sub done_testing {
     my($self, $num_tests) = @_;
 
-    # If done_testing() specified the number of tests, shut off no_plan.
-    if( defined $num_tests ) {
-        $self->{No_Plan} = 0;
-    }
-
     if( $self->{Done_Testing} ) {
         my($file, $line) = @{$self->{Done_Testing}}[1,2];
         $self->croak(qq{done_testing() called twice.\n  First at $file line $line,\n  then });
@@ -640,27 +601,21 @@ sub done_testing {
 
     $self->{Done_Testing} = [caller];
 
-    if( $self->expected_tests && defined $num_tests && $num_tests != $self->expected_tests ) {
-        $self->ok(0, "planned to run @{[ $self->expected_tests ]} ".
-                     "but done_testing() expects $num_tests");
-    }
-
-    if( !$self->{Expected_Tests} ) {
-        if( defined $num_tests ) {
-            $self->{Expected_Tests} = $num_tests;
-        }
-        else {
-            $self->{Expected_Tests} = $self->current_test;
-        }
-    }
-
     $self->stream_start unless $self->stream_started;
 
-    my %plan = defined $num_tests ? ( asserts_expected => $num_tests ) : ( no_plan => 1 );
-    $self->set_plan( %plan ) unless $self->{Have_Plan};
+    if( defined $num_tests ) {
+        if( $self->expected_tests && $num_tests != $self->expected_tests ) {
+            $self->ok(0, "planned to run @{[ $self->expected_tests ]} ".
+                          "but done_testing() expects $num_tests");
+        }
 
-    # The wrong number of tests were run
-    $self->is_passing(0) if $self->{Expected_Tests} != $self->current_test;
+        if( $num_tests != $self->current_test ) {
+            $self->is_passing(0);
+        }
+    }
+
+    my %plan = defined $num_tests ? ( asserts_expected => $num_tests ) : ( no_plan => 1 );
+    $self->set_plan( %plan ) unless $self->_plan_handled;
 
     # No tests were run
     $self->is_passing(0) if $self->current_test == 0;
@@ -684,9 +639,15 @@ of expected tests).
 sub has_plan {
     my $self = shift;
 
-    return( $self->{Expected_Tests} ) if $self->{Expected_Tests};
-    return('no_plan') if $self->{No_Plan};
-    return(undef);
+    my $plan = $self->history->plan;
+    return undef if !defined $plan;
+
+    return 'no_plan' if $plan->no_plan;
+
+    my $want = $plan->asserts_expected;
+    return $want if $want;
+
+    return undef;
 }
 
 =item B<skip_all>
@@ -702,7 +663,6 @@ sub skip_all {
     my( $self, $reason ) = @_;
 
     $reason = defined $reason ? $reason : '';
-    $self->{Skip_All} = $self->parent ? $reason : 1;
 
     $self->stream_start;
 
@@ -766,7 +726,6 @@ sub stream_start {
     $self->event_coordinator->post_event(
         Test::Builder2::Event::StreamStart->new
     );
-    $self->stream_started(1);
 
     return;
 }
@@ -774,11 +733,9 @@ sub stream_start {
 sub stream_end {
     my $self = shift;
 
-    $self->last_test_seen( $self->current_test );
     $self->event_coordinator->post_event(
         Test::Builder2::Event::StreamEnd->new
     );
-    $self->stream_started(0);
 
     return;
 }
@@ -790,25 +747,13 @@ sub set_plan {
         Test::Builder2::Event::SetPlan->new( @_ )
     );
 
-    $self->{Have_Plan} = 1;
-
     return;
 }
 
 
-# The Formatter will reset its counter to 0 at the end of the stream
-# so we have to remember the last test number seen
-has last_test_seen =>
-  is            => 'rw',
-  isa           => 'Test::Builder2::Positive_Int',
-  default       => 0,
-;
-
-has stream_started =>
-  is            => 'rw',
-  isa           => 'Bool',
-  default       => 0
-;
+sub stream_started {
+    $_[0]->history->stream_depth > 0;
+}
 
 sub ok {
     my( $self, $test, $name ) = @_;
@@ -860,8 +805,6 @@ ERR
     # Check that we haven't violated the plan
     $self->_check_is_passing_plan();
 
-    $self->last_test_seen( $self->current_test );
-
     return $test ? 1 : 0;
 }
 
@@ -882,7 +825,7 @@ sub _unoverload {
     my $self = shift;
     my $type = shift;
 
-    $self->try(sub { require overload; }, die_on_fail => 1);
+    $self->load("overload");
 
     foreach my $thing (@_) {
         if( $self->_is_object($$thing) ) {
@@ -1259,8 +1202,6 @@ sub skip {
     $result = shared_clone($result);
     $self->event_coordinator->post_result( $result );
 
-    $self->last_test_seen( $self->current_test );
-
     return 1;
 }
 
@@ -1292,8 +1233,6 @@ sub todo_skip {
     );
     $result = shared_clone($result);
     $self->event_coordinator->post_result( $result );
-
-    $self->last_test_seen( $self->current_test );
 
     return 1;
 }
@@ -1402,7 +1341,10 @@ sub _regex_ok {
         my $test;
         my $context = $self->_caller_context;
 
-        local( $@, $!, $SIG{__DIE__} );    # isolate eval
+        # isolate eval
+        local $@;
+        local $!;
+        local $SIG{__DIE__};
 
         $test = eval $context . q{$test = $this =~ /$usable_regex/ ? 1 : 0};
 
@@ -1444,8 +1386,8 @@ sub is_fh {
     return 1 if ref $maybe_fh  eq 'GLOB';    # its a glob ref
     return 1 if ref \$maybe_fh eq 'GLOB';    # its a glob
 
-    return eval { $maybe_fh->isa("IO::Handle") } ||
-           eval { tied($maybe_fh)->can('TIEHANDLE') };
+    return $self->try(sub { $maybe_fh->isa("IO::Handle") }) ||
+           $self->try(sub { tied($maybe_fh)->can('TIEHANDLE') });
 }
 
 =back
@@ -1681,7 +1623,7 @@ sub explain {
     return map {
         ref $_
           ? do {
-            $self->try(sub { require Data::Dumper }, die_on_fail => 1);
+            $self->load("Data::Dumper");
 
             my $dumper = Data::Dumper->new( [$_] );
             $dumper->Indent(1)->Terse(1);
@@ -1929,7 +1871,7 @@ can erase history if you really want to.
 sub current_test {
     my( $self, $num ) = @_;
 
-    my $counter = $self->formatter->counter;
+    my $counter = $self->counter;
 
     if( defined $num ) {
         my $history = $self->history;
@@ -1950,7 +1892,7 @@ sub current_test {
                     reason      => 'incrementing test number',
                     test_number => $_
                 );
-                $history->accept_result( shared_clone($result) );
+                $history->accept_result( shared_clone($result), $self->event_coordinator );
             }
         }
         # If backward, wipe history.  Its their funeral.
@@ -1959,11 +1901,10 @@ sub current_test {
         }
 
         $counter->set($num);
-        $self->last_test_seen($num);
         return;
     }
     else {
-        return $counter->get || $self->last_test_seen;
+        return $counter->get;
     }
 }
 
@@ -2357,8 +2298,11 @@ sub _ending {
     return if $self->no_ending;
     return if $self->{Ending}++;
 
+    my $history = $self->history;
+    my $plan    = $history->plan;
+
     # End the stream unless we (or somebody else) already ended it
-    $self->stream_end if $self->stream_started and $self->formatter->stream_depth;
+    $self->stream_end if $history->stream_depth;
 
     my $real_exit_code = $?;
 
@@ -2370,13 +2314,13 @@ sub _ending {
     }
 
     # Ran tests but never declared a plan or hit done_testing
-    if( !$self->{Have_Plan} and $self->current_test ) {
+    if( !$self->_plan_handled and $self->current_test ) {
         $self->is_passing(0);
     }
 
     # Exit if plan() was never called.  This is so "require Test::Simple"
     # doesn't puke.
-    if( !$self->{Have_Plan} ) {
+    if( !$self->_plan_handled ) {
         return;
     }
 
@@ -2386,16 +2330,11 @@ sub _ending {
         return;
     }
     # Figure out if we passed or failed and print helpful messages.
-    my $test_results = $self->history->results;
+    my $test_results = $history->results;
     if(@$test_results) {
-        # The plan?  We have no plan.
-        if( $self->{No_Plan} ) {
-            $self->{Expected_Tests} = $self->current_test;
-        }
-
+        my $num_extra = $plan->no_plan ? 0 : $self->current_test - $plan->asserts_expected;
+            
         my $num_failed = grep $_->is_fail, @{$test_results}[ 0 .. $self->current_test - 1 ];
-
-        my $num_extra = $self->current_test - $self->{Expected_Tests};
 
         if( $num_extra != 0 ) {
             $self->is_passing(0);
@@ -2426,7 +2365,7 @@ FAIL
 
         _my_exit($exit_code) && return;
     }
-    elsif( $self->{Skip_All} ) {
+    elsif( $plan->skip ) {
         _my_exit(0) && return;
     }
     elsif($real_exit_code) {

@@ -4,8 +4,7 @@ use Carp;
 use Test::Builder2::Mouse;
 use Test::Builder2::StackBuilder;
 
-with 'Test::Builder2::Singleton',
-     'Test::Builder2::EventWatcher',
+with 'Test::Builder2::EventWatcher',
      'Test::Builder2::CanTry';
 
 
@@ -17,11 +16,10 @@ Test::Builder2::History - Manage the history of test results
 
     use Test::Builder2::History;
 
-    # This is a shared singleton object
-    my $history = Test::Builder2::History->singleton;
+    my $history = Test::Builder2::History->new;
     my $result  = Test::Builder2::Result->new_result( pass => 1 );
 
-    $history->accept_result( $result );
+    $history->accept_result( $result, $ec );
     $history->is_passing;
 
 =head1 DESCRIPTION
@@ -32,20 +30,9 @@ This object stores and manages the history of test results.
 
 =head2 Constructors
 
-=head3 singleton
+=head3 new
 
-    my $history = Test::Builder2::History->singleton;
-    Test::Builder2::History->singleton($history);
-
-Gets/sets the shared instance of the history object.
-
-Test::Builder2::History is a singleton.  singleton() will return the same
-object every time so all users can have a shared history.  If you want
-your own history, call create() instead.
-
-=head3 create
-
-    my $history = Test::Builder2::History->create;
+    my $history = Test::Builder2::History->new;
 
 Creates a new, unique History object.
 
@@ -74,7 +61,25 @@ Get the count of events that are on the stack.
 =cut
 
 buildstack events => 'Any';
-sub accept_event { shift->events_push(shift) }
+sub accept_event {
+    my $self = shift;
+    my $event = shift;
+
+    $self->events_push($event);
+
+    my $type = $event->event_type;
+    if( $type eq 'stream start' ) {
+        $self->_stream_depth_inc;
+    }
+    elsif( $type eq 'stream end' ) {
+        $self->_stream_depth_dec;
+    }
+    elsif( $type eq 'set plan' ) {
+        $self->plan($event);
+    }
+
+    return;
+}
 sub event_count  { shift->events_count }
 sub has_events   { shift->events_count > 0 }
 
@@ -199,6 +204,81 @@ Returns true if we have not yet seen a failing test.
 =cut
 
 sub is_passing { shift->fail_count == 0 }
+
+=head3 plan
+
+    my $plan = $history->plan;
+
+Returns the plan event for the current stream, if any.
+
+=cut
+
+has plan =>
+  is            => 'rw',
+  isa           => 'Test::Builder2::Event',
+;
+
+
+=head2 State
+
+History tracks some basic information about the state of the test
+surmised by watching the events go by.
+
+=head3 stream_depth
+
+  my $stream_depth = $history->stream_depth;
+
+Returns how many C<stream start> events without C<stream end> events
+have been seen.
+
+For example...
+
+    stream start
+
+Would indicate a level of 1.
+
+    stream start
+      stream start
+      stream end
+      stream start
+
+Would indicate a level of 2.
+
+A value of 0 indiciates the Formatter is not in a stream.
+
+A negative value will throw an exception.
+
+=cut
+
+has stream_depth =>
+  is            => 'rw',
+  isa           => 'Test::Builder2::Positive_Int',
+  default       => 0
+;
+
+=begin private
+
+=head3 _stream_depth_inc
+
+=head3 _stream_depth_dec
+
+Increment and decrement the C<stream_depth>.
+
+=end private
+
+=cut
+
+sub _stream_depth_inc {
+    my $self = shift;
+
+    $self->stream_depth( $self->stream_depth + 1 );
+}
+
+sub _stream_depth_dec {
+    my $self = shift;
+
+    $self->stream_depth( $self->stream_depth - 1 );
+}
 
 
 =head2 HISTORY INTERACTION

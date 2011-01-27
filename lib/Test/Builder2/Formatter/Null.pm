@@ -13,7 +13,7 @@ Test::Builder2::Formatter::Null - A formatter that does nothing
 =head1 SYNOPSIS
 
     use Test::Builder::Formatter::Null;
-    my $null = Test::Builder2::Formatter::Null->create;
+    my $null = Test::Builder2::Formatter::Null->new;
 
     # Make your tests output nothing
     $tb->formatter($null);
@@ -26,7 +26,7 @@ produce no output.
 
 =cut
 
-sub INNER_accept_event  {}
-sub INNER_accept_result {}
+sub accept_event  {}
+sub accept_result {}
 
 1;

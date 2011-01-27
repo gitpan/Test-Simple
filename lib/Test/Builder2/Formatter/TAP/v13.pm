@@ -9,24 +9,9 @@ use Test::Builder2::Types;
 use Test::Builder2::threads::shared;
 
 extends 'Test::Builder2::Formatter';
-
-has indent_nesting_with =>
-  is            => 'rw',
-  isa           => 'Str',
-  default       => "    "
-;
+with 'Test::Builder2::CanLoad';
 
 sub default_streamer_class { 'Test::Builder2::Streamer::TAP' }
-
-
-sub make_singleton {
-    my $class = shift;
-
-    require Test::Builder2::Counter;
-    $class->create(
-        counter => shared_clone( Test::Builder2::Counter->create )
-    );
-}
 
 
 =head1 NAME
@@ -38,8 +23,8 @@ Test::Builder2::Formatter::TAP::v13 - Formatter as TAP version 13
   use Test::Builder2::Formatter::TAP::v13;
 
   my $formatter = Test:::Builder2::Formatter::TAP::v13->new;
-  $formatter->accept_event($event);
-  $formatter->accept_result($result);
+  $formatter->accept_event($event,   $ec);
+  $formatter->accept_result($result, $ec);
 
 
 =head1 DESCRIPTION
@@ -72,30 +57,13 @@ sub _prepend {
     return $msg;
 }
 
-sub _add_indentation {
-    my $self = shift;
-    my $output = shift;
-
-    my $level = $self->stream_depth - 1;
-    return unless $level;
-
-    my $indent = $self->indent_nesting_with x $level;
-    for my $idx (0..$#{$output}) {
-        $output->[$idx] = $self->_prepend($output->[$idx], $indent);
-    }
-
-    return;
-}
-
 sub out {
     my $self = shift;
-    $self->_add_indentation(\@_);
     $self->write(out => @_);
 }
 
 sub err {
     my $self = shift;
-    $self->_add_indentation(\@_);
     $self->write(err => @_);
 }
 
@@ -119,8 +87,8 @@ has counter =>
    is => 'rw',
    isa => 'Test::Builder2::Counter',
    default => sub {
-      require Test::Builder2::Counter;
-      return Test::Builder2::Counter->create;
+      $_[0]->load('Test::Builder2::Counter');
+      return Test::Builder2::Counter->new;
    },
 ;
 
@@ -147,10 +115,9 @@ my %event_dispatch = (
     "set plan"          => "accept_set_plan",
 );
 
-sub INNER_accept_event {
+sub accept_event {
     my $self  = shift;
-    my $event = shift;
-    my $ec    = shift;
+    my($event, $ec) = @_;
 
     my $type = $event->event_type;
     my $method = $event_dispatch{$type};
@@ -201,12 +168,12 @@ has show_ending_commentary =>
 
 sub accept_stream_start {
     my $self = shift;
+    my($event, $ec) = @_;
 
     # Only output the TAP version in the first stream
     # and if we're showing the version
     # and if we're showing header information
     $self->out("TAP version 13\n") if
-      $self->stream_depth == 1 and
       $self->show_tap_version  and
       $self->show_header;
 
@@ -223,9 +190,6 @@ sub accept_stream_end {
 
     $self->output_ending_commentary($ec);
 
-    # New counter
-    $self->counter( Test::Builder2::Counter->create );
-
     return;
 }
 
@@ -237,9 +201,9 @@ has plan =>
 
 sub accept_set_plan {
     my $self  = shift;
-    my $event = shift;
+    my($event, $ec) = @_;
 
-    croak "'set plan' event outside of a stream" if !$self->stream_depth;
+    croak "'set plan' event outside of a stream" if !$ec->history->stream_depth;
 
     $self->plan( $event );
 
@@ -319,7 +283,7 @@ sub output_ending_commentary {
     my $tests_run = $self->counter->get;
     my $w_test    = _inflect("test", $tests_run);
 
-    my $tests_failed   = $ec->histories->[0]->fail_count;
+    my $tests_failed   = $ec->history->fail_count;
     my $tests_planned  = !$plan                         ? 0
                        : $plan->no_plan                 ? $tests_run
                        :                                  $plan->asserts_expected
@@ -376,7 +340,7 @@ sub output_ending_commentary {
 }
 
 
-=head3 INNER_accept_result
+=head3 accept_result
 
 Takes a C<Test::Builder2::Result> as an argument and displays the
 result details.
@@ -389,7 +353,7 @@ has seen_results =>
   default       => 0
 ;
 
-sub INNER_accept_result {
+sub accept_result {
     my $self  = shift;
     my $result = shift;
 
