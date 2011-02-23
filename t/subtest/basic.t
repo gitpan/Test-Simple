@@ -15,10 +15,7 @@ use warnings;
 
 use Test::Builder::NoOutput;
 
-use Test::More;
-plan skip_all => "subtests are broken";
-
-plan tests => 19;
+use Test::More tests => 19;
 
 # Formatting may change if we're running under Test::Harness.
 $ENV{HARNESS_ACTIVE} = 0;
@@ -181,8 +178,7 @@ END
         plan skip_all => 'subtest with skip_all';
         ok 0, 'This should never be run';
     };
-    my @details = Test::More->builder->details;
-    is $details[-1]{type}, 'skip',
+    is +Test::Builder->new->{Test_Results}[-1]{type}, 'skip',
         'Subtests which "skip_all" are reported as skipped tests';
 }
 

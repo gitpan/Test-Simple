@@ -7,9 +7,6 @@ BEGIN {
     }
 }
 
-use lib 't/lib';
-use absINC;
-
 # Can't use Test.pm, that's a 5.005 thing.
 package My::Test;
 
@@ -17,9 +14,6 @@ package My::Test;
 # Test::Builder's own and the ending diagnostics don't come out right.
 require Test::Builder;
 my $TB = Test::Builder->create;
-$TB->plan( skip_all => "failure diagnostics not implemented" );
-
-__END__
 $TB->plan(tests => 3);
 
 
@@ -28,7 +22,7 @@ package main;
 require Test::Simple;
 
 chdir 't';
-
+push @INC, '../t/lib/';
 require Test::Simple::Catch;
 my($out, $err) = Test::Simple::Catch::caught();
 local $ENV{HARNESS_ACTIVE} = 0;
@@ -37,8 +31,8 @@ Test::Simple->import(tests => 1);
 exit 250;
 
 END {
-     $TB->is_eq($out->read, <<OUT);
- 1..1
+    $TB->is_eq($out->read, <<OUT);
+1..1
 OUT
 
     $TB->is_eq($err->read, <<ERR);

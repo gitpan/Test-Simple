@@ -2,9 +2,23 @@
 
 use strict;
 
-BEGIN { require 't/test.pl' }
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
+chdir 't';
 
 use Test::Builder;
+
+# The real Test::Builder
+my $Test = Test::Builder->new;
+$Test->plan( tests => 6 );
+
 
 # The one we're going to test.
 my $tb = Test::Builder->create();
@@ -15,7 +29,7 @@ END { 1 while unlink($tmpfile) }
 # Test output to a file
 {
     my $out = $tb->output($tmpfile);
-    ok( defined $out );
+    $Test->ok( defined $out );
 
     print $out "hi!\n";
     close *$out;
@@ -25,7 +39,7 @@ END { 1 while unlink($tmpfile) }
     chomp(my $line = <IN>);
     close IN;
 
-    is($line, 'hi!');
+    $Test->is_eq($line, 'hi!');
 }
 
 
@@ -42,7 +56,7 @@ END { 1 while unlink($tmpfile) }
     my @lines = <IN>;
     close IN;
 
-    like($lines[1], qr/Hello!/);
+    $Test->like($lines[1], qr/Hello!/);
 }
 
 
@@ -52,7 +66,7 @@ END { 1 while unlink($tmpfile) }
     my $out = $tb->output(\$scalar);
 
     print $out "Hey hey hey!\n";
-    is($scalar, "Hey hey hey!\n");
+    $Test->is_eq($scalar, "Hey hey hey!\n");
 }
 
 
@@ -65,7 +79,7 @@ END { 1 while unlink($tmpfile) }
     print $out "To output ";
     print $err "and beyond!";
 
-    is($scalar, "To output and beyond!", "One scalar, two filehandles");
+    $Test->is_eq($scalar, "To output and beyond!", "One scalar, two filehandles");
 }
 
 
@@ -83,15 +97,17 @@ END { 1 while unlink($tmpfile) }
     $tb->skip("wibble\nmoof");
     $tb->todo_skip("todo\nskip\n");
 
-    is( $fakeout, <<'OUTPUT' );
-TAP version 13
+    $Test->is_eq( $fakeout, <<OUTPUT ) || print STDERR $fakeout;
 1..5
 ok 1 - ok
-ok 2 - ok\n
-ok 3 - ok, like\nok
-ok 4 # SKIP wibble\nmoof
-not ok 5 # TODO SKIP todo\nskip\n
+ok 2 - ok
+# 
+ok 3 - ok, like
+# ok
+ok 4 # skip wibble
+# moof
+not ok 5 # TODO & SKIP todo
+# skip
+# 
 OUTPUT
 }
-
-done_testing;
