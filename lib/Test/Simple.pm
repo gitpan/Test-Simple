@@ -1,17 +1,14 @@
 package Test::Simple;
 
-use 5.006;
-
+use 5.008001;
 use strict;
 
-our $VERSION = '0.98';
+our $VERSION = '2.00_07';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-use Test::Builder::Module;
-our @ISA    = qw(Test::Builder::Module);
-our @EXPORT = qw(ok);
+use Test::Builder2::Module;
+our @EXPORT = qw(ok done_testing);
 
-my $CLASS = __PACKAGE__;
 
 =head1 NAME
 
@@ -76,8 +73,12 @@ will do what you mean (fail if stuff is empty)
 
 =cut
 
-sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
-    return $CLASS->builder->ok(@_);
+install_test(ok => sub ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+    return Builder->ok(@_);
+});
+
+sub done_testing {
+    Builder->stream_end;
 }
 
 =back

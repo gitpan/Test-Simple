@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.006;
+use 5.008001;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -24,7 +24,7 @@ CHANGE_WARN
 
         sleep 5;
     }
-    if( $] >= 5.008001 && $Config{useithreads} &&
+    if( $Config{useithreads} &&
         $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
       ) 
     {
@@ -69,22 +69,25 @@ WriteMakefile(
         %Prereqs
     },
 
-    # Added to the core in 5.7.3 and also 5.6.2.
-    INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
+    INSTALLDIRS     => 'perl',
 
     test        => {
-        TESTS           => 't/*.t t/*/*.t',
+        TESTS           => 't/*.t t/*/*.t t/*/*/*.t',
     },
 
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => '5.8.1')),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://test-more.googlecode.com',
-            bugtracker  =>      'http://github.com/schwern/test-more/issues',
-            repository  =>      'http://github.com/schwern/test-more/tree/master',
+            bugtracker  =>      'http://github.com/schwern/test-more/issues/labels/Test-Builder2',
+            repository  =>      'http://github.com/schwern/test-more/tree/Test-Builder2',
             MailingList =>      'http://groups.google.com/group/test-more-users',
+        },
+        no_index => {
+            directory => ["lib/Test/Builder2/Mouse/"],
+            file      => ["lib/Test/Builder2/Mouse.pm"],
         },
     }))
 );
@@ -101,6 +104,11 @@ perltidy:
 	find . -name '*.pm' | xargs perltidy -b
 	find . -name '*.pm.bak' | xargs rm
 
+.PHONY: Mouse
+
+Mouse:
+	$(PERL) "-MMousse::Maker" -e make_mousse 'Test::Builder2::Mouse' > lib/Test/Builder2/Mouse.pm
+
 MAKE
     }
 
@@ -116,10 +124,12 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
-            perl5.12.1
-            perl5.10.1
+            perl5.8.8
             perl5.8.9
-            perl5.6.2
+            perl5.10.0
+            perl5.10.1
+            perl5.12.0
+            perl5.12.1
         );
 
         for my $perl (@perls) {

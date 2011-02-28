@@ -17,10 +17,8 @@ use strict;
 # Normalize the output whether we're running under Test::Harness or not.
 local $ENV{HARNESS_ACTIVE} = 0;
 
-use Test::Builder;
+BEGIN { require 't/test.pl' }
 use Test::Builder::NoOutput;
-
-my $Test = Test::Builder->new;
 
 # Set up a builder to record some failing tests.
 {
@@ -35,7 +33,8 @@ my $Test = Test::Builder->new;
     $tb->ok( 0, 'damnit' );
     $tb->_ending;
 
-    $Test->is_eq($tb->read('out'), <<OUT);
+    is($tb->read('out'), <<OUT);
+TAP version 13
 1..5
 ok 1 - passing
 ok 2 - passing still
@@ -44,13 +43,13 @@ not ok 4 - oh no!
 not ok 5 - damnit
 OUT
 
-    $Test->is_eq($tb->read('err'), <<ERR);
+    is($tb->read('err'), <<ERR);
 #   Failed test 'oh no!'
 #   at $0 line 31.
 #   Failed test 'damnit'
 #   at $0 line 32.
-# Looks like you failed 2 tests of 5.
+# 2 tests of 5 failed.
 ERR
 
-    $Test->done_testing(2);
+    done_testing(2);
 }

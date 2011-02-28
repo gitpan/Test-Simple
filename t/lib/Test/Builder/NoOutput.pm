@@ -39,7 +39,6 @@ $stream's are...
 
     out         output()
     err         failure_output()
-    todo        todo_output()
     all         all outputs
 
 Defaults to 'all'.
@@ -56,17 +55,15 @@ sub create {
         all  => '',
         out  => '',
         err  => '',
-        todo => '',
     );
     $self->{_outputs} = \%outputs;
 
-    tie *OUT,  "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{out};
-    tie *ERR,  "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{err};
-    tie *TODO, "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{todo};
+    require Test::Builder::Tee;
+    tie *OUT,  "Test::Builder::Tee", \$outputs{all}, \$outputs{out};
+    tie *ERR,  "Test::Builder::Tee", \$outputs{all}, \$outputs{err};
 
     $self->output(*OUT);
     $self->failure_output(*ERR);
-    $self->todo_output(*TODO);
 
     return $self;
 }
@@ -86,37 +83,6 @@ sub read {
     }
 
     return $out;
-}
-
-
-package Test::Builder::NoOutput::Tee;
-
-# A cheap implementation of IO::Tee.
-
-sub TIEHANDLE {
-    my($class, @refs) = @_;
-
-    my @fhs;
-    for my $ref (@refs) {
-        my $fh = Test::Builder->_new_fh($ref);
-        push @fhs, $fh;
-    }
-
-    my $self = [@fhs];
-    return bless $self, $class;
-}
-
-sub PRINT {
-    my $self = shift;
-
-    print $_ @_ for @$self;
-}
-
-sub PRINTF {
-    my $self   = shift;
-    my $format = shift;
-
-    printf $_ @_ for @$self;
 }
 
 1;

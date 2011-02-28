@@ -1,9 +1,103 @@
-0.98  Wed, 23 Feb 2011 14:38:02 +1100
-    Bug Fixes
-    * subtest() should not fail if $? is non-zero. (Aaron Crane)
+See README and version control log for Test::Builder2 changes.
 
-    Docs
-    * The behavior of is() and undef has been documented. (Pedro Melo)
+2.00_07  Mon, 28 Feb 2011 23:53:22 +1100
+    Incompatible Changes (since 2.00_01)
+    * TB2::Event::Log now uses symbolic levels, not numeric.  This lets us
+      add new levels later. [github 111]
+    * Event log levels have been lower cased.
+    * The emergency and critical log levels have been removed.  They didn't have
+      a use case.
+    * TB2::Event::Log->levels now returns in order from lowest to highest.
+
+    New Features
+    * Added TB2::Event::Log->between_levels() to compare log levels.
+    * The TAP formatter now respects log events.
+    * Test::Builder->diag and ->note now use log events and the
+      formatter.
+
+    Documentation
+    * The suggested meanings of event log levels are now documented.
+
+    Bug Fixes
+    * Fixed a skip() or todo_skip() called before a plan.  [github 132]
+
+
+2.00_06  Thu, 27 Jan 2011 09:58:35 +1000
+    Incompatible Changes (since 2.00_01)
+    * The EventCoordinator now only has one history object.
+      histories() is now history().  clear_history() and add_histories()
+      are gone. [github 115]
+    * Subtest handling has been removed from the TAP formatter.  The design
+      was wrong.  It will come back later in a better form [github 120]
+    * Test::Builder2::Counter, History and Formatter are no longer singletons.
+      This is unnecessary, use the objects provided by your EventCoordinator.
+      [github 117]
+    * stream_depth() is now a method on the History object, not the TAP
+      formatter.  This makes it available to all event watchers. [github 118]
+    * history is now posted events before the formatter.  This lets the
+      formatter ask the history object about the test state.
+    * INNER_accept_event and INNER_accept_result are now gone from the
+      Formatter.  Write accept_event and accept_result normally.
+    * TB2->ok will now start the stream if there is not one already
+
+    New Features
+    * Added Test::Builder2::CanLoad to protect $! and $@ from tests loading
+      modules internally.
+    * Added Test::Builder2::Tester to test Test:: modules independent of
+      their format. [github 112]
+    * Added Test::Builder2::History->plan to capture the plan event so
+      builders don't have to
+    * Test::Builder no longer tracks the plan on its own, it uses the
+      shared History object. [github 125]
+
+    Bug Fixes
+    * More $@ and $! protection.
+    * Test::Builder now works with non-TAP formatters (or no formatter at all)
+
+
+2.00_05  Mon, 24 Jan 2011 14:52:27 +1000
+    Bug Fix
+    * reset() was not grabbing a fresh copy of STDOUT and STDERR
+
+    Test Fix
+    * Fixed t/Builder/fork_with_new_stdout.t on Windows.
+
+
+2.00_04  Tue Jan 18 11:50:48 EST 2011
+    Test Fix
+    * Work around a qr// bug in Debian etch's perl in t/Builder2/NoWarnings.t
+    * Tests looking for Mouse can now correctly find it.
+
+    New Features
+    * Added a Log event (nothing using it yet)
+    * Added a Comment event (nothing using it yet)
+
+    Bug Fixes
+    * Upgraded Mouse to 0.87
+    * Fixed the SimpleHTML example
+    * TB2::Streamer::TAP->error_fh could get accidentally initialized
+      to undef.
+
+
+2.00_03  Mon Jan 10 09:38:22 EST 2011
+    Test Fix
+    * Casing mistake in t/CanDupFilehandles.t
+
+
+2.00_02  Sun Jan  9 21:20:30 EST 2011
+    Second alpha release of Test::Builder2.
+    Technology Demonstrator.
+    Design complete.
+    Threads broken.
+    Subtests broken.
+    Test::Builder converted to use Test::Builder2 infrastructure.
+    Let's see how much of CPAN this breaks.
+
+
+2.00_01  Mon Sep  6 14:42:38 2010 -0700
+    First alpha release of Test::Builder2.
+    Technology Preview.
+    Very incomplete.
 
 
 0.97_01  Fri Aug 27 22:50:30 PDT 2010
