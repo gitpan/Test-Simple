@@ -16,9 +16,7 @@ BEGIN {
 use strict;
 use warnings;
 
-use Test::More;
-plan skip_all => "subtests are broken";
-plan tests => 4;
+use Test::More tests => 4;
 use Test::Builder;
 use Test::Builder::Tester;
 

@@ -15,10 +15,7 @@ use warnings;
 
 use Test::Builder::NoOutput;
 
-use Test::More;
-plan skip_all => "subtests are broken";
-
-plan tests => 19;
+use Test::More tests => 19;
 
 # Formatting may change if we're running under Test::Harness.
 $ENV{HARNESS_ACTIVE} = 0;
@@ -43,7 +40,6 @@ $ENV{HARNESS_ACTIVE} = 0;
         $tb->ok( $_, "We're on $_" );
     }
 
-    $tb->reset_outputs;
     is $tb->read, <<"END", 'Output should nest properly';
 1..7
 ok 1 - We're on 1
@@ -89,7 +85,6 @@ END
     }
 
     $tb->_ending;
-    $tb->reset_outputs;
     is $tb->read, <<"END", 'We should allow arbitrary nesting';
 ok 1 - We're on 1
 # We ran 1
@@ -127,7 +122,6 @@ END
         $child->ok(3);
         $child->finalize;
     }
-    $tb->reset_outputs;
     is $tb->read, <<"END", 'Previous child failures should not force subsequent failures';
     1..3
     ok 1
@@ -181,8 +175,7 @@ END
         plan skip_all => 'subtest with skip_all';
         ok 0, 'This should never be run';
     };
-    my @details = Test::More->builder->details;
-    is $details[-1]{type}, 'skip',
+    is +Test::Builder->new->{Test_Results}[-1]{type}, 'skip',
         'Subtests which "skip_all" are reported as skipped tests';
 }
 
@@ -198,7 +191,6 @@ END
     $child->todo_end;
     $child->finalize;
     $tb->_ending;
-    $tb->reset_outputs;
     is $tb->read, <<"END", 'TODO tests should not make the parent test fail';
 1..1
     1..1
@@ -213,7 +205,6 @@ END
     my $child = $tb->child;
     $child->finalize;
     $tb->_ending;
-    $tb->reset_outputs;
     my $expected = <<"END";
 1..1
 not ok 1 - No tests run for subtest "Child of $0"

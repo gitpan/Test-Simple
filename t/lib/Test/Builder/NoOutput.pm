@@ -3,6 +3,7 @@ package Test::Builder::NoOutput;
 use strict;
 use warnings;
 
+use Symbol qw(gensym);
 use base qw(Test::Builder);
 
 
@@ -39,6 +40,7 @@ $stream's are...
 
     out         output()
     err         failure_output()
+    todo        todo_output()
     all         all outputs
 
 Defaults to 'all'.
@@ -55,18 +57,22 @@ sub create {
         all  => '',
         out  => '',
         err  => '',
+        todo => '',
     );
     $self->{_outputs} = \%outputs;
 
-    require Test::Builder::Tee;
-    tie *OUT,  "Test::Builder::Tee", \$outputs{all}, \$outputs{out};
-    tie *ERR,  "Test::Builder::Tee", \$outputs{all}, \$outputs{err};
+    my($out, $err, $todo) = map { gensym() } 1..3;
+    tie *$out,  "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{out};
+    tie *$err,  "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{err};
+    tie *$todo, "Test::Builder::NoOutput::Tee", \$outputs{all}, \$outputs{todo};
 
-    $self->output(*OUT);
-    $self->failure_output(*ERR);
+    $self->output($out);
+    $self->failure_output($err);
+    $self->todo_output($todo);
 
     return $self;
 }
+
 
 sub read {
     my $self = shift;
@@ -83,6 +89,37 @@ sub read {
     }
 
     return $out;
+}
+
+
+package Test::Builder::NoOutput::Tee;
+
+# A cheap implementation of IO::Tee.
+
+sub TIEHANDLE {
+    my($class, @refs) = @_;
+
+    my @fhs;
+    for my $ref (@refs) {
+        my $fh = Test::Builder->_new_fh($ref);
+        push @fhs, $fh;
+    }
+
+    my $self = [@fhs];
+    return bless $self, $class;
+}
+
+sub PRINT {
+    my $self = shift;
+
+    print $_ @_ for @$self;
+}
+
+sub PRINTF {
+    my $self   = shift;
+    my $format = shift;
+
+    printf $_ @_ for @$self;
 }
 
 1;

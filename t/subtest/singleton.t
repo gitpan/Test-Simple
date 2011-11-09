@@ -12,9 +12,7 @@ BEGIN {
 
 use strict;
 use warnings;
-use Test::More;
-plan skip_all => "subtests are broken";
-plan tests => 3;
+use Test::More tests => 3;
 
 {
 

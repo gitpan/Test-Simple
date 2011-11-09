@@ -1,6 +1,6 @@
 package Test::More;
 
-use 5.008001;
+use 5.006;
 use strict;
 use warnings;
 
@@ -17,10 +17,10 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '2.00_07';
+our $VERSION = '0.98_01';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-use Test::Builder::Module;
+use Test::Builder::Module 0.98;
 our @ISA    = qw(Test::Builder::Module);
 our @EXPORT = qw(ok use_ok require_ok
   is isnt like unlike is_deeply
@@ -317,6 +317,11 @@ are similar to these:
     ok( ultimate_answer() eq 42,        "Meaning of Life" );
     ok( $foo ne '',     "Got some foo" );
 
+C<undef> will only ever match C<undef>.  So you can test a value
+agains C<undef> like this:
+
+    is($not_defined, undef, "undefined as expected");
+
 (Mnemonic:  "This is that."  "This isn't that.")
 
 So why use these?  They produce better diagnostics on failure.  ok()
@@ -392,7 +397,7 @@ So this:
 
 is similar to:
 
-    ok( $got =~ /expected/, 'this is like that');
+    ok( $got =~ m/expected/, 'this is like that');
 
 (Mnemonic "This is like that".)
 
@@ -524,7 +529,7 @@ sub can_ok ($@) {
 
     my @nok = ();
     foreach my $method (@methods) {
-        $tb->try( sub { $proto->can($method) } ) or push @nok, $method;
+        $tb->_try( sub { $proto->can($method) } ) or push @nok, $method;
     }
 
     my $name = (@methods == 1) ? "$class->can('$methods[0]')" :
@@ -584,10 +589,10 @@ sub isa_ok ($$;$) {
     else {
         my $whatami = ref $object ? 'object' : 'class';
         # We can't use UNIVERSAL::isa because we want to honor isa() overrides
-        my( $rslt, $error ) = $tb->try( sub { $object->isa($class) } );
+        my( $rslt, $error ) = $tb->_try( sub { $object->isa($class) } );
         if($error) {
             if( $error =~ /^Can't call method "isa" on unblessed reference/ ) {
-                # Its an unblessed reference
+                # It's an unblessed reference
                 $obj_name = 'The reference' unless defined $obj_name;
                 if( !UNIVERSAL::isa( $object, $class ) ) {
                     my $ref = ref $object;
@@ -660,7 +665,7 @@ sub new_ok {
     $object_name = "The object" unless defined $object_name;
 
     my $obj;
-    my( $success, $error ) = $tb->try( sub { $obj = $class->new(@$args); 1 } );
+    my( $success, $error ) = $tb->_try( sub { $obj = $class->new(@$args); 1 } );
     if($success) {
         local $Test::Builder::Level = $Test::Builder::Level + 1;
         isa_ok $obj, $class, $object_name;
@@ -824,6 +829,9 @@ import anything, use C<require_ok>.
 
   BEGIN { require_ok "Foo" }
 
+Lexical effects will occur as usual.  For example, this will turn on strictures.
+
+  BEGIN { use_ok "strict"; }
 
 =cut
 
@@ -834,26 +842,34 @@ sub use_ok ($;@) {
 
     my( $pack, $filename, $line ) = caller;
 
-    my $code;
+    my $f = $filename;
+    $f =~ s/[\n\r]/_/g; # so it doesn't run off the "#line $line $f" line
+
+    my $version;
     if( @imports == 1 and $imports[0] =~ /^\d+(?:\.\d+)?$/ ) {
-        # probably a version check.  Perl needs to see the bare number
-        # for it to work with non-Exporter based modules.
-        $code = <<USE;
-package $pack;
-use $module $imports[0];
-1;
-USE
-    }
-    else {
-        $code = <<USE;
-package $pack;
-use $module \@{\$args[0]};
-1;
-USE
+        # probably a version check
+        $version = shift @imports;
     }
 
-    my( $eval_result, $eval_error ) = _eval( $code, \@imports );
+    my $version_check = defined $version ? qq{$module->VERSION($version)} : "";
+    my $code = <<"USE";
+package $pack;
+#line $line $f
+require $module; $version_check; $module->import(\@{\$args[0]});
+# Work around [perl #70151]
+\${\$args[1]} = \$^H;
+%{\$args[2]} = %^H;
+1;
+USE
+
+    my( $eval_result, $eval_error )
+         = _eval( $code, \@imports, \my($hints, %hints) );
     my $ok = $tb->ok( $eval_result, "use $module;" );
+
+    if( $ok ) {
+        $^H = $hints;
+        %^H = %hints;
+    }
 
     unless($ok) {
         chomp $eval_error;

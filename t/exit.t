@@ -10,9 +10,6 @@ BEGIN {
     }
 }
 
-print STDOUT "1..0 # Skip exit codes not implemented\n";
-exit;
-
 require Test::Builder;
 my $TB = Test::Builder->create();
 $TB->level(0);

@@ -3,10 +3,17 @@
 # What if there's a plan and done_testing but they don't match?
 
 use strict;
-use lib 't/lib';
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
 
-BEGIN { require 't/test.pl' }
-
+use Test::Builder;
 use Test::Builder::NoOutput;
 
 my $tb = Test::Builder::NoOutput->create;
@@ -24,9 +31,10 @@ my $tb = Test::Builder::NoOutput->create;
     $tb->done_testing(2);
 }
 
-
-is($tb->read, <<"END");
-TAP version 13
+my $Test = Test::Builder->new;
+$Test->plan( tests => 1 );
+$Test->level(0);
+$Test->is_eq($tb->read, <<"END");
 1..3
 ok 1
 ok 2
@@ -34,8 +42,4 @@ ok 3
 not ok 4 - planned to run 3 but done_testing() expects 2
 #   Failed test 'planned to run 3 but done_testing() expects 2'
 #   at $0 line 24.
-# 3 tests planned, but 4 ran.
-# 1 test of 4 failed.
 END
-
-done_testing;

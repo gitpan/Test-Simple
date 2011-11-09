@@ -4,10 +4,11 @@
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
+        chdir 't';
         @INC = ('../lib', 'lib');
     }
     else {
-        unshift @INC, '../lib', 'lib'
+        unshift @INC, 't/lib';
     }
 }
 chdir 't';
@@ -68,7 +69,7 @@ $Test->is_eq( fileno $tb->todo_output,
 
 # The reset Test::Builder will take over from here.
 $Test->no_ending(1);
-$tb->no_header(1);
+
 
 $tb->current_test($Test->current_test);
 $tb->level(0);

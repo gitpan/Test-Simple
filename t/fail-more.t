@@ -514,7 +514,7 @@ out_like(
 END {
     out_like( <<OUT, <<ERR );
 OUT
-# $Total tests of $Total failed.
+# Looks like you failed $Total tests of $Total.
 ERR
 
     exit(0);
