@@ -11,7 +11,8 @@ BEGIN {
     };
 }
 
-use Test::More;
+BEGIN { require 't/test.pl' }
+
 use Test::Builder;
 use Test::Builder::NoOutput;
 
@@ -83,14 +84,6 @@ use Test::Builder::NoOutput;
     $tb->ok(1);
     $tb->done_testing(2);
     ok !$tb->is_passing, "All tests passed but done_testing() does not match";
-}
-
-
-# is_passing() with no tests run vs done_testing()
-{
-    my $tb = Test::Builder::NoOutput->create;
-    $tb->done_testing();
-    ok !$tb->is_passing, "No tests run with done_testing()";
 }
 
 

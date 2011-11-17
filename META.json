@@ -16,7 +16,11 @@
    "no_index" : {
       "directory" : [
          "t",
-         "inc"
+         "inc",
+         "lib/TB2/Mouse/"
+      ],
+      "file" : [
+         "lib/TB2/Mouse.pm"
       ]
    },
    "prereqs" : {
@@ -33,23 +37,23 @@
       "runtime" : {
          "requires" : {
             "Test::Harness" : "2.03",
-            "perl" : "5.006"
+            "perl" : "5.008001"
          }
       }
    },
    "release_status" : "testing",
    "resources" : {
       "bugtracker" : {
-         "web" : "http://github.com/schwern/test-more/issues"
+         "web" : "http://github.com/schwern/test-more/issues/labels/Test-Builder2"
       },
       "homepage" : "http://test-more.googlecode.com",
       "license" : [
          "http://dev.perl.org/licenses/"
       ],
       "repository" : {
-         "url" : "http://github.com/schwern/test-more/tree/master"
+         "url" : "http://github.com/schwern/test-more/tree/Test-Builder2"
       },
       "x_MailingList" : "http://groups.google.com/group/test-more-users"
    },
-   "version" : "0.98_01"
+   "version" : "1.005000_001"
 }

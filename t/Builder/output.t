@@ -1,24 +1,12 @@
 #!perl -w
 
+# This tests Test::Builder's various output() methods.
+
 use strict;
 
-BEGIN {
-    if( $ENV{PERL_CORE} ) {
-        chdir 't';
-        @INC = ('../lib', 'lib');
-    }
-    else {
-        unshift @INC, 't/lib';
-    }
-}
-chdir 't';
+BEGIN { require 't/test.pl' }
 
 use Test::Builder;
-
-# The real Test::Builder
-my $Test = Test::Builder->new;
-$Test->plan( tests => 6 );
-
 
 # The one we're going to test.
 my $tb = Test::Builder->create();
@@ -29,17 +17,17 @@ END { 1 while unlink($tmpfile) }
 # Test output to a file
 {
     my $out = $tb->output($tmpfile);
-    $Test->ok( defined $out );
+    ok( defined $out );
 
     print $out "hi!\n";
     close *$out;
 
     undef $out;
-    open(IN, $tmpfile) or die $!;
-    chomp(my $line = <IN>);
-    close IN;
+    open(my $in, $tmpfile) or die $!;
+    chomp(my $line = <$in>);
+    close $in;
 
-    $Test->is_eq($line, 'hi!');
+    is($line, 'hi!');
 }
 
 
@@ -52,11 +40,11 @@ END { 1 while unlink($tmpfile) }
     close *$out;
     undef $out;
     select $old;
-    open(IN, $tmpfile) or die $!;
-    my @lines = <IN>;
-    close IN;
+    open(my $in, $tmpfile) or die $!;
+    my @lines = <$in>;
+    close $in;
 
-    $Test->like($lines[1], qr/Hello!/);
+    like($lines[1], qr/Hello!/);
 }
 
 
@@ -66,7 +54,7 @@ END { 1 while unlink($tmpfile) }
     my $out = $tb->output(\$scalar);
 
     print $out "Hey hey hey!\n";
-    $Test->is_eq($scalar, "Hey hey hey!\n");
+    is($scalar, "Hey hey hey!\n");
 }
 
 
@@ -79,7 +67,7 @@ END { 1 while unlink($tmpfile) }
     print $out "To output ";
     print $err "and beyond!";
 
-    $Test->is_eq($scalar, "To output and beyond!", "One scalar, two filehandles");
+    is($scalar, "To output and beyond!", "One scalar, two filehandles");
 }
 
 
@@ -97,17 +85,15 @@ END { 1 while unlink($tmpfile) }
     $tb->skip("wibble\nmoof");
     $tb->todo_skip("todo\nskip\n");
 
-    $Test->is_eq( $fakeout, <<OUTPUT ) || print STDERR $fakeout;
+    is( $fakeout, <<'OUTPUT' );
+TAP version 13
 1..5
 ok 1 - ok
-ok 2 - ok
-# 
-ok 3 - ok, like
-# ok
-ok 4 # skip wibble
-# moof
-not ok 5 # TODO & SKIP todo
-# skip
-# 
+ok 2 - ok\n
+ok 3 - ok, like\nok
+ok 4 # SKIP wibble\nmoof
+not ok 5 # TODO SKIP todo\nskip\n
 OUTPUT
 }
+
+done_testing;
