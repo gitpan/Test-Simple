@@ -1,30 +1,52 @@
 #!/usr/bin/perl -w
 
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
+
 use strict;
-use lib 't/lib';
 
-use Test::Builder::NoOutput;
+require Test::Simple::Catch;
+my($out, $err) = Test::Simple::Catch::caught();
 
-BEGIN { require 't/test.pl' }
+# Can't use Test.pm, that's a 5.005 thing.
+package My::Test;
 
-my $tb = Test::Builder::NoOutput->create;
-$tb->plan( tests => 1 );
-$tb->ok(1);
-$tb->ok(2);
-$tb->ok(3);
-$tb->done_testing;
+# This has to be a require or else the END block below runs before
+# Test::Builder's own and the ending diagnostics don't come out right.
+require Test::Builder;
+my $TB = Test::Builder->create;
+$TB->plan(tests => 2);
 
-is($tb->read('out'), <<OUT);
-TAP version 13
+sub is { $TB->is_eq(@_) }
+
+
+package main;
+
+require Test::Simple;
+Test::Simple->import(tests => 1);
+ok(1);
+ok(1);
+ok(1);
+
+END {
+    My::Test::is($$out, <<OUT);
 1..1
 ok 1
 ok 2
 ok 3
 OUT
 
-is($tb->read('err'), <<ERR);
-# 1 test planned, but 3 ran.
+    My::Test::is($$err, <<ERR);
+# Looks like you planned 1 test but ran 3.
 ERR
 
-done_testing;
-
+    # Prevent Test::Simple from existing with non-zero
+    exit 0;
+}

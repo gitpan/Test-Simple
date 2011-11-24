@@ -72,7 +72,3 @@
 
 # Don't include our dist director
 ^Test-Simple-
-
-# Don't distribute our distribution tools
-^dist/
-

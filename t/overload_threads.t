@@ -17,9 +17,7 @@ BEGIN {
     eval { require threads; 'threads'->import; 1; };
 }
 
-use Test::More;
-plan skip_all => "threads are broken";
-plan tests => 5;
+use Test::More tests => 5;
 
 
 package Overloaded;

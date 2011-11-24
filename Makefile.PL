@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.008001;
+use 5.006;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -24,7 +24,7 @@ CHANGE_WARN
 
         sleep 5;
     }
-    if( $Config{useithreads} &&
+    if( $] >= 5.008001 && $Config{useithreads} &&
         $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
       ) 
     {
@@ -69,25 +69,22 @@ WriteMakefile(
         %Prereqs
     },
 
-    INSTALLDIRS     => 'perl',
+    # Added to the core in 5.7.3 and also 5.6.2.
+    INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
 
     test        => {
-        TESTS           => 't/*.t t/*/*.t t/*/*/*.t',
+        TESTS           => 't/*.t t/*/*.t',
     },
 
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => '5.8.1')),
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
             license     =>      'http://dev.perl.org/licenses/',
             homepage    =>      'http://test-more.googlecode.com',
-            bugtracker  =>      'http://github.com/schwern/test-more/issues/labels/Test-Builder2',
-            repository  =>      'http://github.com/schwern/test-more/tree/Test-Builder2',
+            bugtracker  =>      'http://github.com/schwern/test-more/issues',
+            repository  =>      'http://github.com/schwern/test-more/tree/master',
             MailingList =>      'http://groups.google.com/group/test-more-users',
-        },
-        no_index => {
-            directory => ["lib/TB2/Mouse/"],
-            file      => ["lib/TB2/Mouse.pm"],
         },
     }))
 );
@@ -103,11 +100,6 @@ WriteMakefile(
 perltidy:
 	find . -name '*.pm' | xargs perltidy -b
 	find . -name '*.pm.bak' | xargs rm
-
-.PHONY: Mouse
-
-Mouse:
-	$(PERL) "-MMousse::Maker" -e make_mousse 'TB2::Mouse' > lib/TB2/Mouse.pm
 
 MAKE
     }
@@ -130,7 +122,7 @@ MAKE
             perl5.10.1
             perl5.10.0
             perl5.8.9
-            perl5.8.8
+            perl5.6.2
         );
 
         for my $perl (@perls) {

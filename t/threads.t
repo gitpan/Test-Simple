@@ -9,7 +9,7 @@ BEGIN {
 
 use Config;
 BEGIN {
-    unless ( $Config{'useithreads'} && 
+    unless ( $] >= 5.008001 && $Config{'useithreads'} && 
              eval { require threads; 'threads'->import; 1; }) 
     {
         print "1..0 # Skip: no working threads\n";
@@ -22,7 +22,6 @@ use Test::Builder;
 
 my $Test = Test::Builder->new;
 $Test->exported_to('main');
-$Test->plan(skip_all => "threads are broken");
 $Test->plan(tests => 6);
 
 for(1..5) {

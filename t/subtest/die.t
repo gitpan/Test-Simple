@@ -5,23 +5,26 @@
 use lib 't/lib';
 
 use strict;
+use Test::Builder;
 use Test::Builder::NoOutput;
 
-BEGIN { require "t/test.pl" }
+my $Test = Test::Builder->new;
 
-note "death of a subtest"; {
+{
     my $tb = Test::Builder::NoOutput->create;
 
     $tb->ok(1);
 
-    ok( !eval {
+    $Test->ok( !eval {
         $tb->subtest("death" => sub {
             die "Death in the subtest";
         });
         1;
     });
-    like( $@, qr/^Death in the subtest at $0 line /);
+    $Test->like( $@, qr/^Death in the subtest at $0 line /);
+
+    $Test->ok( !$tb->parent, "the parent object is restored after a die" );
 }
 
 
-done_testing();
+$Test->done_testing();
