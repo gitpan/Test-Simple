@@ -1,17 +1,17 @@
 package Test::Simple;
 
-use 5.006;
-
+use 5.008001;
 use strict;
 
-our $VERSION = '0.98_02';
+our $VERSION = '1.005000_002';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-use Test::Builder::Module 0.98;
+use Test::Builder::Module;
 our @ISA    = qw(Test::Builder::Module);
 our @EXPORT = qw(ok);
 
 my $CLASS = __PACKAGE__;
+
 
 =head1 NAME
 
@@ -33,7 +33,7 @@ suitable for CPAN modules and other pursuits.  If you wish to do more
 complicated testing, use the Test::More module (a drop-in replacement
 for this one).
 
-The basic unit of Perl testing is the ok.  For each thing you want to
+The basic unit of Perl testing is the I<ok>.  For each thing you want to
 test your program will print out an "ok" or "not ok" to indicate pass
 or fail.  You do this with the ok() function (see below).
 
@@ -54,10 +54,10 @@ You must have a plan.
   ok( $foo eq $bar, $name );
   ok( $foo eq $bar );
 
-ok() is given an expression (in this case C<$foo eq $bar>).  If it's
+C<ok()> is given an expression (in this case C<$foo eq $bar>).  If it's
 true, the test passed.  If it's false, it didn't.  That's about it.
 
-ok() prints out either "ok" or "not ok" along with a test number (it
+C<ok()> prints out either "ok" or "not ok" along with a test number (it
 keeps track of that for you).
 
   # This produces "ok 1 - Hell not yet frozen over" (or not ok)
@@ -76,7 +76,7 @@ will do what you mean (fail if stuff is empty)
 
 =cut
 
-sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+sub ok($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
     return $CLASS->builder->ok(@_);
 }
 
@@ -110,7 +110,7 @@ recommended you look at L<Test::More>.
 
 =head1 EXAMPLE
 
-Here's an example of a simple .t file for the fictional Film module.
+Here's an example of a simple F<.t> file for the fictional Film module.
 
     use Test::Simple tests => 5;
 

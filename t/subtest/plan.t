@@ -15,7 +15,8 @@ use warnings;
 
 use Test::Builder::NoOutput;
 
-use Test::More tests => 6;
+use Test::More;
+plan tests => 6;
 
 # Formatting may change if we're running under Test::Harness.
 $ENV{HARNESS_ACTIVE} = 0;
