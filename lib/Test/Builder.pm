@@ -4,7 +4,7 @@ use 5.008001;
 use TB2::Mouse;
 use TB2::Types;
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use TB2::OnlyOnePlan;
@@ -13,7 +13,9 @@ use TB2::TestState;
 
 with 'TB2::CanDupFilehandles',
      'TB2::CanTry',
-     'TB2::CanLoad';
+     'TB2::CanLoad',
+     'TB2::HasObjectID';
+
 
 
 =head1 NAME
@@ -152,11 +154,6 @@ sub subtest {
     {
         local $Test::Builder::Level = $self->{Set_Level};
 
-        # If the subtest is in a TODO, error output should not be seen like
-        # any other TODO test.
-        my $streamer = $self->formatter->streamer;
-        $streamer->error_fh( $streamer->output_fh ) if $in_todo;
-
         # The subtest gets its own TODO state
         $self->_reset_todo_state;
 
@@ -182,13 +179,13 @@ sub subtest {
     # Restore $TODO
     $self->find_TODO(undef, 1, $orig_TODO);
 
-    $self->post_event(
-        TB2::Event::SubtestEnd->new(
-            $self->_file_and_line,
-        )
+    my $subtest_end = TB2::Event::SubtestEnd->new(
+        $self->_file_and_line,
     );
 
-    return;
+    $self->post_event($subtest_end);
+
+    return $subtest_end->result;
 }
 
 
@@ -204,7 +201,7 @@ ended when C<done_testing> is called or the process is exiting.
 =cut
 
 sub in_test {
-    $_[0]->history->in_test;
+    return $_[0]->history->in_test;
 }
 
 =item B<in_subtest>
@@ -240,9 +237,7 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
 
     $self->{Exported_To}    = undef;
 
-    $self->load("TB2::Formatter::TAP");
     $self->{TestState} = TB2::TestState->create(
-        formatters      => [TB2::Formatter::TAP->new],
         early_handlers  => [TB2::OnlyOnePlan->new],
     );
 
@@ -257,15 +252,62 @@ sub reset {    ## no critic (Subroutines::ProhibitBuiltinHomonyms)
     return;
 }
 
+
+=item B<test_state>
+
+    my $state = $builder->test_state;
+
+Returns the L<TB2::TestState> representing the test $builder is working with.
+
+There may be other builders contributing to the same $state.
+
+=cut
+
 sub test_state {
     return $_[0]->{TestState};
 }
+
+
+=item B<formatter>
+
+    my $formatter = $builder->formatter;
+
+Returns the L<TB2::Formatter> being used to format test output.
+
+=cut
 
 use TB2::BlackHole;
 my $blackhole = TB2::BlackHole->new;
 sub formatter {
     return $_[0]->test_state->formatters->[0] || $blackhole;
 }
+
+
+=item B<set_formatter>
+
+    $builder->set_formatter( $formatter );
+
+Change what $formatter is used to output the test.
+
+Note that this changes the $formatter for the entire test state, not just this $builder.
+
+=cut
+
+sub set_formatter {
+    my $self      = shift;
+    my $formatter = shift;
+
+    $self->croak("No formatter given to set_formatter()") unless $formatter;
+    $self->croak("Argument to set_formatter() is not a TB2::Formatter")
+      unless $self->try( sub { $formatter->isa("TB2::Formatter") } );
+
+    my $state = $self->test_state;
+    $state->clear_formatters;
+    $state->add_formatters($formatter);
+
+    return;
+}
+
 
 =item B<history>
 
@@ -294,6 +336,16 @@ sub counter {
     return $counter;
 }
 
+=item B<object_id>
+
+    my $id = $thing->object_id;
+
+Returns an identifier for this object unique to the running process.
+The identifier is fairly simple and easily predictable.
+
+See L<TB2::HasObjectID>
+
+=cut
 
 =back
 
@@ -488,14 +540,14 @@ sub has_plan {
     my $self = shift;
 
     my $plan = $self->history->plan;
-    return undef if !defined $plan;
+    return undef if !defined $plan;     ## no critic
 
     return 'no_plan' if $plan->no_plan;
 
     my $want = $plan->asserts_expected;
     return $want if $want;
 
-    return undef;
+    return undef;                       ## no critic
 }
 
 =item B<skip_all>
@@ -603,7 +655,7 @@ sub set_plan {
 
 
 sub post_event {
-    $_[0]->test_state->post_event($_[1]);
+    return $_[0]->test_state->post_event($_[1]);
 }
 
 sub post_result {
@@ -660,21 +712,7 @@ ERR
     # Store the Result in history making sure to make it thread safe
     $self->post_result($result);
 
-    # Check that we haven't violated the plan
-    $self->_check_is_passing_plan();
-
     return $test ? 1 : 0;
-}
-
-
-# Check that we haven't yet violated the plan and set
-# is_passing() accordingly
-sub _check_is_passing_plan {
-    my $self = shift;
-
-    my $plan = $self->has_plan;
-    return unless defined $plan;        # no plan yet defined
-    return unless $plan !~ /\D/;        # no numeric plan
 }
 
 
@@ -879,38 +917,38 @@ sub isnt_num {
 
 =item B<like>
 
-  $Test->like($this, qr/$regex/, $name);
-  $Test->like($this, '/$regex/', $name);
+  $Test->like($thing, qr/$regex/, $name);
+  $Test->like($thing, '/$regex/', $name);
 
-Like Test::More's C<like()>.  Checks if $this matches the given C<$regex>.
+Like Test::More's C<like()>.  Checks if $thing matches the given C<$regex>.
 
 =item B<unlike>
 
-  $Test->unlike($this, qr/$regex/, $name);
-  $Test->unlike($this, '/$regex/', $name);
+  $Test->unlike($thing, qr/$regex/, $name);
+  $Test->unlike($thing, '/$regex/', $name);
 
-Like Test::More's C<unlike()>.  Checks if $this B<does not match> the
+Like Test::More's C<unlike()>.  Checks if $thing B<does not match> the
 given C<$regex>.
 
 =cut
 
 sub like {
-    my( $self, $this, $regex, $name ) = @_;
+    my( $self, $thing, $regex, $name ) = @_;
 
     local $Level = $Level + 1;
-    return $self->_regex_ok( $this, $regex, '=~', $name );
+    return $self->_regex_ok( $thing, $regex, '=~', $name );
 }
 
 sub unlike {
-    my( $self, $this, $regex, $name ) = @_;
+    my( $self, $thing, $regex, $name ) = @_;
 
     local $Level = $Level + 1;
-    return $self->_regex_ok( $this, $regex, '!~', $name );
+    return $self->_regex_ok( $thing, $regex, '!~', $name );
 }
 
 =item B<cmp_ok>
 
-  $Test->cmp_ok($this, $type, $that, $name);
+  $Test->cmp_ok($thing, $type, $that, $name);
 
 Works just like Test::More's C<cmp_ok()>.
 
@@ -1155,11 +1193,11 @@ For example, a version of C<like()>, sans the useful diagnostic messages,
 could be written as:
 
   sub laconic_like {
-      my ($self, $this, $regex, $name) = @_;
+      my ($self, $thing, $regex, $name) = @_;
       my $usable_regex = $self->maybe_regex($regex);
       die "expecting regex, found '$regex'\n"
           unless $usable_regex;
-      $self->ok($this =~ m/$usable_regex/, $name);
+      $self->ok($thing =~ m/$usable_regex/, $name);
   }
 
 =cut
@@ -1197,7 +1235,7 @@ sub _is_qr {
 }
 
 sub _regex_ok {
-    my( $self, $this, $regex, $cmp, $name ) = @_;
+    my( $self, $thing, $regex, $cmp, $name ) = @_;
 
     my $ok           = 0;
     my $usable_regex = $self->maybe_regex($regex);
@@ -1219,7 +1257,7 @@ sub _regex_ok {
         local $!;
         local $SIG{__DIE__};
 
-        $test = eval $context . q{$test = $this =~ /$usable_regex/ ? 1 : 0};
+        $test = eval $context . q{$test = $thing =~ /$usable_regex/ ? 1 : 0};
 
         $test = !$test if $cmp eq '!~';
 
@@ -1228,11 +1266,11 @@ sub _regex_ok {
     }
 
     unless($ok) {
-        $this = defined $this ? "'$this'" : 'undef';
+        $thing = defined $thing ? "'$thing'" : 'undef';
         my $match = $cmp eq '=~' ? "doesn't match" : "matches";
 
         local $Level = $Level + 1;
-        $self->diag( sprintf <<'DIAGNOSTIC', $this, $match, $regex );
+        $self->diag( sprintf <<'DIAGNOSTIC', $thing, $match, $regex );
                   %s
     %13s '%s'
 DIAGNOSTIC
@@ -1923,9 +1961,13 @@ sub find_TODO {
     $pack = $pack || $self->caller(1) || $self->exported_to;
     return unless $pack;
 
-    no strict 'refs';    ## no critic
-    my $old_value = ${ $pack . '::TODO' };
-    $set and ${ $pack . '::TODO' } = $new_value;
+    my $todo = do {
+        no strict 'refs';    ## no critic
+        no warnings 'once';
+        \${ $pack.'::TODO'};
+    };
+    my $old_value = $$todo;
+    $set and $$todo = $new_value;
     return $old_value;
 }
 
@@ -2341,13 +2383,13 @@ E<lt>schwern@pobox.comE<gt>
 
 =head1 COPYRIGHT
 
-Copyright 2002-2008 by chromatic E<lt>chromatic@wgz.orgE<gt> and
+Copyright 2002-2012 by chromatic E<lt>chromatic@wgz.orgE<gt> and
                        Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
 This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
-See F<http://www.perl.com/perl/misc/Artistic.html>
+See L<http://dev.perl.org/licenses/>
 
 =cut
 

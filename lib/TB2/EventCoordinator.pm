@@ -2,9 +2,9 @@ package TB2::EventCoordinator;
 
 use TB2::Mouse;
 use TB2::Types;
-with 'TB2::CanLoad', 'TB2::CanThread';
+with 'TB2::CanLoad', 'TB2::CanThread', 'TB2::HasObjectID';
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 my @Types = qw(early_handlers history formatters late_handlers);
@@ -18,7 +18,7 @@ TB2::EventCoordinator - Coordinate events amongst the builders
 =head1 SYNOPSIS
 
     use TB2::EventCoordinator;
-    my $ec = TB2::EventCoordinator->create;
+    my $ec = TB2::EventCoordinator->new;
 
     # The builder sends it events like assert results and the beginning
     # and end of tests.
@@ -85,7 +85,10 @@ An array ref of Formatter objects which are listening to events.
 This is a special case of C<handlers> provided so you can distinguish
 between formatters and other handlers.
 
-Defaults to C<< [ TB2::Formatter::TAP->new ] >>.
+Defaults to C<< [ $class->default_formatters ] >>.
+
+The default can be altered by overriding L<default_formatter_class>
+and/or L<default_formatters>.
 
 =cut
 
@@ -96,10 +99,7 @@ has formatters =>
   isa           => 'ArrayRef',
   lazy          => 1,
   trigger       => sub { $_[0]->shared_clone($_[1]) },
-  default       => sub {
-      $_[0]->load("TB2::Formatter::TAP");
-      return $_[0]->shared_clone( [ TB2::Formatter::TAP->new ] );
-  };
+  builder       => 'default_formatters';
 
 
 =head3 early_handlers
@@ -169,6 +169,40 @@ For example, to create an EventCoordinator without a formatter...
 
 =head2 Methods
 
+=head3 default_formatter_class
+
+    my $formatter_class = $class->default_formatter_class;
+
+Returns the L<TB2::Formatter> subclass to be used for formatting by
+default.
+
+Defaults to the TB2_FORMATTER_CLASS environment variable, if set,
+or TB2::Formatter::TAP if not.
+
+=cut
+
+sub default_formatter_class {
+    return $ENV{TB2_FORMATTER_CLASS} || "TB2::Formatter::TAP";
+}
+
+
+=head3 default_formatters
+
+    my $formatters = $class->default_formatters;
+
+Returns the list of L<formatters> to be used by default.
+
+Defaults to a single instance of the L<default_formatter_class>.
+
+=cut
+
+sub default_formatters {
+    my $formatter_class = $_[0]->default_formatter_class;
+    $_[0]->load( $formatter_class );
+    return $_[0]->shared_clone( [ $formatter_class->new ] );
+}
+
+
 =head3 post_event
 
   $ec->post_event($event);
@@ -233,6 +267,15 @@ Use this instead of manipulating the list of handlers directly.
 Removes all handlers of their respective types.
 
 Use this instead of manipulating the list of handlers directly.
+
+=head3 object_id
+
+    my $id = $thing->object_id;
+
+Returns an identifier for this object unique to the running process.
+The identifier is fairly simple and easily predictable.
+
+See L<TB2::HasObjectID>
 
 =cut
 

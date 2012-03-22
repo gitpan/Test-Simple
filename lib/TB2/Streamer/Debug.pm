@@ -3,7 +3,7 @@ package TB2::Streamer::Debug;
 use TB2::Mouse;
 with 'TB2::Streamer';
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -23,6 +23,14 @@ has read_all_position => (
     is       => 'rw',
     default  => 0,
 );
+
+sub clear {
+    my $self = shift;
+    @{$self->written_hunks()} = ();
+    %{$self->read_position_for} = ();
+    $self->read_all_position(0);
+    return;
+}
 
 sub write {
     my ($self, $dest, @hunks) = @_;

@@ -7,12 +7,14 @@ use TB2::Events;
 
 with 'TB2::HasDefault',
      'TB2::CanTry',
-     'TB2::CanLoad';
+     'TB2::CanLoad',
+     'TB2::HasObjectID';
+
 
 use Carp qw(confess);
 sub sanity ($) { confess "Assert failed" unless $_[0] };
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -421,6 +423,16 @@ sub subtest {
     return;
 }
 
+=head3 object_id
+
+    my $id = $thing->object_id;
+
+Returns an identifier for this object unique to the running process.
+The identifier is fairly simple and easily predictable.
+
+See L<TB2::HasObjectID>
+
+=cut
 
 no TB2::Mouse;
 

@@ -3,7 +3,7 @@ package TB2::OnlyOnePlan;
 use TB2::Mouse;
 with 'TB2::EventHandler';
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Carp;
@@ -70,28 +70,20 @@ This specificially allows redundant planning...
 
 =cut
 
-has existing_plan =>
-  is            => 'rw',
-  isa           => 'Object',
-;
-
 sub handle_set_plan {
     my $self  = shift;
-    my $event = shift;
+    my($plan, $ec) = @_;
 
-    $self->already_saw_plan($event) if $self->existing_plan;
-
-    $self->existing_plan($event);
+    my $existing_plan = $ec->history->plan;
+    $self->_already_saw_plan($existing_plan, $plan) if $existing_plan;
 
     return;
 }
 
 
-sub already_saw_plan {
+sub _already_saw_plan {
     my $self = shift;
-    my $new_plan = shift;
-
-    my $existing_plan = $self->existing_plan;
+    my($existing_plan, $new_plan) = @_;
 
     return if $existing_plan->no_plan &&
               ( $new_plan->no_plan || $new_plan->asserts_expected );

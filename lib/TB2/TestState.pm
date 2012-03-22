@@ -3,14 +3,15 @@ package TB2::TestState;
 use TB2::Mouse;
 use TB2::Types;
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Carp;
 
 with 'TB2::HasDefault',
      'TB2::CanLoad',
-     'TB2::CanThread';
+     'TB2::CanThread',
+     'TB2::HasObjectID';
 
 has _coordinators =>
   is            => 'rw',
@@ -137,6 +138,17 @@ sub make_default {
     my $state = $class->create;
     return $state->shared_clone($state);
 }
+
+=head2 Misc
+
+=head3 object_id
+
+    my $id = $thing->object_id;
+
+Returns an identifier for this object unique to the running process.
+The identifier is fairly simple and easily predictable.
+
+See L<TB2::HasObjectID>
 
 
 =head2 EventCoordinator methods
@@ -350,6 +362,7 @@ sub handle_subtest_end {
     # Attach the subtest history to the event.  If somebody else already
     # did so, honor that.
     $event->history( $subtest_ec->history ) unless $event->history;
+    $event->subtest_start( $self->history->subtest_start ) unless $event->subtest_start;
 
     # Post the event to the current level
     $self->current_coordinator->post_event(@_);

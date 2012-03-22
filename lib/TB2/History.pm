@@ -8,7 +8,7 @@ use TB2::StackBuilder;
 with 'TB2::EventHandler',
      'TB2::CanTry';
 
-our $VERSION = '1.005000_002';
+our $VERSION = '1.005000_003';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -49,6 +49,17 @@ It is a L<TB2::EventHandler>.
     my $history = TB2::History->new;
 
 Creates a new, unique History object.
+
+=head2 Misc
+
+=head3 object_id
+
+    my $id = $thing->object_id;
+
+Returns an identifier for this object unique to the running process.
+The identifier is fairly simple and easily predictable.
+
+See L<TB2::HasObjectID>
 
 =head2 Accessors
 
