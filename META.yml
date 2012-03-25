@@ -29,4 +29,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/schwern/test-more/tree/Test-Builder2
   x_MailingList: http://groups.google.com/group/test-more-users
-version: 1.005000_003
+version: 1.005000_004

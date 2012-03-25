@@ -1,5 +1,19 @@
 See README and version control log for Test::Builder2 changes.
 
+1.005000_004  Sun Mar 25 15:01:49 BST 2012
+    Bug Fixes
+    * Fix the thread crashes occurring with 5.12 and down.
+      [github 261]
+
+    Test Fixes
+    * t/History/child_process.t was failing, the forked processes were
+      improperly coordinated.
+
+    Incompatible Changes
+    * coordinate_threads() has been removed.  It had no use case and was
+      complicating threads which are quite complicated enough thank you.
+
+
 1.005000_003  Thu Mar 22 17:48:08 GMT 2012
     Distribution Changes
     * Added an explicit license file and copies of the GPL1 and Artistic

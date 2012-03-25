@@ -4,10 +4,11 @@ use 5.008001;
 
 use TB2::Mouse;
 use TB2::Types;
+use TB2::threads::shared;
 extends 'TB2::Formatter';
-with 'TB2::CanLoad', 'TB2::CanThread';
+with 'TB2::CanLoad';
 
-our $VERSION = '1.005000_003';
+our $VERSION = '1.005000_004';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Carp;
@@ -133,7 +134,7 @@ the test number.
 has counter => 
    is           => 'rw',
    isa          => 'TB2::Counter',
-   trigger      => sub { $_[0]->shared_clone($_[1]) },
+   trigger      => sub { shared_clone($_[1]) },
    default => sub {
       $_[0]->load('TB2::Counter');
       return TB2::Counter->new;

@@ -22,57 +22,33 @@ BEGIN {
     }
 }
 
+# This has to come after the above to threads are on
+use TB2::threads::shared;
+
 
 {
     package WithThreads;
 
     use TB2::Mouse;
-    with "TB2::CanThread";
 
     has 'stuff' =>
       is        => 'rw',
     ;
 }
 
-{
-    package WithoutThreads;
 
-    use TB2::Mouse;
-    with "TB2::CanThread";
-
-    has '+coordinate_threads' =>
-      default   => 0;
-}
-
-
-note "coordinate_threads off"; {
-    my $obj = WithoutThreads->new;
-
-    my %hash = ( foo => 23, bar => [1,2,3] );
-    my $clone = $obj->shared_clone(\%hash);
-    is_deeply $clone, \%hash, "shared_clone() is a pass through";
-
-    my $var = 23;
-    lock($var) if $obj->coordinate_threads;
-    is $var, 23, "lock() does nothing";
-
-    $obj->share($var);
-    is $var, 23, "share() does nothing";
-}
-
-
-note "coordinate_threads on"; {
+note "threads on"; {
     my $obj = WithThreads->new;
 
     # Try this stuff even with threads off to make sure they don't blow up.
     my %hash = ( counter => 4, bar => [1,2,3] );
-    $obj->stuff( $obj->shared_clone(\%hash) );
+    $obj->stuff( shared_clone(\%hash) );
 
     my $var = 5;
-    $obj->share(\$var);
+    share($var);
 
     my $var2 = 1;
-    $obj->share(\$var2);
+    share($var2);
 
     note "check lock() works with threads on or off"; {
         lock($var2);
