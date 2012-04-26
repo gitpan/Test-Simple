@@ -4,7 +4,7 @@ use 5.008001;
 use TB2::Mouse;
 use TB2::Types;
 
-our $VERSION = '1.005000_004';
+our $VERSION = '1.005000_005';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use TB2::OnlyOnePlan;
@@ -14,6 +14,7 @@ use TB2::TestState;
 with 'TB2::CanDupFilehandles',
      'TB2::CanTry',
      'TB2::CanLoad',
+     'TB2::CanOpen',
      'TB2::HasObjectID';
 
 
@@ -322,19 +323,6 @@ sub history {
     return $_[0]->test_state->history;
 }
 
-sub counter {
-    my $self = shift;
-
-    my $counter = $self->try(sub { $self->formatter->counter; });
-    return $counter if $counter;
-
-    # Fake a counter from the history object.
-    # This will not remember changes to the current_test()
-    $counter = TB2::Counter->new;
-    $counter->set($self->history->results_count);
-
-    return $counter;
-}
 
 =item B<object_id>
 
@@ -958,8 +946,15 @@ Works just like Test::More's C<cmp_ok()>.
 
 my %numeric_cmps = map { ( $_, 1 ) } ( "<", "<=", ">", ">=", "==", "!=", "<=>" );
 
+# Bad, these are not comparison operators. Should we include more?
+my %cmp_ok_bl = map { ( $_, 1 ) } ( "=", "+=", ".=", "x=", "^=", "|=", "||=", "&&=", "...");
+
 sub cmp_ok {
     my( $self, $got, $type, $expect, $name ) = @_;
+
+    if ($cmp_ok_bl{$type}) {
+        $self->croak("$type is not a valid comparison operator in cmp_ok()");
+    }
 
     my $test;
     my $error;
@@ -1652,12 +1647,12 @@ sub _new_fh {
         $fh = $file_or_fh;
     }
     elsif( ref $file_or_fh eq 'SCALAR' ) {
-        open $fh, ">>", $file_or_fh
-          or $self->croak("Can't open scalar ref $file_or_fh: $!");
+        $self->try(sub { $fh = $self->open(">>", $file_or_fh) })
+          or $self->croak("Can't open scalar ref $file_or_fh: $@");
     }
     else {
-        open $fh, ">", $file_or_fh
-          or $self->croak("Can't open test output log $file_or_fh: $!");
+        $self->try(sub { $fh = $self->open(">", $file_or_fh) })
+          or $self->croak("Can't open test output log $file_or_fh: $@");
         $self->autoflush($fh);
     }
 
@@ -1740,14 +1735,9 @@ can erase history if you really want to.
 sub current_test {
     my( $self, $num ) = @_;
 
-    my $counter = $self->counter;
+    my $history = $self->history;
 
     if( defined $num ) {
-        my $history = $self->history;
-
-#        lock( $counter );
-#        lock( $history );
-
         # If the test counter is being pushed forward fill in the details.
         my $results = $history->results;
 
@@ -1761,7 +1751,7 @@ sub current_test {
             );
 
             my $last_test_number = @$results ? @$results : 0;
-            $counter->set($last_test_number);
+            $history->counter($last_test_number);
 
             for my $test_number ( $last_test_number + 1 .. $num ) {
                 my $result = TB2::Result->new_result(
@@ -1779,11 +1769,11 @@ sub current_test {
             $#{$results} = $num - 1;
         }
 
-        $counter->set($num);
+        $history->counter($num);
         return;
     }
     else {
-        return $counter->get;
+        return $history->counter;
     }
 }
 
@@ -1826,6 +1816,20 @@ sub summary {
     my($self) = shift;
 
     return map { $_->is_fail ? 0 : 1 } @{$self->history->results};
+}
+
+=item B<name>
+
+    my $name = $Test->name;
+
+Returns the name of the current subtest or test.
+
+=cut
+
+sub name {
+    my $self = shift;
+
+    my $name = $self->in_subtest ? $self->history->subtest->name : $0;
 }
 
 =item B<details>
@@ -2219,16 +2223,12 @@ sub _ending {
     # Forked children often run fragments of tests.
     my $in_child = $self->history->is_child_process;
 
-    # Don't show ending commentary in a forked copy.
-    # Forks often run fragments of tests.
-    $self->formatter->show_ending_commentary(0) if $in_child;
+    # Forks often run fragments of tests, so don't do any ending
+    # processing
+    return if $in_child;
 
     # End the stream unless we (or somebody else) already ended it
     $self->test_end if $history->in_test;
-
-    # Don't change the exit code of a forked copy.
-    # Forks often run fragments of tests.
-    return if $in_child;
 
     my $new_exit_code = $self->test_exit_code($?);
     _my_exit($new_exit_code);

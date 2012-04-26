@@ -2,7 +2,7 @@ package Test::Builder::Tester;
 
 use TB2::Mouse;
 BEGIN {
-    our $VERSION = "1.23_04";
+    our $VERSION = "1.24_005";
 
     extends 'Test::Builder::Module';
     with 'TB2::CanLoad';
@@ -354,7 +354,7 @@ from L<Test::Builder::Module>.
 For example...
 
     # Import all the usual functions, plus color
-    use Test::Builder::Tester import => ['color', ':DEFAULT'];
+    use Test::Builder::Tester import => [':DEFAULT', 'color'];
 
 =over 4
 

@@ -2,7 +2,7 @@ package TB2::BlackHole;
 
 use TB2::Mouse;
 
-our $VERSION = '1.005000_004';
+our $VERSION = '1.005000_005';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -15,6 +15,7 @@ sub AUTOLOAD {
     return __PACKAGE__->new;
 }
 
+sub DESTROY {}
 
 =head1 NAME
 

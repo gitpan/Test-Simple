@@ -6,7 +6,7 @@ use TB2::threads::shared;
 
 with 'TB2::CanLoad', 'TB2::HasObjectID';
 
-our $VERSION = '1.005000_004';
+our $VERSION = '1.005000_005';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 my @Types = qw(early_handlers history formatters late_handlers);
@@ -218,10 +218,30 @@ sub post_event {
     my $self  = shift;
     my $event = shift;
 
+    #prevent counter corruption between multiple threads
+    my $history = $self->history;
+    lock $history;
+
     $event = shared_clone($event);
-    for my $handler ($self->all_handlers) {
-        $handler->accept_event($event, $self);
+
+    # Each set of handlers is specifically in its own loop so an
+    # early handler can change a later handler (such as history)
+    # and have it take effect for that event.
+    for my $h (@{$self->early_handlers}) {
+        $h->accept_event($event, $self);
     }
+
+    $self->history->accept_event($event, $self);
+
+    for my $h (@{$self->formatters}) {
+        $h->accept_event($event, $self);
+    }
+
+    for my $h (@{$self->late_handlers}) {
+        $h->accept_event($event, $self);
+    }
+
+    return;
 }
 
 

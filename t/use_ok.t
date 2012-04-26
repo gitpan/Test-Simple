@@ -67,26 +67,6 @@ note "Signals are preserved"; {
 }
 
 
-note "strict works"; {
-    no strict;
-
-    {
-        BEGIN { use_ok 'strict' }
-        ok !eval { ()=@{"!#%^"}; 1 }, 'use_ok with pragma';
-    }
-
-    ok eval { ()=@{"!#%^"}; 1 }, 'pragmata enabled by use_ok are lexical'; 
-}
-
-
-note "strict works with a version check"; {
-    no strict;
-
-    BEGIN { use_ok 'strict', 1 }
-    ok !eval { ()=@{"!#%^"}; 1 }, 'use_ok with pragma and version';
-}
-
-
 note "Line numbers preserved"; {
     my $package = "that_cares_about_line_numbers";
 
@@ -108,6 +88,16 @@ note "Line numbers preserved"; {
     ::is( $caller[0], __PACKAGE__,      "caller package preserved" );
     ::is( $caller[1], __FILE__,         "  file" );
     ::is( $caller[2], $line,            "  line" );
+}
+
+
+note "not confused by functions vs class names"; {
+    $INC{"ok.pm"} = 1;
+    use_ok("ok");               # ok is a function inside Test::More
+
+    $INC{"Foo/bar.pm"} = 1;
+    sub Foo::bar { 42 }
+    use_ok("Foo::bar");         # Confusing a class name with a function name
 }
 
 done_testing;

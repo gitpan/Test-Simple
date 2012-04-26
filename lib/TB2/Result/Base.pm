@@ -4,7 +4,7 @@ use TB2::Mouse;
 use TB2::Types;
 with 'TB2::Event';
 
-our $VERSION = '1.005000_004';
+our $VERSION = '1.005000_005';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 my $CLASS = __PACKAGE__;
@@ -64,7 +64,8 @@ The name of the assert.  For example...
 
 has name =>
   is    => 'rw',
-  isa   => 'Str'
+  isa   => 'TB2::Stringify',
+  coerce => 1,
 ;
 
 

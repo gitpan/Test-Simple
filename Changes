@@ -1,5 +1,40 @@
 See README and version control log for Test::Builder2 changes.
 
+1.005000_005  Thu Apr 26 15:23:25 PDT 2012
+    New Features
+    * cmp_ok() will error when used with something which is not a
+      comparison operator, including =, += and the like.
+      [github 141]
+
+    Bug Fixes
+    * Using a reference as a test name works again.  [github #264]
+    * Protected against Test::More accidentally overwriting $!
+      [github #268] [github #266]
+    * Restored the behavior of a fork, it will not issue its own
+      plan, making testing with fork easier.
+    * Test::Builder->name() has been restored. [github #220]
+      (Matthew Horsfall)
+    * TB2::BlackHole no longer tries to AUTOLOAD its destructor.
+      [github #280] (Peter Rabbitson)
+    * Threads work on 5.12 and 5.10 again. (Peter Rabbitson)
+
+    Doc Fixes
+    * use_ok() has been discouraged and de-emphasized as a general
+      replacement for `use` in tests. [github #288]
+
+    Incompatible Changes with previous alphas
+    * TB2::Counter has been removed [github 119]
+    * The test counter has been moved from the TAP formatter
+      into TB2::History [github 190]
+    * TB2::TestState is no longer a complete subclass of
+      TB2::EventCoordinator, but delegates most EC methods.  The isa/can
+      trickery caused threading issues. [github 291]
+    * TB2::TestState->current_coordinator is now TB2::TestState->ec.
+    * use_ok() will no longer apply lexical pragams.  The incompatibilities
+      and extra complexity is not worth the marginal use.
+      [github #287]
+
+
 1.005000_004  Sun Mar 25 15:01:49 BST 2012
     Bug Fixes
     * Fix the thread crashes occurring with 5.12 and down.
@@ -9,7 +44,7 @@ See README and version control log for Test::Builder2 changes.
     * t/History/child_process.t was failing, the forked processes were
       improperly coordinated.
 
-    Incompatible Changes
+    Incompatible Changes with previous alphas
     * coordinate_threads() has been removed.  It had no use case and was
       complicating threads which are quite complicated enough thank you.
 
@@ -47,7 +82,7 @@ See README and version control log for Test::Builder2 changes.
     * Quiet warnings in the TAP formatter when a result name is
       undefined. [github 260]
 
-    Incompatible changes (with the last alpha)
+    Incompatible changes with previous alphas
     * TB2::NoHistory has been deleted before somebody relies on it.
       It was unmaintained and will be replaced by a TB2::History feature.
       See github 198.  [github 241]
@@ -104,7 +139,7 @@ See README and version control log for Test::Builder2 changes.
     Tests should continue to work as written.  Please report any breakages
     at https://github.com/schwern/test-more/issues/
 
-    Incompatible Changes (since 2.00_07)
+    Incompatible Changes with previous alphas
     * A lot, too many to list.  If you were using an earlier alpha,
       all bets are off.
 
@@ -114,7 +149,7 @@ See README and version control log for Test::Builder2 changes.
 
 
 2.00_07  Mon, 28 Feb 2011 23:53:22 +1100
-    Incompatible Changes (since 2.00_01)
+    Incompatible Changes with previous alphas
     * TB2::Event::Log now uses symbolic levels, not numeric.  This lets us
       add new levels later. [github 111]
     * Event log levels have been lower cased.
@@ -136,7 +171,7 @@ See README and version control log for Test::Builder2 changes.
 
 
 2.00_06  Thu, 27 Jan 2011 09:58:35 +1000
-    Incompatible Changes (since 2.00_01)
+    Incompatible Changes with previous alphas
     * The EventCoordinator now only has one history object.
       histories() is now history().  clear_history() and add_histories()
       are gone. [github 115]
@@ -211,6 +246,26 @@ See README and version control log for Test::Builder2 changes.
     First alpha release of Test::Builder2.
     Technology Preview.
     Very incomplete.
+
+
+0.98_03
+    New Features
+    * cmp_ok() will error when used with something which is not a
+      comparison operator, including =, += and the like.
+      [github 141]
+
+    Bug Fixes
+    * use_ok() was calling class->import without quoting which could
+      cause problems if "class" is also a function.
+
+    Doc Fixes
+    * use_ok() has been discouraged and de-emphasized as a general
+      replacement for `use` in tests. [github #288]
+
+    Incompatible Changes With Previous Alphas
+    * use_ok() will no longer apply lexical pragams.  The incompatibilities
+      and extra complexity is not worth the marginal use.
+      [github #287]
 
 
 0.98_02  Thu Nov 24 01:13:53 PST 2011
