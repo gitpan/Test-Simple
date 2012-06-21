@@ -1,9 +1,14 @@
 #!/usr/bin/perl -w
 
-use strict;
-use warnings;
-
-use lib 't/lib';
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
 
 use Test::More;
 use Test::Builder;
@@ -60,9 +65,7 @@ push @Expected_Details, { 'ok'      => 1,
                           reason    => 'i need both'
                         };
 
-for ($start_test..$Test->current_test) {
-    print "ok $_\n";
-}
+for ($start_test..$Test->current_test) { print "ok $_\n" }
 $Test->reset_outputs;
 
 $Test->is_num( scalar $Test->summary(), 4,   'summary' );
@@ -77,7 +80,7 @@ $Test->current_test(6);
 print "ok 6 - current_test incremented\n";
 push @Expected_Details, { 'ok'      => 1,
                           actual_ok => undef,
-                          name      => '',
+                          name      => undef,
                           type      => 'unknown',
                           reason    => 'incrementing test number',
                         };

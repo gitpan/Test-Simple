@@ -1,4 +1,15 @@
-#!/usr/bin/env perl -w
+#!perl -w
+
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
+chdir 't';
 
 BEGIN {
     # There was a bug with overloaded objects and threads.

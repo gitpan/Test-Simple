@@ -17,16 +17,13 @@ no_index:
   directory:
     - t
     - inc
-    - lib/TB2/Mouse/
-  file:
-    - lib/TB2/Mouse.pm
 requires:
   Test::Harness: 2.03
-  perl: 5.008001
+  perl: 5.006
 resources:
-  bugtracker: http://github.com/schwern/test-more/issues/labels/Test-Builder2
-  homepage: http://test-more.googlecode.com
+  bugtracker: http://github.com/schwern/test-more/issues/
+  homepage: http://github.com/schwern/test-more/
   license: http://dev.perl.org/licenses/
-  repository: http://github.com/schwern/test-more/tree/Test-Builder2
-  x_MailingList: http://groups.google.com/group/test-more-users
-version: 1.005000_005
+  repository: http://github.com/schwern/test-more/
+  x_MailingList: http://lists.perl.org/list/perl-qa.html
+version: 0.98_03
