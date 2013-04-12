@@ -1,20 +1,12 @@
 #!/usr/bin/perl -w
 
-BEGIN {
-    if( $ENV{PERL_CORE} ) {
-        chdir 't';
-        @INC = ('../lib', 'lib');
-    }
-    else {
-        unshift @INC, 't/lib';
-    }
-}
-
 # There was a bug with like() involving a qr// not failing properly.
 # This tests against that.
 
 use strict;
+use warnings;
 
+use lib 't/lib';
 
 # Can't use Test.pm, that's a 5.005 thing.
 package My::Test;
@@ -40,6 +32,7 @@ Test::More->import(tests => 1);
     eval q{ like( "foo", qr/that/, 'is foo like that' ); };
 
     $TB->is_eq($out->read, <<OUT, 'failing output');
+TAP version 13
 1..1
 not ok 1 - is foo like that
 OUT
@@ -58,7 +51,7 @@ ERR
 }
 
 {
-    # line 62
+# line 62
     like("foo", "not a regex");
     $TB->is_eq($out->read, <<OUT);
 not ok 2
@@ -73,5 +66,5 @@ OUT
 
 END {
     # Test::More thinks it failed.  Override that.
-    exit(scalar grep { !$_ } $TB->summary);
+    exit $TB->history->test_was_successful ? 0 : 1;
 }
