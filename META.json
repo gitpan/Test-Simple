@@ -16,11 +16,7 @@
    "no_index" : {
       "directory" : [
          "t",
-         "inc",
-         "lib/TB2/Mouse/"
-      ],
-      "file" : [
-         "lib/TB2/Mouse.pm"
+         "inc"
       ]
    },
    "prereqs" : {
@@ -36,8 +32,9 @@
       },
       "runtime" : {
          "requires" : {
+            "Scalar::Util" : "1.13",
             "Test::Harness" : "2.03",
-            "perl" : "5.008001"
+            "perl" : "5.006"
          }
       }
    },
@@ -55,5 +52,5 @@
       },
       "x_MailingList" : "http://lists.perl.org/list/perl-qa.html"
    },
-   "version" : "1.005000_006"
+   "version" : "0.98_04"
 }

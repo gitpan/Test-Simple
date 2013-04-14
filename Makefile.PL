@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.008001;
+use 5.006;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -24,7 +24,7 @@ CHANGE_WARN
 
         sleep 5;
     }
-    if( $Config{useithreads} &&
+    if( $] >= 5.008001 && $Config{useithreads} &&
         $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
       ) 
     {
@@ -65,17 +65,19 @@ WriteMakefile(
     ($mm_ver >= 6.31 ? (LICENSE => 'perl') : ()),
 
     PREREQ_PM       => { 
-        Test::Harness   => 2.03,
+        'Test::Harness'         => 2.03,
+        'Scalar::Util'          => 1.13,
         %Prereqs
     },
 
-    INSTALLDIRS     => 'perl',
+    # Added to the core in 5.7.3 and also 5.6.2.
+    INSTALLDIRS     => $] >= 5.006002 ? 'perl' : 'site',
 
     test        => {
-        TESTS           => 't/*.t t/*/*.t t/*/*/*.t',
+        TESTS           => 't/*.t t/*/*.t',
     },
 
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => '5.8.1')),
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
@@ -84,10 +86,6 @@ WriteMakefile(
             bugtracker  =>      'http://github.com/schwern/test-more/issues/',
             repository  =>      'http://github.com/schwern/test-more/',
             MailingList =>      'http://lists.perl.org/list/perl-qa.html',
-        },
-        no_index => {
-            directory => ["lib/TB2/Mouse/"],
-            file      => ["lib/TB2/Mouse.pm"],
         },
     }))
 );
@@ -104,11 +102,6 @@ perltidy:
 	find . -name '*.pm' | xargs perltidy -b
 	find . -name '*.pm.bak' | xargs rm
 
-.PHONY: Mouse
-
-Mouse:
-	$(PERL) "-MMousse::Maker" -e make_mousse 'TB2::Mouse' > lib/TB2/Mouse.pm
-
 MAKE
     }
 
@@ -124,45 +117,24 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
-            perl5.8
-            perl5.8.1
-            perl5.8.5
-            perl5.8.8
-            perl5.8.9
-            perl5.10
-            perl5.10.0
-            perl5.10.1
-            perl5.12
-            perl5.12.3
-            perl5.12.4
-            perl5.14
             perl5.14.1
-            perl5.14.2
-            perl5.16
-            perl5.16.0
-            perl5.16.1
+            perl5.12.4
+            perl5.12.3
+            perl5.10.1
+            perl5.10.0
+            perl5.8.9
+            perl5.6.2
         );
 
         for my $perl (@perls) {
             if( !`which $perl` ) {
-                print STDERR "Missing $perl\n";
+                print STDERR "Missing $perl";
                 next;
             }
-
-            my $has_threads = `$perl -MConfig -e 'print \$Config{usethreads}'` eq 'define';
-            my $is_58       = $perl =~ /5\.8/;
-
-            if( $is_58 && $has_threads ) {
-                print STDERR "Skipping threaded 5.8 $perl\n";
-                next;
-            }
-
             $make .= sprintf <<'END', $perl;
 	cd $(DISTVNAME) && $(MAKE) clean && %s Makefile.PL && PERL_RELEASING=0 $(MAKE) test $(PASTHRU)
 END
         }
-
-        sleep 1;
 
         # Rebuild so subsequent make commands work
         $make .= <<'END';

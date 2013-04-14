@@ -1,319 +1,30 @@
-See README and version control log for Test::Builder2 changes.
-
-1.005000_006  Fri Apr 12 18:01:09 BST 2013
-    New Features
-    * Memory usage will not grow as more tests are run.
-    * Added TB2::History->last_result and last_event to retrieve the
-      last result and event seen.
-    * Clarify who to contact when getting a WHOA! [github 324]
-      (Noirin Plunkett)
-    * TB2::Formatter::SimpleHTML now shows the file and line.
+0.98_04  Sun Apr 14 10:54:13 BST 2013
+    Distribution Changes
+    * Scalar::Util 1.13 (ships with Perl 5.8.1) is now required.
       (Michael G Schwern)
-    * Add TB2::History->literal_pass_count and literal_fail_count to
-      record results with literal_pass and literal_fail.
-      (Michael G Schwern)
-    * Add TB2::History->last_result and last_event to record the
-      last seen event and result. (Michael G Schwern)
-
-    Bug Fixes
-    * Patched TB2::Mouse to not blow over tied $_ (a local $_ bug).
-      (Father Chrysostomos) [github 293]
-    * Test::Builder::Tester will now set a plan in test tests emulating
-      an undocumented 0.x feature that some tests accidentally rely on.
-      [github 327] [github 328]
-    * Test::Builder::Tester will now turn off the ending stuff to
-      emulate an undocumented 0.x feature that some tests accidentally
-      rely on.  [github #276]
-    * Fix TB2::Formatter::PlusMinus and TB2::Formatter::POSIX.  They
-      suffered bit rot.
-    * Conditionally call special methods on Formatters so things don't
-      blow up on non-TAP formatters. (Michael G Schwern)
-    * Fix test_fail called via a do statement. [github #349] (nnutter)
-    * Fix TB2_FORMATTER_CLASS with taint mode tests. [github #357]
-      (Michael G Schwern)
-
-    Doc Fixes
-    * Typo and POD formatting fixes. [github #318] [github #320] [github #355]
-      (Ben Bullock, pdl, derek.mead@gmail.com)
-    * Add a COMPATIBILITY section to the Test::More docs. [github #344]
-      (pdl, Michael G Schwern)
-    * Fix UTF-8 encoding errors in the docs. [github #348] (Michael G Schwern)
-
-    Misc
-    * Update the resources meta data to point at the correct repository, issues
-      mailing list and home page.
-    * Test::Builder::Tester is now discouraged.  Use Test::Tester or TB2::Tester
-      instead.
-
-    Incompatible Changes
-    * The result of each test is no longer stored by default.  This keeps
-      the test framework from consuming more and more memory as tests are
-      run.  Test::Builder->details and Test::Builder->summary will throw
-      exceptions by default.  For most needs, they are replaced with
-      statistical methods in TB2::History. [github 198]
 
     Feature Changes
-    * 'use Test::More no_plan => 1' no longer warns.  This allows us
-      to simplify the import argument handling, everything is a hash
-      now (or can be converted into one). (Michael G Schwern)
+    * The default name and diagnostics for isa_ok() and new_ok() have
+      changed. (Michael G Schwern)
 
-    Test Fixes
-    * Fix tests for Carp 1.25 [github 321] (Michael G Schwern)
+    Docs Fixes
+    * Added a COMPATIBILITY section so users know what major features were
+      added with what version of Test::More or perl. [github 343] [github 344]
+      (pdl)
+    * Fix the ok() example with grep(). (derek.mead@gmail.com)
+
+    Bug Fixes
+    * A test with no plan and missing done_testing() now exits with non-zero.
+      [github #341] (tokuhirom)
+    * isa_ok() tests were broken in 5.17 because of a change in
+      method resolution. [github #353] (Michael G Schwern)
 
 
-1.005000_005  Thu Apr 26 15:23:25 PDT 2012
+0.98_03  Thu Jun 21 13:04:19 PDT 2012
     New Features
     * cmp_ok() will error when used with something which is not a
       comparison operator, including =, += and the like.
-      [github 141]
-
-    Bug Fixes
-    * Using a reference as a test name works again.  [github #264]
-    * Protected against Test::More accidentally overwriting $!
-      [github #268] [github #266]
-    * Restored the behavior of a fork, it will not issue its own
-      plan, making testing with fork easier.
-    * Test::Builder->name() has been restored. [github #220]
-      (Matthew Horsfall)
-    * TB2::BlackHole no longer tries to AUTOLOAD its destructor.
-      [github #280] (Peter Rabbitson)
-    * Threads work on 5.12 and 5.10 again. (Peter Rabbitson)
-
-    Doc Fixes
-    * use_ok() has been discouraged and de-emphasized as a general
-      replacement for `use` in tests. [github #288]
-
-    Incompatible Changes with previous alphas
-    * TB2::Counter has been removed [github 119]
-    * The test counter has been moved from the TAP formatter
-      into TB2::History [github 190]
-    * TB2::TestState is no longer a complete subclass of
-      TB2::EventCoordinator, but delegates most EC methods.  The isa/can
-      trickery caused threading issues. [github 291]
-    * TB2::TestState->current_coordinator is now TB2::TestState->ec.
-    * use_ok() will no longer apply lexical pragams.  The incompatibilities
-      and extra complexity is not worth the marginal use.
-      [github #287]
-
-
-1.005000_004  Sun Mar 25 15:01:49 BST 2012
-    Bug Fixes
-    * Fix the thread crashes occurring with 5.12 and down.
-      [github 261]
-
-    Test Fixes
-    * t/History/child_process.t was failing, the forked processes were
-      improperly coordinated.
-
-    Incompatible Changes with previous alphas
-    * coordinate_threads() has been removed.  It had no use case and was
-      complicating threads which are quite complicated enough thank you.
-
-
-1.005000_003  Thu Mar 22 17:48:08 GMT 2012
-    Distribution Changes
-    * Added an explicit license file and copies of the GPL1 and Artistic
-      License.
-    * Changed the URL pointing to the Perl license to use the dev.perl.org
-      one pointing at the Perl license, not just the Artistic.
-
-    New Features
-    * The default formatter can be changed several ways.
-        use Some::Test formatter => "Some::Other::Formatter";
-        $builder->set_formatter( $other_formatter );
-        TB2_FORMATTER_CLASS environment variable
-      [github 244] [github 243]
-    * A new formatter, TB2::Formatter::TAP::TB1, emulates all the
-      quirks of Test::Builder 0.98. [github 215]
-    * Test::Builder::Tester now uses TB2::Formatter::TAP::TB1
-      so tests written with TBT remain compatible.  TBT is
-      discouraged, use Test::Tester.
-      [github 242]
-    * Everything responds to object_id() now. [github 162]
-
-    Bug Fixes
-    * subtest() once again returns the Result of the subtest.
-      [github 250]
-    * Remove unnecessary uses of local $_ in Test::Builder::Tester.
-      Father Chrysostomos says it interferes with a caller's tied $_.
-      [rt.cpan.org 73543]
-    * Quiet a warning about $TODO when a test function is called at
-      BEGIN time and outside the package into which Test::More was
-      exported. [github 253]
-    * Quiet warnings in the TAP formatter when a result name is
-      undefined. [github 260]
-
-    Incompatible changes with previous alphas
-    * TB2::NoHistory has been deleted before somebody relies on it.
-      It was unmaintained and will be replaced by a TB2::History feature.
-      See github 198.  [github 241]
-    * Events no longer have an event_id method, it's all object_id.
-      [github 162]
-
-    Documentation Changes
-    * $this has been replaced with $thing to avoid Javascript or C++
-      folks being confused. (Karen Etheridge)
-
-
-1.005000_002  Mon Nov 28 21:16:13 PST 2011
-    This release is now 100% feature complete and supports all documented
-    features of Test::Builder 0.98.  From this point forward it's bug
-    fixing.
-
-    New Features
-    * Test::Builder->in_subtest() will tell you if you're currently in
-      a subtest.  (dunsmoreb) [github/229]
-
-    Bug Fixes
-    * Thread support is now 100% operational.
-    * use_ok() in 1.005000_001 was leaking pragmas from inside Test::More.
-      This looked like Test::More was forcing strict. [rt.cpan.org 67538]
-      (same as 0.98_02) (Father Chrysostomos)
-    * subtest(), child(), name() and parent() are now completely removed,
-      no stubs, so that a can() check will not find them.  This fixes
-      some modules. (dunsmoreb) [github/229]
-
-    Doc Fixes
-    * References to "stream" have all been turned to "test" to be
-      consistent with the new terminology. [github issue/211]
-
-    Performance Improvements
-    * Runtime performance of a basic test has been significantly improved.
-
-    Some Known Broken Dependencies
-    * POE
-    * Test::Tester (and anything based on it)
-    * Test::NoWarnings (because of Test::Tester)
-    * Test::Deep (because of Test::Tester)
-    * Test::Class
-    * Test::SharedFork
-    * Test::Aggregate
-
-
-1.005000_001  Thu Nov 17 01:38:53 PST 2011
-    This is the first alpha release of what has been termed Test::Builder1.5.
-    It is Test::Builder implemented with the Test::Builder2 internals
-    (formatters, event system, etc...).  Aside from thread support, it is
-    feature complete and supports all existing features of Test::Builder,
-    Test::Simple and Test::More.
-
-    Tests should continue to work as written.  Please report any breakages
-    at https://github.com/schwern/test-more/issues/
-
-    Incompatible Changes with previous alphas
-    * A lot, too many to list.  If you were using an earlier alpha,
-      all bets are off.
-
-    Incompatible Changes (since 0.98)
-    * The test output format has changed in small ways.  A later release
-      will provide the means to format the output just like 0.98 does now.
-
-
-2.00_07  Mon, 28 Feb 2011 23:53:22 +1100
-    Incompatible Changes with previous alphas
-    * TB2::Event::Log now uses symbolic levels, not numeric.  This lets us
-      add new levels later. [github 111]
-    * Event log levels have been lower cased.
-    * The emergency and critical log levels have been removed.  They didn't have
-      a use case.
-    * TB2::Event::Log->levels now returns in order from lowest to highest.
-
-    New Features
-    * Added TB2::Event::Log->between_levels() to compare log levels.
-    * The TAP formatter now respects log events.
-    * Test::Builder->diag and ->note now use log events and the
-      formatter.
-
-    Documentation
-    * The suggested meanings of event log levels are now documented.
-
-    Bug Fixes
-    * Fixed a skip() or todo_skip() called before a plan.  [github 132]
-
-
-2.00_06  Thu, 27 Jan 2011 09:58:35 +1000
-    Incompatible Changes with previous alphas
-    * The EventCoordinator now only has one history object.
-      histories() is now history().  clear_history() and add_histories()
-      are gone. [github 115]
-    * Subtest handling has been removed from the TAP formatter.  The design
-      was wrong.  It will come back later in a better form [github 120]
-    * Test::Builder2::Counter, History and Formatter are no longer singletons.
-      This is unnecessary, use the objects provided by your EventCoordinator.
-      [github 117]
-    * stream_depth() is now a method on the History object, not the TAP
-      formatter.  This makes it available to all event watchers. [github 118]
-    * history is now posted events before the formatter.  This lets the
-      formatter ask the history object about the test state.
-    * INNER_accept_event and INNER_accept_result are now gone from the
-      Formatter.  Write accept_event and accept_result normally.
-    * TB2->ok will now start the stream if there is not one already
-
-    New Features
-    * Added Test::Builder2::CanLoad to protect $! and $@ from tests loading
-      modules internally.
-    * Added Test::Builder2::Tester to test Test:: modules independent of
-      their format. [github 112]
-    * Added Test::Builder2::History->plan to capture the plan event so
-      builders don't have to
-    * Test::Builder no longer tracks the plan on its own, it uses the
-      shared History object. [github 125]
-
-    Bug Fixes
-    * More $@ and $! protection.
-    * Test::Builder now works with non-TAP formatters (or no formatter at all)
-
-
-2.00_05  Mon, 24 Jan 2011 14:52:27 +1000
-    Bug Fix
-    * reset() was not grabbing a fresh copy of STDOUT and STDERR
-
-    Test Fix
-    * Fixed t/Builder/fork_with_new_stdout.t on Windows.
-
-
-2.00_04  Tue Jan 18 11:50:48 EST 2011
-    Test Fix
-    * Work around a qr// bug in Debian etch's perl in t/Builder2/NoWarnings.t
-    * Tests looking for Mouse can now correctly find it.
-
-    New Features
-    * Added a Log event (nothing using it yet)
-    * Added a Comment event (nothing using it yet)
-
-    Bug Fixes
-    * Upgraded Mouse to 0.87
-    * Fixed the SimpleHTML example
-    * TB2::Streamer::TAP->error_fh could get accidentally initialized
-      to undef.
-
-
-2.00_03  Mon Jan 10 09:38:22 EST 2011
-    Test Fix
-    * Casing mistake in t/CanDupFilehandles.t
-
-
-2.00_02  Sun Jan  9 21:20:30 EST 2011
-    Second alpha release of Test::Builder2.
-    Technology Demonstrator.
-    Design complete.
-    Threads broken.
-    Subtests broken.
-    Test::Builder converted to use Test::Builder2 infrastructure.
-    Let's see how much of CPAN this breaks.
-
-
-2.00_01  Mon Sep  6 14:42:38 2010 -0700
-    First alpha release of Test::Builder2.
-    Technology Preview.
-    Very incomplete.
-
-
-0.98_03
-    New Features
-    * cmp_ok() will error when used with something which is not a
-      comparison operator, including =, += and the like.
-      [github 141]
+      [github 141] (Matthew Horsfall)
 
     Bug Fixes
     * use_ok() was calling class->import without quoting which could
@@ -322,8 +33,10 @@ See README and version control log for Test::Builder2 changes.
     Doc Fixes
     * use_ok() has been discouraged and de-emphasized as a general
       replacement for `use` in tests. [github #288]
+    * $thing is now $this in the docs to avoid confusing users of
+      other languages. [Karen Etheridge]
 
-    Incompatible Changes With Previous Alphas
+    Incompatible Changes With Previous Alphas (0.98_01)
     * use_ok() will no longer apply lexical pragams.  The incompatibilities
       and extra complexity is not worth the marginal use.
       [github #287]

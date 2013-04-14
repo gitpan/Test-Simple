@@ -4,12 +4,10 @@ use strict;
 
 use Test::Builder 0.98;
 
-BEGIN {
-    require Exporter;
-    our @ISA = qw(Exporter);
-}
+require Exporter;
+our @ISA = qw(Exporter);
 
-our $VERSION = '1.005000_006';
+our $VERSION = '0.98_04';
 $VERSION = eval $VERSION;      ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -48,7 +46,7 @@ Test::Builder::Module is a subclass of Exporter which means your
 module is also a subclass of Exporter.  @EXPORT, @EXPORT_OK, etc...
 all act normally.
 
-A few methods are provided to do the C<< use Your::Module tests => 23 >> part
+A few methods are provided to do the C<use Your::Module tests => 23> part
 for you.
 
 =head3 import
@@ -59,7 +57,13 @@ exporting of functions and variables.  This allows your module to set
 the plan independent of Test::More.
 
 All arguments passed to import() are passed onto 
-C<< Your::Module->builder->plan() >> with some exceptions below.
+C<< Your::Module->builder->plan() >> with the exception of 
+C<< import =>[qw(things to import)] >>.
+
+    use Your::Module import => [qw(this that)], tests => 23;
+
+says to import the functions this() and that() as well as set the plan
+to be 23 tests.
 
 import() also sets the exported_to() attribute of your builder to be
 the caller of the import() function.
@@ -67,57 +71,10 @@ the caller of the import() function.
 Additional behaviors can be added to your import() method by overriding
 import_extra().
 
-The special keywords are...
-
-=over 4
-
-=item B<import>
-
-C<import> can be passed an array ref of symbols to import, using the
-normal L<Exporter> syntax.
-
-    use Your::Module import => [qw(this that)], tests => 23;
-
-Says to import the functions this() and that() as well as set the plan
-to be 23 tests.
-
-    use Your::Module import => [qw(!fail)], tests => 23;
-
-Say to export everything normally, except the C<fail> function.
-
-
-=item B<formatter>
-
-C<formatter> can be used to change the L<TB2::Formatter> used to
-output test results.
-
-    use TB2::Formatter::POSIX;
-    use Your::Module formatter => TB2::Formatter::POSIX->new;
-
-The test will then use the POSIX formatter rather than the normal TAP
-formatter.  Note this effects the whole test, not just the functions
-in your module.
-
-See L<Test::Builder/set_formatter> for more details.
-
-=back
-
 =cut
-
-my $special_imports = {
-    formatter => sub {
-        my $class     = shift;
-        my $formatter = shift;
-
-        $class->builder->set_formatter($formatter);
-
-        return $formatter;
-    },
-};
 
 sub import {
     my($class) = shift;
-    my @args = @_;
 
     # Don't run all this when loading ourself.
     return 1 if $class eq 'Test::Builder::Module';
@@ -128,29 +85,39 @@ sub import {
 
     $test->exported_to($caller);
 
-    # Special case for 'use Test::More "no_plan"'
-    # Normalize it into 'use Test::More no_plan => 1' so we can hash the
-    # args list.
-    push @args, 1 if @args == 1 and $args[0] eq 'no_plan';
+    $class->import_extra( \@_ );
+    my(@imports) = $class->_strip_imports( \@_ );
 
-    # Let a module do whatever extra things it likes
-    $class->import_extra( \@args );
+    $test->plan(@_);
 
-    my %args = @args;
-
-    my $imports = delete $args{import};
-
-    for my $key (keys %$special_imports) {
-        my $method = $special_imports->{$key};
-        $class->$method(delete $args{$key}) if exists $args{$key};
-    }
-
-    # We're left with test plan arguments
-    $test->plan(%args);
-
-    $class->export_to_level( 1, $class, @$imports );
+    $class->export_to_level( 1, $class, @imports );
 }
 
+sub _strip_imports {
+    my $class = shift;
+    my $list  = shift;
+
+    my @imports = ();
+    my @other   = ();
+    my $idx     = 0;
+    while( $idx <= $#{$list} ) {
+        my $item = $list->[$idx];
+
+        if( defined $item and $item eq 'import' ) {
+            push @imports, @{ $list->[ $idx + 1 ] };
+            $idx++;
+        }
+        else {
+            push @other, $item;
+        }
+
+        $idx++;
+    }
+
+    @$list = @other;
+
+    return @imports;
+}
 
 =head3 import_extra
 

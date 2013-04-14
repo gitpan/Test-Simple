@@ -1,12 +1,18 @@
 #!/usr/bin/perl -w
 
-use strict;
-use warnings;
+BEGIN {
+    if( $ENV{PERL_CORE} ) {
+        chdir 't';
+        @INC = ('../lib', 'lib');
+    }
+    else {
+        unshift @INC, 't/lib';
+    }
+}
 
-{
-    # Avoid conflicting with Test::More
-    package MyTest;
-    BEGIN { require "t/test.pl" }
+my $Exit_Code;
+BEGIN {
+    *CORE::GLOBAL::exit = sub { $Exit_Code = shift; };
 }
 
 use Test::Builder;
@@ -16,15 +22,18 @@ my $output;
 my $TB = Test::More->builder;
 $TB->output(\$output);
 
-MyTest::plan(tests => 2);
+my $Test = Test::Builder->create;
+$Test->level(0);
 
-plan( tests => 4 );
+$Test->plan(tests => 2);
+
+plan tests => 4;
 
 ok 'foo';
-subtest 'outer' => sub {
+subtest 'bar' => sub {
     plan tests => 3;
     ok 'sub_foo';
-    subtest 'inner' => sub {
+    subtest 'sub_bar' => sub {
         plan tests => 3;
         ok 'sub_sub_foo';
         ok 'sub_sub_bar';
@@ -34,27 +43,15 @@ subtest 'outer' => sub {
     ok 'sub_baz';
 };
 
-
-END {
-    MyTest::is( $output, <<'OUT' );
-TAP version 13
+$Test->is_eq( $output, <<'OUT' );
 1..4
 ok 1
-    TAP version 13
     1..3
     ok 1
-        TAP version 13
         1..3
         ok 1
         ok 2
 Bail out!  ROCKS FALL! EVERYONE DIES!
 OUT
 
-    MyTest::is( $?, 255, "bail out sets non-zero exit" );
-
-    # Don't exit non-zero because of the bail out
-    $? = 0;
-
-    # I can't get this to fire after the END block, so suppress Test::Builder's ending.
-    Test::More->builder->no_ending(1);
-}
+$Test->is_eq( $Exit_Code, 255 );

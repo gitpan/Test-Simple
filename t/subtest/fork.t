@@ -1,8 +1,6 @@
 #!/usr/bin/perl -w
-
 use strict;
 use warnings;
-
 use Config;
 use IO::Pipe;
 use Test::Builder;
@@ -39,10 +37,12 @@ subtest 'fork within subtest' => sub {
     else {
         $pipe->writer;
 
-        my $builder = Test::More->builder;
-        $builder->output( $pipe );
-        $builder->failure_output( $pipe );
-        $builder->todo_output( $pipe );
+        # Force all T::B output into the pipe, for the parent
+        # builder as well as the current subtest builder.
+        no warnings 'redefine';
+        *Test::Builder::output         = sub { $pipe };
+        *Test::Builder::failure_output = sub { $pipe };
+        *Test::Builder::todo_output    = sub { $pipe };
         
         diag 'Child Done';
         exit 0;
