@@ -27,4 +27,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/schwern/test-more/
   x_MailingList: http://lists.perl.org/list/perl-qa.html
-version: 0.98_04
+version: 0.98_05

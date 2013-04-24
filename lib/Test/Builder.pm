@@ -4,7 +4,7 @@ use 5.006;
 use strict;
 use warnings;
 
-our $VERSION = '0.98_04';
+our $VERSION = '0.98_05';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 BEGIN {
@@ -247,11 +247,14 @@ sub subtest {
         # $Level first to limit the scope of the reset to the subtest.
         local $Test::Builder::Level = $Test::Builder::Level + 1;
 
+        # Store the guts of $self as $parent and turn $child into $self.
         $child  = $self->child($name);
         _copy($self,  $parent);
         _copy($child, $self);
 
         my $run_the_subtests = sub {
+            # Add subtest name for clarification of starting point
+            $self->note("Subtest: $name");
             $subtests->();
             $self->done_testing unless $self->_plan_handled;
             1;
@@ -1451,14 +1454,19 @@ sub _regex_ok {
     }
 
     {
-        ## no critic (BuiltinFunctions::ProhibitStringyEval)
-
         my $test;
         my $context = $self->_caller_context;
 
-        local( $@, $!, $SIG{__DIE__} );    # isolate eval
+        {
+            ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-        $test = eval $context . q{$test = $thing =~ /$usable_regex/ ? 1 : 0};
+            local( $@, $!, $SIG{__DIE__} );    # isolate eval
+
+            # No point in issuing an uninit warning, they'll see it in the diagnostics
+            no warnings 'uninitialized';
+
+            $test = eval $context . q{$test = $thing =~ /$usable_regex/ ? 1 : 0};
+        }
 
         $test = !$test if $cmp eq '!~';
 
