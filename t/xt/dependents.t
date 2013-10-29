@@ -19,6 +19,7 @@ $CPAN::Config->{test_report} = 0;
 
 # Module which depend on Test::More to test
 my @Modules = qw(
+    Test::Tester
     Test::Most
     Test::Warn
     Test::Exception
@@ -29,16 +30,22 @@ my @Modules = qw(
 );
 
 # Modules which are known to be broken
-my %Broken = map { $_ => 1 } qw(
+my %Broken = map { $_ => 1 } (
+    'Test::Most',
+    'Test::Differences'
 );
+
+# Have to do it here because CPAN chdirs.
+my $perl5lib = join ":", File::Spec->rel2abs("blib/lib"), File::Spec->rel2abs("lib");
 
 TODO: for my $name (@ARGV ? @ARGV : @Modules) {
     local $TODO = "$name known to be broken" if $Broken{$name};
+    local $ENV{PERL5LIB} = $perl5lib;
 
-    local $ENV{PERL5LIB} = "$ENV{PERL5LIB}:" . File::Spec->rel2abs("blib/lib");
     my $module = CPAN::Shell->expand("Module", $name);
+    $module->make;
     $module->test;
-    ok( !$module->distribution->{make_test}->failed, $name );
+    my $test_result = $module->distribution->{make_test};
+    ok( $test_result && !$test_result->failed, $name );
 }
-
 done_testing();

@@ -152,6 +152,7 @@ t/use_ok.t
 t/useing.t
 t/utf8.t
 t/versions.t
+t/xt/dependents.t
 TODO
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
