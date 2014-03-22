@@ -7,7 +7,7 @@ build_requires:
 configure_requires:
   ExtUtils::MakeMaker: 0
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.8, CPAN::Meta::Converter version 2.132830'
+generated_by: 'ExtUtils::MakeMaker version 6.92, CPAN::Meta::Converter version 2.120921'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
@@ -22,9 +22,9 @@ requires:
   Test::Harness: 2.03
   perl: 5.006
 resources:
-  MailingList: http://lists.perl.org/list/perl-qa.html
-  bugtracker: http://github.com/schwern/test-more/issues/
-  homepage: http://github.com/schwern/test-more/
+  bugtracker: http://github.com/Test-More/test-more/issues/
+  homepage: http://github.com/Test-More/test-more/
   license: http://dev.perl.org/licenses/
-  repository: http://github.com/schwern/test-more/
-version: 1.001002
+  repository: http://github.com/Test-More/test-more/
+  x_MailingList: http://lists.perl.org/list/perl-qa.html
+version: 1.001003
