@@ -4,7 +4,7 @@
       "Michael G Schwern <schwern@pobox.com>"
    ],
    "dynamic_config" : 1,
-   "generated_by" : "ExtUtils::MakeMaker version 6.92, CPAN::Meta::Converter version 2.120921",
+   "generated_by" : "ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921",
    "license" : [
       "perl_5"
    ],
@@ -38,7 +38,7 @@
          }
       }
    },
-   "release_status" : "stable",
+   "release_status" : "testing",
    "resources" : {
       "bugtracker" : {
          "web" : "http://github.com/Test-More/test-more/issues/"
@@ -52,5 +52,5 @@
       },
       "x_MailingList" : "http://lists.perl.org/list/perl-qa.html"
    },
-   "version" : "1.001003"
+   "version" : "1.001004_001"
 }
