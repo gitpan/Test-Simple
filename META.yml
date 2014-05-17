@@ -27,4 +27,4 @@ resources:
   license: http://dev.perl.org/licenses/
   repository: http://github.com/Test-More/test-more/
   x_MailingList: http://lists.perl.org/list/perl-qa.html
-version: 1.001004_001
+version: 1.001004_002
