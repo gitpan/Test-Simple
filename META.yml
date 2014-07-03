@@ -3,28 +3,28 @@ abstract: 'Basic utilities for writing tests.'
 author:
   - 'Michael G Schwern <schwern@pobox.com>'
 build_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 configure_requires:
-  ExtUtils::MakeMaker: 0
+  ExtUtils::MakeMaker: '0'
 dynamic_config: 1
-generated_by: 'ExtUtils::MakeMaker version 6.66, CPAN::Meta::Converter version 2.120921'
+generated_by: 'ExtUtils::MakeMaker version 6.98, CPAN::Meta::Converter version 2.140640'
 license: perl
 meta-spec:
   url: http://module-build.sourceforge.net/META-spec-v1.4.html
-  version: 1.4
+  version: '1.4'
 name: Test-Simple
 no_index:
   directory:
     - t
     - inc
 requires:
-  Scalar::Util: 1.13
-  Test::Harness: 2.03
-  perl: 5.006
+  Scalar::Util: '1.13'
+  Test::Harness: '2.03'
+  perl: '5.008'
 resources:
+  MailingList: http://lists.perl.org/list/perl-qa.html
   bugtracker: http://github.com/Test-More/test-more/issues/
   homepage: http://github.com/Test-More/test-more/
   license: http://dev.perl.org/licenses/
   repository: http://github.com/Test-More/test-more/
-  x_MailingList: http://lists.perl.org/list/perl-qa.html
-version: 1.001004_003
+version: 1.301001_001
