@@ -1,6 +1,6 @@
 package Test::Builder;
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 
@@ -15,7 +15,7 @@ use Test::Builder::Result::Plan;
 use Test::Builder::Result::Bail;
 use Test::Builder::Result::Child;
 
-our $VERSION = '1.301001_001';
+our $VERSION = '1.301001_002';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -220,8 +220,15 @@ sub subtest {
             1;
         };
 
-        if( !eval { $run_the_subtests->() } ) {
-            $error = $@;
+        {
+            local $@;
+            local $!;
+            local $_;
+            {
+                if( !eval { $run_the_subtests->() } ) {
+                    $error = $@;
+                }
+            }
         }
     }
 
@@ -234,7 +241,7 @@ sub subtest {
     $self->find_TODO(undef, 1, $child->{Parent_TODO});
 
     # Die *after* we restore the parent.
-    die $error if $error and !eval { $error->isa('Test::Builder::Exception') };
+    die $error if $error && !(Scalar::Util::blessed($error) && $error->isa('Test::Builder::Exception'));
 
     local $Level = $Level + 1; local $BLevel = $BLevel + 1;
     my $finalize = $child->finalize(1);

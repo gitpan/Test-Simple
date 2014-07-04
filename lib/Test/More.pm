@@ -17,11 +17,12 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '1.301001_001';
+our $VERSION = '1.301001_002';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 our $TODO;
 use Test::Builder::Provider;
+*EXPORT = TB_PROVIDER_META()->{export};
 
 provides qw(
   ok use_ok require_ok
