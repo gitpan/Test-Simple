@@ -3,8 +3,9 @@ use strict;
 use warnings;
 
 use Test::Builder;
+use Test::Builder::Util qw/package_sub is_tester is_provider find_builder/;
 use Carp qw/croak/;
-use Scalar::Util qw/blessed reftype set_prototype/;
+use Scalar::Util qw/reftype set_prototype/;
 use B();
 
 my %SIG_MAP = (
@@ -48,7 +49,7 @@ sub export_into {
     my %seen;
     for my $name (grep { !$seen{$_}++ } @sym_list) {
         no strict 'refs';
-        my $ref = $subs{$name} || $class->can($name);
+        my $ref = $subs{$name} || package_sub($class, $name);
         croak "$class does not export '$name'" unless $ref;
         *{"$dest\::$name"} = $ref ;
     }
@@ -65,7 +66,7 @@ sub make_provider {
     my $class = shift;
     my ($dest) = @_;
 
-    my $meta = $dest->can('TB_PROVIDER_META') ? $dest->TB_PROVIDER_META : undef;
+    my $meta = is_provider($dest);
 
     unless ($meta) {
         $meta = {refs => {}, attrs => {}, export => []};
@@ -89,26 +90,25 @@ sub _build_provide {
         croak "The second argument to provide() must be a ref, got: $ref"
             if $ref && !ref $ref;
 
-        $ref ||= $dest->can($name);
+        $ref ||= package_sub($dest, $name);
         croak "$dest has no sub named '$name', and no ref was given"
             unless $ref;
 
         my $attrs = {%params, package => $dest, name => $name};
         $meta->{attrs}->{$name} = $attrs;
 
-        # Stupid Legacy! This can go away when https://github.com/Ovid/test--most/pull/9 is merged.
         push @{$meta->{export}} => $name;
 
         # If this is just giving, or not a coderef
         return $meta->{refs}->{$name} = $ref if $params{give} || reftype $ref ne 'CODE';
 
-        bless $ref, $class;
-
         my $o_name = B::svref_2object($ref)->GV->NAME;
         if ($o_name && $o_name ne '__ANON__') { #sub has a name
             $meta->{refs}->{$name} = $ref;
+            $attrs->{named} = 1;
         }
         else {
+            $attrs->{named} = 0;
             # Voodoo....
             # Insert an anonymous sub, and use a trick to make caller() think its
             # name is this string, which tells us how to find the thing that was
@@ -127,7 +127,7 @@ sub _build_provide {
             my $proto = prototype($ref);
             &set_prototype($code, $proto) if $proto;
 
-            $meta->{refs}->{$name} = bless $code, $class;
+            $meta->{refs}->{$name} = $code;
 
             no strict 'refs';
             *$globname = $code;
@@ -169,7 +169,7 @@ sub _build_export {
                     unless ($meta->{refs}->{$sym} && reftype $meta->{refs}->{$sym} eq $SIG_MAP{$sig});
 
                 no strict 'refs';
-                *{"$caller\::$sym"} = $meta->{refs}->{$name} || *{"$class\::$sym"}{$sig}
+                *{"$caller\::$sym"} = $meta->{refs}->{$name} || *{"$class\::$sym"}{$SIG_MAP{$sig}}
                     || croak "'$class' has no symbol named '$name'";
             }
             else {
@@ -177,7 +177,7 @@ sub _build_export {
                     unless $meta->{refs}->{$name};
 
                 no strict 'refs';
-                *{"$caller\::$name"} = $meta->{refs}->{$name} || $class->can($name)
+                *{"$caller\::$name"} = $meta->{refs}->{$name} || package_sub($class, $name)
                     || croak "'$class' has no sub named '$name'";
             }
         }
@@ -194,18 +194,6 @@ sub provider_import {
     $class->after_import(@_)   if $class->can('after_import');
 
     1;
-}
-
-sub find_builder {
-    my $trace = Test::Builder->trace_test;
-
-    if ($trace && $trace->{report}) {
-        my $pkg = $trace->{package};
-        return $pkg->TB_INSTANCE
-            if $pkg && $pkg->can('TB_INSTANCE');
-    }
-
-    return Test::Builder->new;
 }
 
 sub anoint { Test::Builder->anoint($_[1], $_[0]) };
