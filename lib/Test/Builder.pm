@@ -15,7 +15,7 @@ use Test::Builder::Result::Plan;
 use Test::Builder::Result::Bail;
 use Test::Builder::Result::Child;
 
-our $VERSION = '1.301001_008';
+our $VERSION = '1.301001_009';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -1622,7 +1622,7 @@ with modern practices instead of deprecated ones.
 
 =item $Test->depth
 
-Det/Set the depth. This is usually set for Child tests.
+Get/Set the depth. This is usually set for Child tests.
 
 =back
 
