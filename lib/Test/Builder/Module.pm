@@ -7,7 +7,7 @@ use Test::Builder 0.99;
 require Exporter;
 our @ISA = qw(Exporter);
 
-our $VERSION = '1.301001_009';
+our $VERSION = '1.301001_010';
 $VERSION = eval $VERSION;      ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -82,12 +82,13 @@ sub import {
     my($class) = shift;
 
     my $test = $class->builder;
-    warn __PACKAGE__ . " is deprecated!\n" if $test->modern;
+    my $caller = caller;
+
+    warn __PACKAGE__ . " is deprecated!\n" if $caller->can('TB_INSTANCE') && $caller->TB_INSTANCE->modern;
 
     # Don't run all this when loading ourself.
     return 1 if $class eq 'Test::Builder::Module';
 
-    my $caller = caller;
 
     $test->exported_to($caller);
 
