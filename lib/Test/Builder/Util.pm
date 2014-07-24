@@ -13,6 +13,7 @@ exports(qw/
     import export exports accessor accessors delta deltas export_to transform
     atomic_delta atomic_deltas try protect
     package_sub is_tester is_provider find_builder
+    type_isa
 /);
 
 export(new => sub {
@@ -21,7 +22,12 @@ export(new => sub {
 
     my $self = bless {}, $class;
 
-    for my $attr (keys %params) {
+    $self->pre_init(\%params) if $self->can('pre_init');
+
+    my @attrs = keys %params;
+    @attrs = $self->init_order(@attrs) if @attrs && $self->can('init_order');
+
+    for my $attr (@attrs) {
         croak "$class has no method named '$attr'" unless $self->can($attr);
         $self->$attr($params{$attr});
     }
@@ -287,6 +293,17 @@ sub find_builder {
     }
 
     return Test::Builder->new;
+}
+
+sub type_isa {
+    my ($type, @want) = @_;
+    # We really just need: no warnings 'UNIVERSAL::isa';
+    # But if UNIVERSAL::isa is not loaded thats a compile-time error
+    # We do not want to load it ourselves.
+    # Checking to see if it is loaded each run of this method is a PITA and
+    # error prone (and also does not fix the UNIVERSAL::isa test suite.
+    no warnings;
+    return $type->isa(@want);
 }
 
 1;

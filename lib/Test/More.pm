@@ -1,6 +1,6 @@
 package Test::More;
 
-use 5.006;
+use 5.008001;
 use strict;
 use warnings;
 
@@ -17,11 +17,12 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '1.301001_013';
+our $VERSION = '1.301001_014';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 our $TODO;
 use Test::Builder::Provider;
+use Test::Builder::Util qw/type_isa/;
 *EXPORT = TB_PROVIDER_META()->{export};
 
 provides qw(
@@ -203,7 +204,7 @@ sub isa_ok ($$;$) {
     }
 
     # We can't use UNIVERSAL::isa because we want to honor isa() overrides
-    my( $rslt, $error ) = $tb->_try( sub { $thing->isa($class) } );
+    my( $rslt, $error ) = $tb->_try( sub { type_isa($thing, $class) } );
 
     if($error) {
         die <<WHOA unless $error =~ /^Can't (locate|call) method "isa"/;

@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-use Test::Builder::Util qw/try/;
+use Test::Builder::Util qw/try type_isa/;
 use Scalar::Util();
 use Test::Builder::Stream;
 use Test::Builder::Result;
@@ -16,7 +16,7 @@ use Test::Builder::Result::Bail;
 use Test::Builder::Result::Child;
 use Test::Builder::Trace;
 
-our $VERSION = '1.301001_013';
+our $VERSION = '1.301001_014';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -190,7 +190,7 @@ sub child {
 
     my $res = Test::Builder::Result::Child->new(
         $self->context,
-        name    => $name || undef,
+        name    => $child->name,
         action  => 'push',
         in_todo => $self->in_todo || 0,
         is_subtest => $is_subtest || 0,
@@ -239,7 +239,7 @@ sub subtest {
     $self->find_TODO(undef, 1, $child->{Parent_TODO});
 
     # Die *after* we restore the parent.
-    die $error if $error && !(Scalar::Util::blessed($error) && $error->isa('Test::Builder::Exception'));
+    die $error if $error && !(Scalar::Util::blessed($error) && type_isa($error, 'Test::Builder::Exception'));
 
     local $Level = $Level + 1; local $BLevel = $BLevel + 1;
     my $finalize = $child->finalize(1);
@@ -953,7 +953,7 @@ sub _check_is_passing_plan {
 sub _is_object {
     my( $self, $thing ) = @_;
 
-    return $self->_try( sub { ref $thing && $thing->isa('UNIVERSAL') } ) ? 1 : 0;
+    return $self->_try( sub { ref $thing && type_isa($thing, 'UNIVERSAL') } ) ? 1 : 0;
 }
 
 sub _unoverload {
@@ -1367,12 +1367,11 @@ sub AUTOLOAD {
     $AUTOLOAD =~ m/^(.*)::([^:]+)$/;
     my ($package, $sub) = ($1, $2);
 
-    unless ($TB15_METHODS{$sub}) {
-        my @caller = CORE::caller();
-        die qq{Can't locate object method "$sub" via package "$package" at $caller[1] line $caller[2]\n};
-    }
+    my @caller = CORE::caller();
+    my $msg = qq{Can't locate object method "$sub" via package "$package" at $caller[1] line $caller[2]\n};
 
-    die <<"    EOT";
+    $msg .= <<"    EOT" if $TB15_METHODS{$sub};
+
     *************************************************************************
     '$sub' is a Test::Builder 1.5 method. Test::Builder 1.5 is a dead branch.
     You need to update your code so that it no longer treats Test::Builders
@@ -1381,6 +1380,8 @@ sub AUTOLOAD {
     See: http://blogs.perl.org/users/chad_exodist_granum/2014/03/testmore---new-maintainer-also-stop-version-checking.html
     *************************************************************************
     EOT
+
+    die $msg;
 }
 
 ####################
