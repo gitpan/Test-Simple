@@ -4,7 +4,6 @@ use warnings;
 
 use Test::Builder::Threads;
 use Test::Builder::Util qw/accessors transform try protect/;
-use PerlIO;
 
 use base 'Test::Builder::Formatter';
 
@@ -186,25 +185,19 @@ sub _init_handles {
 sub _copy_io_layers {
     my($src, $dst) = @_;
 
-    my @src_layers = PerlIO::get_layers($src);
-    _apply_layers($dst, @src_layers) if @src_layers;
+    try {
+        require PerlIO;
+        my @src_layers = PerlIO::get_layers($src);
+        _apply_layers($dst, @src_layers) if @src_layers;
+    };
 
     return;
 }
 
-my %DEFAULT_IO_LAYERS;
-BEGIN {
-    try {
-        require File::Temp;
-        my ($fh, $fn) = File::Temp::tempfile();
-        %DEFAULT_IO_LAYERS = map {$_ => 1} PerlIO::get_layers($fh);
-    }
-}
-
 sub _apply_layers {
     my ($fh, @layers) = @_;
-    my %seen = (%DEFAULT_IO_LAYERS);
-    my @unique = grep { !$seen{$_}++ } @layers;
+    my %seen;
+    my @unique = grep { $_ !~ /^(unix|perlio)$/ and !$seen{$_}++ } @layers;
     binmode($fh, join(":", "", "raw", @unique));
 }
 

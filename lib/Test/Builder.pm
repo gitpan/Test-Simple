@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-use Test::Builder::Util qw/try/;
+use Test::Builder::Util qw/try protect/;
 use Scalar::Util();
 use Test::Builder::Stream;
 use Test::Builder::Result;
@@ -16,7 +16,7 @@ use Test::Builder::Result::Bail;
 use Test::Builder::Result::Child;
 use Test::Builder::Trace;
 
-our $VERSION = '1.301001_018';
+our $VERSION = '1.301001_019';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -298,7 +298,9 @@ sub finalize {
 #####################################
 
 sub trace_test {
-    return Test::Builder::Trace->new;
+    my $out;
+    protect { $out = Test::Builder::Trace->new };
+    return $out;
 }
 
 sub find_TODO {
@@ -1111,22 +1113,19 @@ sub _regex_ok {
 
     $test = !$test if $cmp eq '!~';
 
-    local $Level = $Level + 1; local $BLevel = $BLevel + 1;
-    $ok = $self->_ok_obj( $test, $name );
-
+    my @diag;
     unless($test) {
         $thing = defined $thing ? "'$thing'" : 'undef';
         my $match = $cmp eq '=~' ? "doesn't match" : "matches";
 
-        local $Level = $Level + 1; local $BLevel = $BLevel + 1;
-        $ok->diag( sprintf <<'DIAGNOSTIC', $thing, $match, $regex );
+        push @diag => sprintf( <<'DIAGNOSTIC', $thing, $match, $regex );
                   %s
     %13s '%s'
 DIAGNOSTIC
-
     }
 
-    $self->_record_ok($ok);
+    local $Level = $Level + 1; local $BLevel = $BLevel + 1;
+    $self->ok( $test, $name, @diag );
 
     return $test;
 }
