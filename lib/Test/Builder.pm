@@ -16,7 +16,7 @@ use Test::Builder::Result::Bail;
 use Test::Builder::Result::Child;
 use Test::Builder::Trace;
 
-our $VERSION = '1.301001_021';
+our $VERSION = '1.301001_022';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -2270,7 +2270,7 @@ could be written as:
 =head1 PACKAGE VARIABLES
 
 B<NOTE>: These are tied to the package, not the instance. Basically that means
-touching these can effect more things than you expect. Using these can lead to
+touching these can affect more things than you expect. Using these can lead to
 unexpected interactions at a distance.
 
 =over 4

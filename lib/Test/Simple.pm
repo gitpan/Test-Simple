@@ -4,10 +4,11 @@ use 5.008001;
 
 use strict;
 
-our $VERSION = '1.301001_021';
+our $VERSION = '1.301001_022';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Provider;
+require Test::More;
 
 provides qw/ok/;
 
@@ -15,6 +16,9 @@ sub before_import {
     my $class = shift;
     my ($list, $dest) = @_;
 
+    Test::More::_set_tap_locale($dest, 'legacy');
+
+    my $locale_set = 0; 
     my $other = [];
     my $idx   = 0;
     while( $idx <= $#{$list} ) {
@@ -34,7 +38,18 @@ sub before_import {
         }
         elsif( $item eq 'modern' ) {
             modernize($dest);
+            Test::More::_set_tap_locale($dest, 'utf8') unless $locale_set;
         }
+        elsif ($item eq 'utf8') {
+            Test::More::_set_tap_locale($dest, 'utf8');
+            $locale_set++;
+        }
+        elsif ($item eq 'locale') {
+            my $locale = @{$list->[$idx++]};
+            Test::More::_set_tap_locale($dest, $locale);
+            $locale_set++;
+        }
+
         else {
             Carp::croak("Unknown option: $item");
         }
