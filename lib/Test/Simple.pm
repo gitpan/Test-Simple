@@ -4,7 +4,7 @@ use 5.008001;
 
 use strict;
 
-our $VERSION = '1.301001_022';
+our $VERSION = '1.301001_023';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Provider;
@@ -16,38 +16,40 @@ sub before_import {
     my $class = shift;
     my ($list, $dest) = @_;
 
-    Test::More::_set_tap_locale($dest, 'legacy');
+    Test::More::_set_tap_encoding($dest, 'legacy');
 
-    my $locale_set = 0; 
-    my $other = [];
-    my $idx   = 0;
-    while( $idx <= $#{$list} ) {
+    my $encoding_set = 0;
+    my $other        = [];
+    my $idx          = 0;
+    my $modern       = 0;
+    while ($idx <= $#{$list}) {
         my $item = $list->[$idx++];
 
-        if( defined $item and $item eq 'no_diag' ) {
+        if (defined $item and $item eq 'no_diag') {
             $class->builder->no_diag(1);
         }
-        elsif( $item eq 'tests' || $item eq 'skip_all' ) {
+        elsif ($item eq 'tests' || $item eq 'skip_all') {
             $class->builder->plan($item => $list->[$idx++]);
         }
-        elsif( $item eq 'no_plan' ) {
+        elsif ($item eq 'no_plan') {
             $class->builder->plan($item);
         }
-        elsif( $item eq 'import' ) {
+        elsif ($item eq 'import') {
             push @$other => @{$list->[$idx++]};
         }
-        elsif( $item eq 'modern' ) {
+        elsif ($item eq 'modern') {
             modernize($dest);
-            Test::More::_set_tap_locale($dest, 'utf8') unless $locale_set;
+            Test::More::_set_tap_encoding($dest, 'utf8') unless $encoding_set;
+            $modern++;
         }
         elsif ($item eq 'utf8') {
-            Test::More::_set_tap_locale($dest, 'utf8');
-            $locale_set++;
+            Test::More::_set_tap_encoding($dest, 'utf8');
+            $encoding_set++;
         }
-        elsif ($item eq 'locale') {
-            my $locale = @{$list->[$idx++]};
-            Test::More::_set_tap_locale($dest, $locale);
-            $locale_set++;
+        elsif ($item eq 'encoding') {
+            my $encoding = @{$list->[$idx++]};
+            Test::More::_set_tap_encoding($dest, $encoding);
+            $encoding_set++;
         }
 
         else {
@@ -56,6 +58,8 @@ sub before_import {
     }
 
     @$list = @$other;
+
+    Test::Builder::Stream->shared->use_lresults unless $modern;
 
     return;
 }
