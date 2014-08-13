@@ -20,7 +20,7 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '1.301001_032';
+our $VERSION = '1.301001_033';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 our $TODO;
@@ -2008,7 +2008,9 @@ Key feature milestones include:
 
 =item test tracing
 
-Test::Builder and Test::More version 1.001004 introduce these major
+=item tap encoding
+
+Test::Builder and Test::More version 1.301001 introduce these major
 modernizations.
 
 =item subtests
@@ -2048,22 +2050,32 @@ versions included as core can be found using L<Module::CoreList>:
 =item utf8 / "Wide character in print"
 
 If you use utf8 or other non-ASCII characters with Test::More you
-might get a "Wide character in print" warning.  Using
-C<< binmode STDOUT, ":utf8" >> will not fix it.
-L<Test::Builder> (which powers
-Test::More) duplicates STDOUT and STDERR.  So any changes to them,
-including changing their output disciplines, will not be seem by
-Test::More.
+might get a "Wide character in print" warning.
+Using C<< binmode STDOUT, ":utf8" >> will not fix it.
 
-One work around is to apply encodings to STDOUT and STDERR as early
-as possible and before Test::More (or any other Test module) loads.
+Use the C<tap_encoding> function to configure the TAP stream encoding.
 
+    use utf8;
+    use Test::More;
+    tap_encoding 'utf8';
+
+L<Test::Builder> (which powers Test::More) duplicates STDOUT and STDERR.
+So any changes to them, including changing their output disciplines,
+will not be seen by Test::More.
+
+B<Note>:deprecated ways to use utf8 or other non-ASCII characters.
+
+In the past it was necessary to alter the filehandle encoding prior to loading
+Test::More. This is no longer necessary thanks to C<tap_encoding()>.
+
+    # *** DEPRECATED WAY ***
     use open ':std', ':encoding(utf8)';
     use Test::More;
 
 A more direct work around is to change the filehandles used by
 L<Test::Builder>.
 
+    # *** EVEN MORE DEPRECATED WAY ***
     my $builder = Test::More->builder;
     binmode $builder->output,         ":encoding(utf8)";
     binmode $builder->failure_output, ":encoding(utf8)";
