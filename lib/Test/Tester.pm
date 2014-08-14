@@ -11,7 +11,7 @@ BEGIN {
     }
 }
 
-use Test::Builder;
+use Test::Builder 1.301001;
 BEGIN { Test::Builder::Stream->shared->use_lresults }
 use Test::Tester::CaptureRunner;
 use Test::Tester::Delegate;
@@ -21,7 +21,7 @@ require Exporter;
 use vars qw( @ISA @EXPORT $VERSION );
 
 
-our $VERSION = '1.301001_033';
+our $VERSION = '1.301001_034';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 @EXPORT  = qw( run_tests check_tests check_test cmp_results show_space );
