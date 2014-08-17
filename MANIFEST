@@ -6,6 +6,14 @@ examples/subtest.t
 layout.dot
 lib/ok.pm
 lib/Test/Builder.pm
+lib/Test/Builder/Event.pm
+lib/Test/Builder/Event/Bail.pm
+lib/Test/Builder/Event/Child.pm
+lib/Test/Builder/Event/Diag.pm
+lib/Test/Builder/Event/Finish.pm
+lib/Test/Builder/Event/Note.pm
+lib/Test/Builder/Event/Ok.pm
+lib/Test/Builder/Event/Plan.pm
 lib/Test/Builder/ExitMagic.pm
 lib/Test/Builder/Fork.pm
 lib/Test/Builder/Formatter.pm
@@ -13,14 +21,6 @@ lib/Test/Builder/Formatter/LegacyResults.pm
 lib/Test/Builder/Formatter/TAP.pm
 lib/Test/Builder/Module.pm
 lib/Test/Builder/Provider.pm
-lib/Test/Builder/Result.pm
-lib/Test/Builder/Result/Bail.pm
-lib/Test/Builder/Result/Child.pm
-lib/Test/Builder/Result/Diag.pm
-lib/Test/Builder/Result/Finish.pm
-lib/Test/Builder/Result/Note.pm
-lib/Test/Builder/Result/Ok.pm
-lib/Test/Builder/Result/Plan.pm
 lib/Test/Builder/Stream.pm
 lib/Test/Builder/Tester.pm
 lib/Test/Builder/Tester/Color.pm
@@ -42,7 +42,6 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 README
 t/00compile.t
-t/00test_harness_check.t
 t/bad_plan.t
 t/bail_out.t
 t/BEGIN_require_ok.t
@@ -126,18 +125,18 @@ t/lib/Test/Simple/sample_tests/two_fail.plx
 t/lib/TieOut.pm
 t/missing.t
 t/Modern/Builder.t
+t/Modern/Builder_Event.t
+t/Modern/Builder_Event_Child.t
+t/Modern/Builder_Event_Diag.t
+t/Modern/Builder_Event_Finish.t
+t/Modern/Builder_Event_Note.t
+t/Modern/Builder_Event_Ok.t
+t/Modern/Builder_Event_Plan.t
 t/Modern/Builder_Fork.t
 t/Modern/Builder_Formatter.t
 t/Modern/Builder_Formatter_TAP.t
 t/Modern/Builder_Module.t
 t/Modern/Builder_Provider.t
-t/Modern/Builder_Result.t
-t/Modern/Builder_Result_Child.t
-t/Modern/Builder_Result_Diag.t
-t/Modern/Builder_Result_Finish.t
-t/Modern/Builder_Result_Note.t
-t/Modern/Builder_Result_Ok.t
-t/Modern/Builder_Result_Plan.t
 t/Modern/Builder_Stream.t
 t/Modern/Builder_Tester.t
 t/Modern/Builder_Trace.t
@@ -164,7 +163,6 @@ t/plan_is_noplan.t
 t/plan_no_plan.t
 t/plan_shouldnt_import.t
 t/plan_skip_all.t
-t/pod-coverage.t
 t/pod.t
 t/require_ok.t
 t/ribasushi_diag.t
@@ -216,6 +214,5 @@ t/useing.t
 t/utf8.t
 t/versions.t
 t/xt/dependents.t
-TODO
 META.yml                                 Module YAML meta-data (added by MakeMaker)
 META.json                                Module JSON meta-data (added by MakeMaker)
