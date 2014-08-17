@@ -16,7 +16,7 @@ use Test::Builder::Event::Bail;
 use Test::Builder::Event::Child;
 use Test::Builder::Trace;
 
-our $VERSION = '1.301001_035';
+our $VERSION = '1.301001_036';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 # The mostly-singleton, and other package vars.
@@ -1834,7 +1834,7 @@ normally be seen by the user except in verbose mode.
 
 =back
 
-=head2 ADVANCED RESULT PRODUCERS
+=head2 ADVANCED EVENT PRODUCERS
 
 =over 4
 
