@@ -20,7 +20,7 @@ sub _carp {
     return warn @_, " at $file line $line\n";
 }
 
-our $VERSION = '1.301001_039';
+our $VERSION = '1.301001_040';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 our $TODO;
@@ -110,7 +110,7 @@ sub before_import {
         elsif ($item eq 'encoding') {
             modernize($dest) unless $modern++;
             $encoding_set++;
-            my $encoding = @{$list->[$idx++]};
+            my $encoding = $list->[$idx++];
             _set_tap_encoding($dest, $encoding);
         }
         else {

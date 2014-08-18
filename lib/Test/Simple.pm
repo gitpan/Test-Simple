@@ -4,7 +4,7 @@ use 5.008001;
 
 use strict;
 
-our $VERSION = '1.301001_039';
+our $VERSION = '1.301001_040';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder::Provider;
@@ -47,7 +47,7 @@ sub before_import {
             $encoding_set++;
         }
         elsif ($item eq 'encoding') {
-            my $encoding = @{$list->[$idx++]};
+            my $encoding = $list->[$idx++];
             Test::More::_set_tap_encoding($dest, $encoding);
             $encoding_set++;
         }
