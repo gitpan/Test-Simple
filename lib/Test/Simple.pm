@@ -1,76 +1,17 @@
 package Test::Simple;
 
-use 5.008001;
+use 5.006;
 
 use strict;
 
-our $VERSION = '1.301001_040';
+our $VERSION = '1.001006';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-use Test::Builder::Provider;
-require Test::More;
+use Test::Builder::Module 0.99;
+our @ISA    = qw(Test::Builder::Module);
+our @EXPORT = qw(ok);
 
-provides qw/ok/;
-
-sub before_import {
-    my $class = shift;
-    my ($list, $dest) = @_;
-
-    Test::More::_set_tap_encoding($dest, 'legacy');
-
-    my $encoding_set = 0;
-    my $other        = [];
-    my $idx          = 0;
-    my $modern       = 0;
-    while ($idx <= $#{$list}) {
-        my $item = $list->[$idx++];
-
-        if (defined $item and $item eq 'no_diag') {
-            $class->builder->no_diag(1);
-        }
-        elsif ($item eq 'tests' || $item eq 'skip_all') {
-            $class->builder->plan($item => $list->[$idx++]);
-        }
-        elsif ($item eq 'no_plan') {
-            $class->builder->plan($item);
-        }
-        elsif ($item eq 'import') {
-            push @$other => @{$list->[$idx++]};
-        }
-        elsif ($item eq 'modern') {
-            modernize($dest);
-            Test::More::_set_tap_encoding($dest, 'utf8') unless $encoding_set;
-            $modern++;
-        }
-        elsif ($item eq 'utf8') {
-            Test::More::_set_tap_encoding($dest, 'utf8');
-            $encoding_set++;
-        }
-        elsif ($item eq 'encoding') {
-            my $encoding = $list->[$idx++];
-            Test::More::_set_tap_encoding($dest, $encoding);
-            $encoding_set++;
-        }
-
-        else {
-            Carp::croak("Unknown option: $item");
-        }
-    }
-
-    @$list = @$other;
-
-    Test::Builder::Stream->shared->use_lresults unless $modern;
-
-    return;
-}
-
-sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
-    return builder()->ok(@_);
-}
-
-1;
-
-__END__
+my $CLASS = __PACKAGE__;
 
 =head1 NAME
 
@@ -82,16 +23,6 @@ Test::Simple - Basic utilities for writing tests.
 
   ok( $foo eq $bar, 'foo is bar' );
 
-=head1 TEST COMPONENT MAP
-
-  [Test Script] > [Test Tool] > [Test::Builder] > [Test::Bulder::Stream] > [Event Formatter]
-                       ^
-                 You are here
-
-A test script uses a test tool such as L<Test::More>, which uses Test::Builder
-to produce events. The events are sent to L<Test::Builder::Stream> which then
-forwards them on to one or more formatters. The default formatter is
-L<Test::Builder::Fromatter::TAP> which produces TAP output.
 
 =head1 DESCRIPTION
 
@@ -142,6 +73,12 @@ All tests are run in scalar context.  So this:
     ok( @stuff, 'I have some stuff' );
 
 will do what you mean (fail if stuff is empty)
+
+=cut
+
+sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+    return $CLASS->builder->ok(@_);
+}
 
 =back
 
@@ -274,9 +211,11 @@ E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
 
 Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
-Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
-
-This program is free software; you can redistribute it and/or
+This program is free software; you can redistribute it and/or 
 modify it under the same terms as Perl itself.
 
 See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=cut
+
+1;
