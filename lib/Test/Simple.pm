@@ -1,17 +1,65 @@
 package Test::Simple;
 
-use 5.006;
+use 5.008001;
 
 use strict;
+use warnings;
 
-our $VERSION = '1.001006';
+our $VERSION = '1.301001_041';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
-use Test::Builder::Module 0.99;
-our @ISA    = qw(Test::Builder::Module);
-our @EXPORT = qw(ok);
+use Test::Stream;
+use Test::Stream::Toolset;
 
-my $CLASS = __PACKAGE__;
+use Test::Stream::Exporter;
+exports qw/ok/;
+Test::Stream::Exporter->cleanup;
+
+sub before_import {
+    my $class = shift;
+    my ($importer, $list) = @_;
+
+    my $meta    = init_tester($importer);
+    my $context = context(1);
+    my $idx = 0;
+    my $other = [];
+    while ($idx <= $#{$list}) {
+        my $item = $list->[$idx++];
+
+        if (defined $item and $item eq 'no_diag') {
+            Test::Stream->shared->set_no_diag(1);
+        }
+        elsif ($item eq 'tests') {
+            $context->plan($list->[$idx++]);
+        }
+        elsif ($item eq 'skip_all') {
+            $context->plan(0, 'SKIP', $list->[$idx++]);
+        }
+        elsif ($item eq 'no_plan') {
+            $context->plan(0, 'NO PLAN');
+        }
+        elsif ($item eq 'import') {
+            push @$other => @{$list->[$idx++]};
+        }
+        else {
+            $context->throw("Unknown option: $item");
+        }
+    }
+
+    @$list = @$other;
+
+    return;
+}
+
+sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
+    my $ctx = context();
+    return $ctx->ok(@_);
+    return $_[0] ? 1 : 0;
+}
+
+1;
+
+__END__
 
 =head1 NAME
 
@@ -23,6 +71,16 @@ Test::Simple - Basic utilities for writing tests.
 
   ok( $foo eq $bar, 'foo is bar' );
 
+=head1 TEST COMPONENT MAP
+
+  [Test Script] > [Test Tool] > [Test::Builder] > [Test::Bulder::Stream] > [Event Formatter]
+                       ^
+                 You are here
+
+A test script uses a test tool such as L<Test::More>, which uses Test::Builder
+to produce events. The events are sent to L<Test::Builder::Stream> which then
+forwards them on to one or more formatters. The default formatter is
+L<Test::Builder::Fromatter::TAP> which produces TAP output.
 
 =head1 DESCRIPTION
 
@@ -73,12 +131,6 @@ All tests are run in scalar context.  So this:
     ok( @stuff, 'I have some stuff' );
 
 will do what you mean (fail if stuff is empty)
-
-=cut
-
-sub ok ($;$) {    ## no critic (Subroutines::ProhibitSubroutinePrototypes)
-    return $CLASS->builder->ok(@_);
-}
 
 =back
 
@@ -211,11 +263,9 @@ E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
 
 Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
 
-This program is free software; you can redistribute it and/or 
+Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
+
+This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 See F<http://www.perl.com/perl/misc/Artistic.html>
-
-=cut
-
-1;

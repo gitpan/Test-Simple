@@ -43,7 +43,8 @@ plan tests => 8 * @test_combos;
 sub test_subtest_in_todo {
     my ($name, $code, $want_out, $no_tests_run) = @_;
 
-    my $xxx = $no_tests_run ? 'No tests run for subtest "xxx"' : 'xxx';
+    #my $xxx = $no_tests_run ? 'No tests run for subtest "xxx"' : 'xxx';
+    my @no_test_err = $no_tests_run ? ('#   No tests run for subtest.') : ();
 
     chomp $want_out;
     my @outlines = split /\n/, $want_out;
@@ -52,14 +53,17 @@ sub test_subtest_in_todo {
         my ($set_via, $todo_reason, $level) = @$combo;
 
         test_out(
-            "    # Subtest: xxx",
+            "# Subtest: xxx",
             @outlines,
-            "not ok 1 - $xxx # TODO $todo_reason",
-            "#   Failed (TODO) test '$xxx'",
-            "#   at $0 line $line{xxx}.",
-            "not ok 2 - regular todo test # TODO $todo_reason",
-            "#   Failed (TODO) test 'regular todo test'",
-            "#   at $0 line $line{reg}.",
+            map { my $x = $_; $x =~ s/\s+$//; $x } (
+                "not ok 1 - xxx # TODO $todo_reason",
+                "#   Failed (TODO) test 'xxx'",
+                "#   at $0 line $line{xxx}.",
+                @no_test_err,
+                "not ok 2 - regular todo test # TODO $todo_reason",
+                "#   Failed (TODO) test 'regular todo test'",
+                "#   at $0 line $line{reg}.",
+            )
         );
 
         {
@@ -77,14 +81,14 @@ sub test_subtest_in_todo {
             }
         }
 
-        test_test("$name ($level), todo [$todo_reason] set via $set_via");
+        last unless test_test("$name ($level), todo [$todo_reason] set via $set_via");
     }
 }
 
 package Foo; # If several stack frames are in package 'main' then $Level
              # could be wrong and $main::TODO might still be found.  Using
              # another package makes the tests more sensitive.
-             
+
 sub main::subtest_at_level {
     my ($name, $code, $level) = @_;
 

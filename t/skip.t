@@ -7,14 +7,21 @@ BEGIN {
     }
 }
 
-use Test::More tests => 17;
+use Test::More;
+
+BEGIN {
+    require warnings;
+    if( eval "warnings->can('carp')" ) {
+        plan skip_all => 'Modern::Open is installed, which breaks this test';
+    }
+}
 
 # If we skip with the same name, Test::Harness will report it back and
 # we won't get lots of false bug reports.
 my $Why = "Just testing the skip interface.";
 
 SKIP: {
-    skip $Why, 2 
+    skip $Why, 2
       unless Pigs->can('fly');
 
     my $pig = Pigs->new;
@@ -64,7 +71,7 @@ SKIP: {
         fail("So very failed");
     }
     is( $warning, "skip() needs to know \$how_many tests are in the ".
-                  "block at $0 line 56\n",
+                  "block at $0 line 56.\n",
         'skip without $how_many warning' );
 }
 
@@ -96,3 +103,5 @@ SKIP: {
 
     like $warning, qr/^skip\(\) was passed a non-numeric number of tests/;
 }
+
+done_testing;

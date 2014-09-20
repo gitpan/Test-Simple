@@ -1,4 +1,6 @@
 #!/usr/bin/perl
+use strict;
+use warnings;
 
 BEGIN {
     if( $ENV{PERL_CORE} ) {
@@ -11,14 +13,13 @@ BEGIN {
 use Test::More tests => 3;
 use Test::Builder;
 
-my $tb = Test::Builder->create;
-sub foo { $tb->croak("foo") }
-sub bar { $tb->carp("bar")  }
+sub foo { my $ctx = context(); Test::Builder->new->croak("foo") }
+sub bar { my $ctx = context(); Test::Builder->new->carp("bar")  }
 
 eval { foo() };
 is $@, sprintf "foo at %s line %s.\n", $0, __LINE__ - 1;
 
-eval { $tb->croak("this") };
+eval { Test::Builder->new->croak("this") };
 is $@, sprintf "this at %s line %s.\n", $0, __LINE__ - 1;
 
 {
