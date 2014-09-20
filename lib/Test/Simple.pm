@@ -5,7 +5,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_045';
+our $VERSION = '1.301001_046';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream;
@@ -70,17 +70,6 @@ Test::Simple - Basic utilities for writing tests.
   use Test::Simple tests => 1;
 
   ok( $foo eq $bar, 'foo is bar' );
-
-=head1 TEST COMPONENT MAP
-
-  [Test Script] > [Test Tool] > [Test::Builder] > [Test::Bulder::Stream] > [Event Formatter]
-                       ^
-                 You are here
-
-A test script uses a test tool such as L<Test::More>, which uses Test::Builder
-to produce events. The events are sent to L<Test::Builder::Stream> which then
-forwards them on to one or more formatters. The default formatter is
-L<Test::Builder::Fromatter::TAP> which produces TAP output.
 
 =head1 DESCRIPTION
 

@@ -206,8 +206,8 @@ END
     my $expected = <<"END";
 1..1
 not ok 1 - Child of $0
-#   Failed test 'Child of t/subtest/basic.t'
-#   at t/subtest/basic.t line 225.
+#   Failed test 'Child of $0'
+#   at $0 line 225.
 #   No tests run for subtest.
 END
     like $tb->read, qr/\Q$expected/,

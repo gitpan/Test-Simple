@@ -43,8 +43,12 @@ my $events = intercept {
 
 events_are(
     $events,
-    ok   => { in_todo => 1 },
-    diag => { in_todo => 1 },
+    ok => {
+        in_todo => 1,
+        diag => [
+            diag => { in_todo => 1 },
+        ],
+    },
     note => { in_todo => 1 },
     note => { in_todo => 1 },
     end => "All events are TODO"
