@@ -2,7 +2,7 @@ package Test::Stream;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_046';
+our $VERSION = '1.301001_047';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream::Threads;
@@ -10,9 +10,8 @@ use Test::Stream::IOSets;
 use Test::Stream::Util qw/try/;
 use Test::Stream::Carp qw/croak confess/;
 
-use Test::Stream::ArrayBase;
-BEGIN {
-    accessors qw{
+use Test::Stream::ArrayBase(
+    accessors => [qw{
         no_ending no_diag no_header
         pid tid
         state
@@ -27,9 +26,8 @@ BEGIN {
         use_numbers
         io_sets
         event_id
-    };
-    Test::Stream::ArrayBase->cleanup;
-}
+    }],
+);
 
 use constant STATE_COUNT   => 0;
 use constant STATE_FAILED  => 1;
@@ -47,7 +45,6 @@ exports qw/
     OUT_STD OUT_ERR OUT_TODO
     STATE_COUNT STATE_FAILED STATE_PLAN STATE_PASSING STATE_LEGACY STATE_ENDED
 /;
-
 Test::Stream::Exporter->cleanup;
 
 sub plan   { $_[0]->[STATE]->[-1]->[STATE_PLAN]   }
@@ -470,17 +467,15 @@ sub _render_tap {
     my $in_subtest = $e->in_subtest || 0;
     my $indent = '    ' x $in_subtest;
 
-    for(my $i = 0; $i < @sets; $i += 2) {
-        my $hid = $sets[$i];
-        my $msg = $sets[$i + 1];
-        my $fmsg = $msg;
+    for my $set (@sets) {
+        my ($hid, $msg) = @$set;
+        next unless $msg;
         my $enc = $e->encoding || confess "Could not find encoding!";
+        my $io = $self->[IO_SETS]->{$enc}->[$hid] || confess "Could not find IO $hid for $enc";
 
-        if(my $io = $self->[IO_SETS]->{$enc}->[$hid]) {
-            local($\, $", $,) = (undef, ' ', '');
-            $msg =~ s/^/$indent/mg if $in_subtest;
-            print $io $msg if $io && $msg;
-        }
+        local($\, $", $,) = (undef, ' ', '');
+        $msg =~ s/^/$indent/mg if $in_subtest;
+        print $io $msg;
     }
 }
 

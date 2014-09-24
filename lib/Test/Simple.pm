@@ -5,14 +5,14 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_046';
+our $VERSION = '1.301001_047';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream;
 use Test::Stream::Toolset;
 
 use Test::Stream::Exporter;
-exports qw/ok/;
+default_exports qw/ok/;
 Test::Stream::Exporter->cleanup;
 
 sub before_import {

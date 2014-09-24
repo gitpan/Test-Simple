@@ -3,11 +3,9 @@ use strict;
 use warnings;
 
 use Test::Stream qw/OUT_STD/;
-use Test::Stream::Event;
-BEGIN {
-    accessors qw/message/;
-    Test::Stream::Event->cleanup;
-};
+use Test::Stream::Event(
+    accessors => [qw/message/],
+);
 
 use Test::Stream::Carp qw/confess/;
 
@@ -22,7 +20,7 @@ sub to_tap {
     $msg = "# $msg" unless $msg =~ m/^\n/;
     $msg =~ s/\n/\n# /g;
 
-    return (OUT_STD, "$msg\n");
+    return [OUT_STD, "$msg\n"];
 }
 
 1;

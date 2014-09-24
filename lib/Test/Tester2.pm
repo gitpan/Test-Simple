@@ -11,7 +11,7 @@ use Test::Stream::Carp qw/croak carp/;
 
 use Test::Stream::Toolset;
 use Test::Stream::Exporter;
-exports qw{
+default_exports qw{
     intercept grab
 
     events_are check
@@ -21,8 +21,8 @@ exports qw{
     display_events display_event
     render_event
 };
-
-export dir => \&directive;
+default_export dir => \&directive;
+Test::Stream::Exporter->cleanup;
 
 sub grab {
     require Test::Tester2::Grab;
@@ -357,7 +357,11 @@ sub _simplify_event {
     $fields->{diag}   = [@{$r->diag || []}]   if $r->isa('Test::Stream::Event::Ok');
     $fields->{events} = [@{$r->events}] if $r->isa('Test::Stream::Event::Subtest');
 
-    $fields->{tap} = $r->to_tap if $r->can('to_tap');
+    # TODO: This is lame, we need a better way to validate the tap.
+    if ($r->can('to_tap')) {
+        my @sets = $r->to_tap;
+        $fields->{tap} = $sets[0]->[1] if @sets;
+    }
     chomp($fields->{tap}) if $fields->{tap};
 
     return $fields;

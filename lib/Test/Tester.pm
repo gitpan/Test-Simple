@@ -8,14 +8,14 @@ package Test::Tester;
 use Test::Builder 1.301001;
 use Test::Stream::Toolset;
 use Test::More::Tools;
-use Test::Stream;
+use Test::Stream qw/STATE_LEGACY/;
 use Test::Tester::Capture;
 
 require Exporter;
 
 use vars qw( @ISA @EXPORT $VERSION );
 
-our $VERSION = '1.301001_046';
+our $VERSION = '1.301001_047';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 @EXPORT  = qw( run_tests check_tests check_test cmp_results show_space );

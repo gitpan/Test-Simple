@@ -2,17 +2,14 @@ package Test::Stream::Event::Subtest;
 use strict;
 use warnings;
 
-use Test::Stream::Event::Ok;
-use Test::Stream::Event 'Test::Stream::Event::Ok';
-use Test::Stream;
 use Scalar::Util qw/blessed/;
-
-BEGIN {
-    accessors qw/state events exception/;
-    Test::Stream::Event->cleanup;
-};
-
 use Test::Stream::Carp qw/confess/;
+use Test::Stream qw/STATE_PASSING STATE_COUNT OUT_STD/;
+
+use Test::Stream::Event(
+    base      => 'Test::Stream::Event::Ok',
+    accessors => [qw/state events exception/],
+);
 
 sub init {
     my $self = shift;
@@ -58,9 +55,9 @@ sub to_tap {
     my @out = (
         $self->SUPER::to_tap($num),
         $self->_render_events(@_),
-        OUT_STD, "}\n",
+        [OUT_STD, "}\n"],
     );
-    $self->[NAME] =~ s/ {$//mg;
+    $self->[NAME] =~ s/ \{$//mg;
     return @out;
 }
 
@@ -76,8 +73,8 @@ sub _render_events {
         push @out => $e->to_tap($idx, $delayed);
     }
 
-    for (my $i = 1; $i < @out; $i += 2) {
-        $out[$i] =~ s/^/    /mg;
+    for my $set (@out) {
+        $set->[1] =~ s/^/    /mg;
     }
 
     return @out;

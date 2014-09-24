@@ -3,11 +3,9 @@ use strict;
 use warnings;
 
 use Test::Stream qw/OUT_STD/;
-use Test::Stream::Event;
-BEGIN {
-    accessors qw/max directive reason/;
-    Test::Stream::Event->cleanup;
-};
+use Test::Stream::Event(
+    accessors => [qw/max directive reason/],
+);
 
 use Test::Stream::Carp qw/confess/;
 
@@ -51,7 +49,7 @@ sub to_tap {
         $plan .= " $reason" if defined $reason;
     }
 
-    return (OUT_STD, "$plan\n");
+    return [OUT_STD, "$plan\n"];
 }
 
 1;
