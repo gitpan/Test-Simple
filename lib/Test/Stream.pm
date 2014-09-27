@@ -2,7 +2,7 @@ package Test::Stream;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_047';
+our $VERSION = '1.301001_051';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream::Threads;
@@ -20,6 +20,7 @@ use Test::Stream::ArrayBase(
         subtest_tap_delayed
         mungers
         listeners
+        follow_ups
         bailed_out
         exit_on_disruption
         use_tap use_legacy _use_fork
@@ -119,7 +120,6 @@ sub init {
     }
 
     sub clear {
-        use Carp qw/cluck/;
         $root->[NO_ENDING] = 1;
         $root  = undef;
         $magic = undef;
@@ -192,6 +192,18 @@ sub munge {
     }
 }
 
+sub follow_up {
+    my $self = shift;
+    for my $sub (@_) {
+        next unless $sub;
+
+        croak "follow_up only takes coderefs for arguments, got '$sub'"
+            unless ref $sub && ref $sub eq 'CODE';
+
+        push @{$self->[FOLLOW_UPS]} => $sub;
+    }
+}
+
 sub use_fork {
     require File::Temp;
     require Storable;
@@ -253,16 +265,20 @@ sub fork_cull {
         next if $file =~ m/^\.+$/;
         next unless $file =~ m/\.ready$/;
 
-        my $obj = Storable::retrieve("$tempdir/$file");
-        confess "Empty event object found '$tempdir/$file'" unless $obj;
+        # Untaint the path.
+        my $full = "$tempdir/$file";
+        ($full) = ($full =~ m/^(.*)$/gs);
+
+        my $obj = Storable::retrieve($full);
+        confess "Empty event object found '$full'" unless $obj;
         $obj->context->set_stream($self);
 
         if ($ENV{TEST_KEEP_TMP_DIR}) {
-            rename("$tempdir/$file", "$tempdir/$file.complete")
-                || confess "Could not rename file '$tempdir/$file', '$tempdir/$file.complete'";
+            rename($full, "$full.complete")
+                || confess "Could not rename file '$full', '$full.complete'";
         }
         else {
-            unlink("$tempdir/$file") || die "Could not unlink file: $file";
+            unlink($full) || die "Could not unlink file: $file";
         }
 
         my $cache = $self->_update_state($self->[STATE]->[0], $obj);
@@ -306,6 +322,11 @@ sub done_testing {
         $ctx->ok(0, "done_testing() was already called at $f1 line $l1");
         return;
     }
+
+    if ($self->[FOLLOW_UPS]) {
+        $_->($ctx) for @{$self->[FOLLOW_UPS]};
+    }
+
     $state->[STATE_ENDED] = $ctx->snapshot;
 
     my $ran  = $state->[STATE_COUNT];
@@ -399,7 +420,10 @@ sub _update_state {
         }
     }
     elsif (!$self->[NO_HEADER] && $e->isa('Test::Stream::Event::Finish')) {
-        $cache->{do_tap} = 1;
+        if ($self->[FOLLOW_UPS]) {
+            $_->($e->context) for @{$self->[FOLLOW_UPS]};
+        }
+
         $state->[STATE_ENDED] = $e->context->snapshot;
 
         my $plan = $state->[STATE_PLAN];
@@ -407,6 +431,11 @@ sub _update_state {
             $plan->set_max($state->[STATE_COUNT]);
             $plan->set_directive(undef);
             $cache->{tap_event} = $plan;
+            $cache->{do_tap} = 1;
+        }
+        else {
+            $cache->{do_tap} = 0;
+            $cache->{no_out} = 1;
         }
     }
     elsif ($self->[NO_DIAG] && $e->isa('Test::Stream::Event::Diag')) {
@@ -462,6 +491,7 @@ sub _render_tap {
     return unless $cache->{do_tap} || $e->can('to_tap');
 
     my $num = $self->use_numbers ? $cache->{number} : undef;
+    confess "XXX" unless $e->can('to_tap');
     my @sets = $e->to_tap($num, $self->[SUBTEST_TAP_DELAYED]);
 
     my $in_subtest = $e->in_subtest || 0;
@@ -498,3 +528,102 @@ sub _finalize_event {
 }
 
 1;
+
+__END__
+
+=encoding utf8
+
+=head1 SOURCE
+
+The source code repository for Test::More can be found at
+F<http://github.com/Test-More/test-more/>.
+
+=head1 MAINTAINER
+
+=over 4
+
+=item Chad Granum E<lt>exodist@cpan.orgE<gt>
+
+=back
+
+=head1 AUTHORS
+
+The following people have all contributed to the Test-More dist (sorted using
+VIM's sort function).
+
+=over 4
+
+=item Chad Granum E<lt>exodist@cpan.orgE<gt>
+
+=item Fergal Daly E<lt>fergal@esatclear.ie>E<gt>
+
+=item Mark Fowler E<lt>mark@twoshortplanks.comE<gt>
+
+=item Michael G Schwern E<lt>schwern@pobox.comE<gt>
+
+=item 唐鳳
+
+=back
+
+=head1 COPYRIGHT
+
+=over 4
+
+=item Test::Stream
+
+=item Test::Tester2
+
+Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::Simple
+
+=item Test::More
+
+=item Test::Builder
+
+Originally authored by Michael G Schwern E<lt>schwern@pobox.comE<gt> with much
+inspiration from Joshua Pritikin's Test module and lots of help from Barrie
+Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and the perl-qa
+gang.
+
+Idea by Tony Bowden and Paul Johnson, code by Michael G Schwern
+E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
+
+Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::use::ok
+
+To the extent possible under law, 唐鳳 has waived all copyright and related
+or neighboring rights to L<Test-use-ok>.
+
+This work is published from Taiwan.
+
+L<http://creativecommons.org/publicdomain/zero/1.0>
+
+=item Test::Tester
+
+This module is copyright 2005 Fergal Daly <fergal@esatclear.ie>, some parts
+are based on other people's work.
+
+Under the same license as Perl itself
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=item Test::Builder::Tester
+
+Copyright Mark Fowler E<lt>mark@twoshortplanks.comE<gt> 2002, 2004.
+
+This program is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
+
+=back

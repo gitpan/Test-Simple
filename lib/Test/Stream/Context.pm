@@ -13,7 +13,7 @@ use Test::Stream::Util qw/try/;
 use Test::Stream::Meta qw/init_tester is_tester/;
 
 use Test::Stream::ArrayBase(
-    accessors => [qw/frame stream encoding in_todo todo modern pid skip diag_todo provider/],
+    accessors => [qw/frame stream encoding in_todo todo modern pid skip diag_todo provider monkeypatch_stash/],
 );
 
 use Test::Stream::Exporter qw/import export_to default_exports/;
@@ -55,23 +55,23 @@ sub context {
     }
 
     my $call = _find_context($level);
-
-    $call = _find_context_harder() unless $call && is_tester($call->[0]);
+    $call = _find_context_harder() unless $call;
     my $pkg  = $call->[0];
 
-    my $meta = is_tester($pkg);
+    my $meta = is_tester($pkg) || _find_tester();
 
     # Check if $TODO is set in the package, if not check if Test::Builder is
     # loaded, and if so if it has Todo set. We check the element directly for
     # performance.
     my ($todo, $in_todo);
     {
+        my $todo_pkg = $meta->[Test::Stream::Meta::PACKAGE];
         no strict 'refs';
         no warnings 'once';
         if ($todo = $meta->[Test::Stream::Meta::TODO]) {
             $in_todo = 1;
         }
-        elsif ($todo = ${"$pkg\::TODO"}) {
+        elsif ($todo = ${"$todo_pkg\::TODO"}) {
             $in_todo = 1;
         }
         elsif ($Test::Builder::Test && defined $Test::Builder::Test->{Todo}) {
@@ -88,7 +88,7 @@ sub context {
         ($ppkg, $pname) = ($provider[3] =~ m/^(.*)::([^:]+)$/);
     }
 
-    $stream ||= $meta->[Test::Stream::Meta::STREAM] || Test::Stream->shared;
+    $stream ||= $meta->[Test::Stream::Meta::STREAM] || Test::Stream->shared || confess "No Stream!?";
     if ((USE_THREADS || $stream->_use_fork) && ($stream->pid == $$ && $stream->tid == get_tid())) {
         $stream->fork_cull();
     }
@@ -141,40 +141,38 @@ sub _find_context {
 
 sub _find_context_harder {
     my $level = 0;
+    my $fallback;
     while(1) {
         my ($pkg, $file, $line, $subname) = caller($level++);
-        last unless $pkg;
-        return [$pkg, $file, $line, $subname] if is_tester($pkg);
-    }
-
-    # Find, find a .t file!
-    $level = 0;
-    while(1) {
-        my ($pkg, $file, $line, $subname) = caller($level++);
-        last unless $pkg;
-        if ($file eq $0 && $file =~ m/\.t$/) {
-            init_tester($pkg);
-            return [$pkg, $file, $line, $subname];
-        }
-    }
-
-    # Final fallback, package main (If it is in the stack)
-    $level = 0;
-    while(1) {
-        my ($pkg, $file, $line, $subname) = caller($level++);
-        last unless $pkg;
-        next unless $pkg eq 'main';
-
-        init_tester($pkg);
+        $fallback ||= [$pkg, $file, $line, $subname] if $subname =~ m/::END$/;
+        next if $pkg =~ m/^Test::(Stream|Builder|More|Simple)(::.*)?$/;
         return [$pkg, $file, $line, $subname];
     }
 
-    # Give up!
-    confess "Could not find context! No tester in the stack!";
+    return $fallback if $fallback;
+    return [ '<UNKNOWN>', '<UNKNOWN>', 0, '<UNKNOWN>' ];
 }
 
-sub done_testing {
-    $_[0]->stream->done_testing(@_);
+sub _find_tester {
+    my $level = 2;
+    while(1) {
+        my $pkg = caller($level++);
+        last unless $pkg;
+        my $meta = is_tester($pkg) || next;
+        return $meta;
+    }
+
+    # find a .t file!
+    $level = 0;
+    while(1) {
+        my ($pkg, $file) = caller($level++);
+        last unless $pkg;
+        if ($file eq $0 && $file =~ m/\.t$/) {
+            return init_tester($pkg);
+        }
+    }
+
+    return init_tester('main');
 }
 
 sub alert {
@@ -213,11 +211,68 @@ sub send {
     $self->[STREAM]->send(@_);
 }
 
+# Uhg.. support legacy monkeypatching
+# If this is still here in 2020 I will be a sad panda.
+{
+    sub ok {
+        return _ok(@_) unless $INC{'Test/Builder.pm'} && $Test::Builder::ORIG{ok} != \&Test::Builder::ok;
+        my $self = shift;
+        local $Test::Builder::CTX = $self;
+        my ($bool, $name, @stash) = @_;
+        push @{$self->[MONKEYPATCH_STASH]} => \@stash;
+        my $out = Test::Builder->new->ok($bool, $name);
+        return $out;
+    }
+
+    sub _unwind_ok {
+        my $self = shift;
+        my ($bool, $name) = @_;
+        my $stash = pop @{$self->[MONKEYPATCH_STASH]};
+        return $self->_ok($bool, $name, @$stash);
+    }
+
+    sub note {
+        return _note(@_) unless $INC{'Test/Builder.pm'} && $Test::Builder::ORIG{note} != \&Test::Builder::note;
+        local $Test::Builder::CTX = shift;
+        my $out = Test::Builder->new->note(@_);
+        return $out;
+    }
+
+    sub diag {
+        return _diag(@_) unless $INC{'Test/Builder.pm'} && $Test::Builder::ORIG{diag} != \&Test::Builder::diag;
+        local $Test::Builder::CTX = shift;
+        my $out = Test::Builder->new->diag(@_);
+        return $out;
+    }
+
+    sub plan {
+        return _plan(@_) unless $INC{'Test/Builder.pm'} && $Test::Builder::ORIG{plan} != \&Test::Builder::plan;
+        local $Test::Builder::CTX = shift;
+        my ($num, $dir, $arg) = @_;
+        $dir ||= 'tests';
+        $dir = 'skip_all' if $dir eq 'SKIP';
+        $dir = 'no_plan'  if $dir eq 'NO PLAN';
+        my $out = Test::Builder->new->plan($dir, $num || $arg || ());
+        return $out;
+    }
+
+    sub done_testing {
+        return $_[0]->stream->done_testing(@_)
+            unless $INC{'Test/Builder.pm'} && $Test::Builder::ORIG{done_testing} != \&Test::Builder::done_testing;
+
+        local $Test::Builder::CTX = shift;
+        my $out = Test::Builder->new->done_testing(@_);
+        return $out;
+    }
+}
+
 sub register_event {
     my $class = shift;
-    my ($pkg) = @_;
-    my $name = lc($pkg);
-    $name =~ s/^.*:://g;
+    my ($pkg, $name) = @_;
+    unless($name) {
+        $name = lc($pkg);
+        $name =~ s/^.*:://g;
+    }
 
     confess "Method '$name' is already defined, event '$pkg' cannot get a context method!"
         if $class->can($name);
@@ -288,7 +343,7 @@ sub DESTROY { 1 }
 
 our $AUTOLOAD;
 sub AUTOLOAD {
-    my $class = blessed($_[0]) || $_[0];
+    my $class = blessed($_[0]) || $_[0] || confess $AUTOLOAD;
 
     my $name = $AUTOLOAD;
     $name =~ s/^.*:://g;
@@ -305,3 +360,102 @@ sub AUTOLOAD {
 }
 
 1;
+
+__END__
+
+=encoding utf8
+
+=head1 SOURCE
+
+The source code repository for Test::More can be found at
+F<http://github.com/Test-More/test-more/>.
+
+=head1 MAINTAINER
+
+=over 4
+
+=item Chad Granum E<lt>exodist@cpan.orgE<gt>
+
+=back
+
+=head1 AUTHORS
+
+The following people have all contributed to the Test-More dist (sorted using
+VIM's sort function).
+
+=over 4
+
+=item Chad Granum E<lt>exodist@cpan.orgE<gt>
+
+=item Fergal Daly E<lt>fergal@esatclear.ie>E<gt>
+
+=item Mark Fowler E<lt>mark@twoshortplanks.comE<gt>
+
+=item Michael G Schwern E<lt>schwern@pobox.comE<gt>
+
+=item 唐鳳
+
+=back
+
+=head1 COPYRIGHT
+
+=over 4
+
+=item Test::Stream
+
+=item Test::Tester2
+
+Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::Simple
+
+=item Test::More
+
+=item Test::Builder
+
+Originally authored by Michael G Schwern E<lt>schwern@pobox.comE<gt> with much
+inspiration from Joshua Pritikin's Test module and lots of help from Barrie
+Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and the perl-qa
+gang.
+
+Idea by Tony Bowden and Paul Johnson, code by Michael G Schwern
+E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
+
+Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::use::ok
+
+To the extent possible under law, 唐鳳 has waived all copyright and related
+or neighboring rights to L<Test-use-ok>.
+
+This work is published from Taiwan.
+
+L<http://creativecommons.org/publicdomain/zero/1.0>
+
+=item Test::Tester
+
+This module is copyright 2005 Fergal Daly <fergal@esatclear.ie>, some parts
+are based on other people's work.
+
+Under the same license as Perl itself
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=item Test::Builder::Tester
+
+Copyright Mark Fowler E<lt>mark@twoshortplanks.comE<gt> 2002, 2004.
+
+This program is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
+
+=back

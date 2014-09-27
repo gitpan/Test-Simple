@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_047';
+our $VERSION = '1.301001_051';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::More::Tools;
@@ -12,6 +12,7 @@ use Test::More::Tools;
 use Test::Stream qw/ STATE_LEGACY STATE_PLAN STATE_COUNT /;
 use Test::Stream::Toolset;
 use Test::Stream::Context;
+use Test::Stream::Carp qw/confess/;
 
 use Test::Stream::Util qw/try protect unoverload_str is_regex/;
 use Scalar::Util qw/blessed reftype/;
@@ -51,6 +52,47 @@ sub _ending {
     $self->{stream}->set_no_ending(0);
     Test::Stream::ExitMagic->new->do_magic($self->{stream}, $ctx);
 }
+
+my %WARNED;
+our $CTX;
+our %ORIG = (
+    ok   => \&ok,
+    diag => \&diag,
+    note => \&note,
+    plan => \&plan,
+    done_testing => \&done_testing,
+);
+
+sub WARN_OF_OVERRIDE {
+    my ($sub, $ctx) = @_;
+
+    return unless $ctx->modern;
+    my $old = $ORIG{$sub};
+    # Use package instead of self, we want replaced subs, not subclass overrides.
+    my $new = __PACKAGE__->can($sub);
+
+    return if $new == $old;
+
+    require B;
+    my $o    = B::svref_2object($new);
+    my $gv   = $o->GV;
+    my $st   = $o->START;
+    my $name = $gv->NAME;
+    my $pkg  = $gv->STASH->NAME;
+    my $line = $st->line;
+    my $file = $st->file;
+
+    warn <<"    EOT" unless $WARNED{"$pkg $name $file $line"}++;
+
+*******************************************************************************
+Something monkeypatched Test::Builder::$sub()!
+The new sub is '$pkg\::$name' defined in $file around line $line.
+In the near future monkeypatching Test::Builder::ok() will no longer work
+as expected.
+*******************************************************************************
+    EOT
+}
+
 
 ####################
 # {{{ Constructors #
@@ -154,6 +196,12 @@ sub finalize {
 
     $ctx = $parent->ctx;
     $ctx->child('pop', $self->{Name});
+}
+
+sub in_subtest {
+    my $self = shift;
+    my $ctx = $self->ctx;
+    return scalar @{$ctx->stream->subtests};
 }
 
 sub parent { $_[0]->{parent} }
@@ -264,9 +312,11 @@ my %PLAN_CMDS = (
 
 sub plan {
     my ($self, $cmd, @args) = @_;
-    return unless $cmd;
 
-    my $ctx = $self->ctx;
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+    WARN_OF_OVERRIDE(plan => $ctx);
+
+    return unless $cmd;
 
     if (my $method = $PLAN_CMDS{$cmd}) {
         $self->$method(@args);
@@ -284,14 +334,18 @@ sub skip_all {
 
     $self->{Skip_All} = 1;
 
-    $self->ctx()->plan(0, 'SKIP', $reason);
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+
+    $ctx->_plan(0, 'SKIP', $reason);
 }
 
 sub no_plan {
     my ($self, @args) = @_;
 
-    $self->ctx()->alert("no_plan takes no arguments") if @args;
-    $self->ctx()->plan(0, 'NO PLAN');
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+
+    $ctx->alert("no_plan takes no arguments") if @args;
+    $ctx->_plan(0, 'NO PLAN');
 
     return 1;
 }
@@ -299,17 +353,19 @@ sub no_plan {
 sub _plan_tests {
     my ($self, $arg) = @_;
 
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+
     if ($arg) {
-        $self->ctx()->throw("Number of tests must be a positive integer.  You gave it '$arg'")
+        $ctx->throw("Number of tests must be a positive integer.  You gave it '$arg'")
             unless $arg =~ /^\+?\d+$/;
 
-        $self->ctx()->plan($arg);
+        $ctx->_plan($arg);
     }
     elsif (!defined $arg) {
-        $self->ctx()->throw("Got an undefined number of tests");
+        $ctx->throw("Got an undefined number of tests");
     }
     else {
-        $self->ctx()->throw("You said to run 0 tests");
+        $ctx->throw("You said to run 0 tests");
     }
 
     return;
@@ -317,7 +373,12 @@ sub _plan_tests {
 
 sub done_testing {
     my ($self, $num_tests) = @_;
-    $self->ctx()->done_testing($num_tests);
+
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+    WARN_OF_OVERRIDE(done_testing => $ctx);
+
+    my $out = $ctx->stream->done_testing($ctx, $num_tests);
+    return $out;
 }
 
 ################
@@ -331,14 +392,16 @@ sub done_testing {
 sub ok {
     my $self = shift;
     my($test, $name) = @_;
-    my $ctx = $self->ctx();
+
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+    WARN_OF_OVERRIDE(ok => $ctx);
 
     if ($self->{child}) {
         $self->is_passing(0);
         $ctx->throw("Cannot run test ($name) with active children");
     }
 
-    $ctx->ok($test, $name);
+    $ctx->_unwind_ok($test, $name);
     return $test ? 1 : 0;
 }
 
@@ -374,14 +437,22 @@ sub todo_skip {
 sub diag {
     my $self = shift;
     my $msg = join '', map { defined($_) ? $_ : 'undef' } @_;
-    $self->ctx->diag($msg);
+
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+    WARN_OF_OVERRIDE(diag => $ctx);
+
+    $ctx->_diag($msg);
     return;
 }
 
 sub note {
     my $self = shift;
     my $msg = join '', map { defined($_) ? $_ : 'undef' } @_;
-    $self->ctx->note($msg);
+
+    my $ctx = $CTX || Test::Stream::Context->peek || $self->ctx();
+    WARN_OF_OVERRIDE(note => $ctx);
+
+    $ctx->_note($msg);
 }
 
 #############################
@@ -740,7 +811,7 @@ sub summary {
 # This is just a list of method Test::Builder current does not have that Test::Builder 1.5 does.
 my %TB15_METHODS = map { $_ => 1 } qw{
     _file_and_line _join_message _make_default _my_exit _reset_todo_state
-    _result_to_hash _results _todo_state formatter history in_subtest in_test
+    _result_to_hash _results _todo_state formatter history in_test
     no_change_exit_code post_event post_result set_formatter set_plan test_end
     test_exit_code test_start test_state
 };
@@ -1021,7 +1092,7 @@ L<Test::More::Tools>. Calling the methods below is not advised.
 
 Get the stream used by this builder (or the shared stream).
 
-=item $TB->name  
+=item $TB->name
 
 Name of the test
 
@@ -1031,14 +1102,14 @@ Parent if this is a child.
 
 =back
 
-=head1 AUTHORS
+=encoding utf8
 
-Michael G Schwern E<lt>schwern@pobox.comE<gt> with much inspiration
-from Joshua Pritikin's Test module and lots of help from Barrie
-Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and
-the perl-qa gang.
+=head1 SOURCE
 
-=head1 MAINTAINERS
+The source code repository for Test::More can be found at
+F<http://github.com/Test-More/test-more/>.
+
+=head1 MAINTAINER
 
 =over 4
 
@@ -1046,14 +1117,32 @@ the perl-qa gang.
 
 =back
 
-=head1 SOURCE
+=head1 AUTHORS
 
-The source code repository for Test::More can be found at
-F<http://github.com/Test-More/test-more/>.
+The following people have all contributed to the Test-More dist (sorted using
+VIM's sort function).
+
+=over 4
+
+=item Chad Granum E<lt>exodist@cpan.orgE<gt>
+
+=item Fergal Daly E<lt>fergal@esatclear.ie>E<gt>
+
+=item Mark Fowler E<lt>mark@twoshortplanks.comE<gt>
+
+=item Michael G Schwern E<lt>schwern@pobox.comE<gt>
+
+=item 唐鳳
+
+=back
 
 =head1 COPYRIGHT
 
-Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+=over 4
+
+=item Test::Stream
+
+=item Test::Tester2
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 
@@ -1061,3 +1150,51 @@ This program is free software; you can redistribute it and/or
 modify it under the same terms as Perl itself.
 
 See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::Simple
+
+=item Test::More
+
+=item Test::Builder
+
+Originally authored by Michael G Schwern E<lt>schwern@pobox.comE<gt> with much
+inspiration from Joshua Pritikin's Test module and lots of help from Barrie
+Slaymaker, Tony Bowden, blackstar.co.uk, chromatic, Fergal Daly and the perl-qa
+gang.
+
+Idea by Tony Bowden and Paul Johnson, code by Michael G Schwern
+E<lt>schwern@pobox.comE<gt>, wardrobe by Calvin Klein.
+
+Copyright 2001-2008 by Michael G Schwern E<lt>schwern@pobox.comE<gt>.
+
+This program is free software; you can redistribute it and/or
+modify it under the same terms as Perl itself.
+
+See F<http://www.perl.com/perl/misc/Artistic.html>
+
+=item Test::use::ok
+
+To the extent possible under law, 唐鳳 has waived all copyright and related
+or neighboring rights to L<Test-use-ok>.
+
+This work is published from Taiwan.
+
+L<http://creativecommons.org/publicdomain/zero/1.0>
+
+=item Test::Tester
+
+This module is copyright 2005 Fergal Daly <fergal@esatclear.ie>, some parts
+are based on other people's work.
+
+Under the same license as Perl itself
+
+See http://www.perl.com/perl/misc/Artistic.html
+
+=item Test::Builder::Tester
+
+Copyright Mark Fowler E<lt>mark@twoshortplanks.comE<gt> 2002, 2004.
+
+This program is free software; you can redistribute it
+and/or modify it under the same terms as Perl itself.
+
+=back
