@@ -2,7 +2,7 @@ package Test::Stream;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_053';
+our $VERSION = '1.301001_054';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream::Threads;
@@ -227,7 +227,12 @@ sub fork_out {
 
         # First write the file, then rename it so that it is not read before it is ready.
         my $name =  $tempdir . "/$$-$tid-" . ($self->[EVENT_ID]++);
-        Storable::store($event, $name);
+        my ($ret, $err) = try { Storable::store($event, $name) };
+        # Temporary to debug an error on one cpan-testers box
+        unless ($ret) {
+            require Data::Dumper;
+            confess(Data::Dumper::Dumper({ error => $err, event => $event}));
+        }
         rename($name, "$name.ready") || confess "Could not rename file '$name' -> '$name.ready'";
     }
 }
@@ -566,11 +571,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

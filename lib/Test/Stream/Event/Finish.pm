@@ -6,6 +6,14 @@ use Test::Stream::Event(
     accessors => [qw/tests_run tests_failed/],
 );
 
+sub extra_details {
+    my $self = shift;
+    return (
+        tests_run    => $self->tests_run    || 0,
+        tests_failed => $self->tests_failed || 0,
+    );
+}
+
 1;
 
 __END__
@@ -54,11 +62,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

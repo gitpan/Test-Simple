@@ -1,27 +1,61 @@
-package Test::Stream::Event::Child;
+package Test::Stream::Tester::Grab;
 use strict;
 use warnings;
 
-use Test::Stream::Carp qw/confess/;
-use Test::Stream::Event(
-    accessors => [qw/action name no_note/],
-);
+sub new {
+    my $class = shift;
 
-sub init {
-    confess "did not get an action" unless $_[0]->[ACTION];
-    confess "action must be either 'push' or 'pop', not '$_[0]->[ACTION]'"
-        unless $_[0]->[ACTION] =~ m/^(push|pop)$/;
+    my $self = bless {
+        events  => [],
+        streams => [ Test::Stream->intercept_start ],
+    }, $class;
 
-    $_[0]->[NAME] ||= "";
+    $self->{streams}->[0]->listen(
+        sub {
+            shift;    # Stream
+            push @{$self->{events}} => @_;
+        }
+    );
+
+    return $self;
+}
+
+sub flush {
+    my $self = shift;
+    my $out = delete $self->{events};
+    $self->{events} = [];
+    return $out;
+}
+
+sub events {
+    my $self = shift;
+    # Copy
+    return [@{$self->{events}}];
+}
+
+sub finish {
+    my ($self) = @_; # Do not shift;
+    $_[0] = undef;
+
+    $self->{finished} = 1;
+    my ($remove) = $self->{streams}->[0];
+    Test::Stream->intercept_stop($remove);
+
+    return $self->flush;
+}
+
+sub DESTROY {
+    my $self = shift;
+    return if $self->{finished};
+    my ($remove) = $self->{streams}->[0];
+    Test::Stream->intercept_stop($remove);
 }
 
 1;
 
 __END__
 
-=head1 NAME
-
-Test::Stream::Event::Child - Child event type
+=pod
 
 =encoding utf8
 

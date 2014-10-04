@@ -1,7 +1,7 @@
 package Test::Builder::Tester;
 
 use strict;
-our $VERSION = '1.301001_053';
+our $VERSION = '1.301001_054';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Builder 1.301001;
@@ -15,7 +15,7 @@ Test::Builder
 
 =head1 DEPRECATED
 
-B<This module is deprecated.> Please see L<Test::Tester2> for a
+B<This module is deprecated.> Please see L<Test::Stream::Tester> for a
 better alternative that does not involve dealing with TAP/string output.
 
 =head1 SYNOPSIS
@@ -500,11 +500,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

@@ -3,7 +3,7 @@ use strict;
 package Test::Tester;
 
 # Turn this back on later
-#warn "Test::Tester is deprecated, see Test::Tester2\n";
+#warn "Test::Tester is deprecated, see Test::Stream::Tester\n";
 
 use Test::Builder 1.301001;
 use Test::Stream::Toolset;
@@ -15,7 +15,7 @@ require Exporter;
 
 use vars qw( @ISA @EXPORT $VERSION );
 
-our $VERSION = '1.301001_053';
+our $VERSION = '1.301001_054';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 @EXPORT  = qw( run_tests check_tests check_test cmp_results show_space );
@@ -323,7 +323,7 @@ Test::Tester - *DEPRECATED* Ease testing test modules built with Test::Builder
 
 =head1 DEPRECATED
 
-See L<Test::Tester2> for a modern and maintained alternative.
+See L<Test::Stream::Tester> for a modern and maintained alternative.
 
 =head1 SYNOPSIS
 
@@ -702,11 +702,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

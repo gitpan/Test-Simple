@@ -405,11 +405,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

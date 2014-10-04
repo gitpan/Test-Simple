@@ -1,61 +1,84 @@
-package Test::Tester2::Grab;
+package Test::Stream::Tester::Checks::Event;
 use strict;
 use warnings;
 
+use Test::Stream::Util qw/is_regex/;
+use Test::Stream::Carp qw/confess croak/;
+
+use Scalar::Util qw/blessed reftype/;
+
 sub new {
     my $class = shift;
+    my $fields = {@_};
+    my $self = bless {fields => $fields}, $class;
 
-    my $self = bless {
-        events  => [],
-        streams => [ Test::Stream->intercept_start ],
-    }, $class;
+    $self->{$_} = delete $fields->{$_}
+        for qw/debug_line debug_file debug_package/;
 
-    $self->{streams}->[0]->listen(
-        sub {
-            shift;    # Stream
-            push @{$self->{events}} => @_;
-        }
-    );
+    map { $self->validate_check($_) } values %$fields;
+
+    my $type = $self->get('type') || confess "No type specified!";
+
+    my $etypes = Test::Stream::Context->events;
+    confess "'$type' is not a valid event type"
+        unless $etypes->{$type};
 
     return $self;
 }
 
-sub flush {
+sub debug_line    { shift->{debug_line}    }
+sub debug_file    { shift->{debug_file}    }
+sub debug_package { shift->{debug_package} }
+
+sub debug {
     my $self = shift;
-    my $out = delete $self->{events};
-    $self->{events} = [];
-    return $out;
+
+    my $type = $self->get('type');
+    my $file = $self->debug_file;
+    my $line = $self->debug_line;
+
+    return "'$type' from $file line $line.";
 }
 
-sub events {
+sub keys { sort keys %{shift->{fields}} }
+
+sub exists {
     my $self = shift;
-    # Copy
-    return [@{$self->{events}}];
+    my ($field) = @_;
+    return exists $self->{fields}->{$field};
 }
 
-sub finish {
-    my ($self) = @_; # Do not shift;
-    $_[0] = undef;
-
-    $self->{finished} = 1;
-    my ($remove) = $self->{streams}->[0];
-    Test::Stream->intercept_stop($remove);
-
-    return $self->flush;
+sub get {
+    my $self = shift;
+    my ($field) = @_;
+    return $self->{fields}->{$field};
 }
 
-sub DESTROY {
+sub validate_check {
     my $self = shift;
-    return if $self->{finished};
-    my ($remove) = $self->{streams}->[0];
-    Test::Stream->intercept_stop($remove);
+    my ($val) = @_;
+
+    return unless defined $val;
+    return unless ref $val;
+    return if is_regex($val);
+
+    if (blessed($val)) {
+        return if $val->isa('Test::Stream::Tester::Checks');
+        return if $val->isa('Test::Stream::Tester::Events');
+        return if $val->isa('Test::Stream::Tester::Checks::Event');
+        return if $val->isa('Test::Stream::Tester::Events::Event');
+    }
+
+    croak "'$val' is not a valid field check"
+        unless reftype($val) eq 'ARRAY';
+
+    croak "Arrayrefs given as field checks may only contain regexes"
+        if grep { !is_regex($_) } @$val;
+
+    return;
 }
 
 1;
-
-__END__
-
-=pod
 
 =encoding utf8
 
@@ -93,11 +116,14 @@ VIM's sort function).
 
 =head1 COPYRIGHT
 
+There has been a lot of code migration between modules,
+here are all the original copyrights together:
+
 =over 4
 
 =item Test::Stream
 
-=item Test::Tester2
+=item Test::Stream::Tester
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 

@@ -1,27 +1,37 @@
-package Test::Stream::Event::Child;
+package Test::Stream::Tester::Events;
 use strict;
 use warnings;
 
-use Test::Stream::Carp qw/confess/;
-use Test::Stream::Event(
-    accessors => [qw/action name no_note/],
-);
+use Scalar::Util qw/blessed/;
 
-sub init {
-    confess "did not get an action" unless $_[0]->[ACTION];
-    confess "action must be either 'push' or 'pop', not '$_[0]->[ACTION]'"
-        unless $_[0]->[ACTION] =~ m/^(push|pop)$/;
+use Test::Stream::Tester::Events::Event;
 
-    $_[0]->[NAME] ||= "";
+sub new {
+    my $class = shift;
+    my $self = bless [map { Test::Stream::Tester::Events::Event->new($_->summary) } @_], $class;
+    return $self;
+}
+
+sub next { shift @{$_[0]} };
+
+sub seek {
+    my $self = shift;
+    my ($type) = @_;
+
+    while (my $e = shift @$self) {
+        return $e if $e->{type} eq $type;
+    }
+
+    return undef;
+}
+
+sub clone {
+    my $self = shift;
+    my $class = blessed($self);
+    return bless [@$self], $class;
 }
 
 1;
-
-__END__
-
-=head1 NAME
-
-Test::Stream::Event::Child - Child event type
 
 =encoding utf8
 
