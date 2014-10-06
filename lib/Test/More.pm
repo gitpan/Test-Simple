@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_055';
+our $VERSION = '1.301001_056';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream::Carp qw/croak carp/;
@@ -1596,8 +1596,6 @@ Test::More is built on top of L<Test::Stream> which provides a single,
 unified backend for any test library to use.  This means two test
 libraries which both use <Test::Stream> B<can> be used together in the
 same program>.
-
-=back
 
 =head1 EXIT CODES
 

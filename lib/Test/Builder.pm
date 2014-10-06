@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_055';
+our $VERSION = '1.301001_056';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::More::Tools;
@@ -1101,6 +1101,15 @@ Name of the test
 Parent if this is a child.
 
 =back
+
+=head1 MONKEYPATCHING
+
+Many legacy testing modules monkeypatch C<ok()>, C<plan()>, and others. The
+abillity to monkeypatch these to effect all events of the specified type is now
+considered discouraged. For backwords compatability monkeypatching continues to
+work, however in the distant future it will be removed. L<Test::Stream> upon
+which Test::Builder is now built, provides hooks and API's for doing everything
+that previously required monkeypatching.
 
 =encoding utf8
 

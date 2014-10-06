@@ -7,7 +7,7 @@ use Test::Builder 0.99;
 require Exporter;
 our @ISA = qw(Exporter);
 
-our $VERSION = '1.301001_055';
+our $VERSION = '1.301001_056';
 $VERSION = eval $VERSION;      ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 
@@ -17,7 +17,7 @@ Test::Builder::Module - *DEPRECATED* Base class for test modules
 
 =head1 DEPRECATED
 
-B<This module is deprecated> See L<Test::Builder::Provider> for what you should
+B<This module is deprecated> See L<Test::Stream::Toolset> for what you should
 use instead.
 
 =head1 SYNOPSIS
