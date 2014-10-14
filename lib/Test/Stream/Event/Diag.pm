@@ -2,7 +2,6 @@ package Test::Stream::Event::Diag;
 use strict;
 use warnings;
 
-use Test::Stream qw/OUT_ERR OUT_TODO/;
 use Test::Stream::Event(
     accessors  => [qw/message linked/],
     ctx_method => '_diag',
@@ -12,7 +11,6 @@ use Test::Stream::Util qw/try/;
 use Scalar::Util qw/weaken/;
 use Test::Stream::Carp qw/confess/;
 
-my $NORMALIZE = undef;
 sub init {
     $_[0]->[MESSAGE] ||= 'undef';
     weaken($_[0]->[LINKED]) if $_[0]->[LINKED];
@@ -30,22 +28,6 @@ sub to_tap {
     my $self = shift;
 
     chomp(my $msg = $self->[MESSAGE]);
-
-    my $encoding = $self->[CONTEXT]->encoding;
-    if ($encoding ne 'legacy') {
-        my $file = $self->[CONTEXT]->file;
-        my $decoded;
-        require Encode;
-        try { $decoded = Encode::decode($encoding, "$file", Encode::FB_CROAK()) };
-        if ($decoded) {
-            unless (defined $NORMALIZE) {
-                $NORMALIZE = try { require Unicode::Normalize; 1 };
-                $NORMALIZE ||= 0;
-            }
-            $decoded = Unicode::Normalize::NFKC($decoded) if $NORMALIZE;
-            $msg =~ s/$file/$decoded/g;
-        }
-    }
 
     $msg = "# $msg" unless $msg =~ m/^\n/;
     $msg =~ s/\n/\n# /g;

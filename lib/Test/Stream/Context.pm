@@ -6,10 +6,10 @@ use Scalar::Util qw/blessed weaken/;
 
 use Test::Stream::Carp qw/confess/;
 
-use Test::Stream;
+use Test::Stream '-internal';
 use Test::Stream::Threads;
 use Test::Stream::Event();
-use Test::Stream::Util qw/try/;
+use Test::Stream::Util qw/try translate_filename/;
 use Test::Stream::Meta qw/init_tester is_tester/;
 
 use Test::Stream::ArrayBase(
@@ -42,6 +42,7 @@ sub set {
     weaken($CURRENT);
 }
 
+my $WARNED;
 sub context {
     my ($level, $stream) = @_;
     # If the context has already been initialized we simply return it, we
@@ -88,16 +89,47 @@ sub context {
         ($ppkg, $pname) = ($provider[3] =~ m/^(.*)::([^:]+)$/);
     }
 
+    # Uh-Oh! someone has replaced the singleton, that means they probably want
+    # everything to go through them... We can't do a whole lot about that, but
+    # we will use the singletons stream which should catch most use-cases.
+    if ($Test::Builder::_ORIG_Test && $Test::Builder::_ORIG_Test != $Test::Builder::Test) {
+        $stream ||= $Test::Builder::Test->{stream};
+
+        my $warn = $meta->[Test::Stream::Meta::MODERN]
+                && !$WARNED++;
+
+        warn <<"        EOT" if $warn;
+
+    *******************************************************************************
+    Something replaced the singleton \$Test::Builder::Test.
+
+    The Test::Builder singleton is no longer the central place for all test
+    events. Please look at Test::Stream, and Test::Stream->intercept() to
+    accomplish the type of thing that was once done with the singleton.
+
+    All attempts have been made to preserve compatability with older modules,
+    but if you experience broken behavior you may need to update your code. If
+    updating your code is not an option you will need to downgrade to a
+    Test::More prior to version 1.301001. Patches that restore compatability
+    without breaking necessary Test::Stream functionality will be gladly
+    accepted.
+    *******************************************************************************
+        EOT
+    }
+
     $stream ||= $meta->[Test::Stream::Meta::STREAM] || Test::Stream->shared || confess "No Stream!?";
     if ((USE_THREADS || $stream->_use_fork) && ($stream->pid == $$ && $stream->tid == get_tid())) {
         $stream->fork_cull();
     }
 
+    my $encoding = $meta->[Test::Stream::Meta::ENCODING] || 'legacy';
+    $call->[1] = translate_filename($encoding => $call->[1]) if $encoding ne 'legacy';
+
     my $ctx = bless(
         [
             $call,
             $stream,
-            $meta->[Test::Stream::Meta::ENCODING] || 'legacy',
+            $encoding,
             $in_todo,
             $todo,
             $meta->[Test::Stream::Meta::MODERN]   || 0,
@@ -291,6 +323,8 @@ sub register_event {
         sub $name {
             my \$self = shift;
             my \@call = caller(0);
+            my \$encoding = \$self->[ENCODING];
+            \$call[1] = translate_filename(\$encoding => \$call[1]) if \$encoding ne 'legacy';
             my \$e = '$pkg'->new(\$self->snapshot, [\@call[0 .. 4]], 0, \@_);
             return \$self->stream->send(\$e);
         };

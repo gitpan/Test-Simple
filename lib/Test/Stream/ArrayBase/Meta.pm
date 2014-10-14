@@ -64,7 +64,7 @@ sub add_accessor {
     my $self = shift;
     my ($name) = @_;
 
-    confess "Cannot add accessor, metadata is locked due to a subclass being initialized."
+    confess "Cannot add accessor, metadata is locked due to a subclass being initialized ($self->{parent}).\n"
         if $self->{locked};
 
     confess "field '$name' already defined!"

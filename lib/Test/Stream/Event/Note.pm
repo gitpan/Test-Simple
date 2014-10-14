@@ -2,7 +2,6 @@ package Test::Stream::Event::Note;
 use strict;
 use warnings;
 
-use Test::Stream qw/OUT_STD/;
 use Test::Stream::Event(
     accessors  => [qw/message/],
     ctx_method => '_note',
@@ -11,7 +10,7 @@ use Test::Stream::Event(
 use Test::Stream::Carp qw/confess/;
 
 sub init {
-    confess "No message set for note!" unless $_[0]->[MESSAGE];
+    confess "No message set for note!" unless defined $_[0]->[MESSAGE];
 }
 
 sub to_tap {

@@ -4,12 +4,12 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_056';
+our $VERSION = '1.301001_057';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::More::Tools;
 
-use Test::Stream qw/ STATE_LEGACY STATE_PLAN STATE_COUNT /;
+use Test::Stream qw/ -internal STATE_LEGACY STATE_PLAN STATE_COUNT /;
 use Test::Stream::Toolset;
 use Test::Stream::Context;
 use Test::Stream::Carp qw/confess/;
@@ -23,6 +23,7 @@ BEGIN {
 
 # The mostly-singleton, and other package vars.
 our $Test  = Test::Builder->new;
+our $_ORIG_Test = $Test;
 our $Level = 1;
 
 sub ctx {
@@ -507,7 +508,9 @@ sub reset {
         Test::Stream->shared->state->[-1]->[STATE_LEGACY] = [];
     }
     else {
-        $self->{stream} = Test::Stream->new()
+        $self->{stream} = Test::Stream->new();
+        $self->{stream}->set_use_legacy(1);
+        $self->{stream}->state->[-1]->[STATE_LEGACY] = [];
     }
 
     # We leave this a global because it has to be localized and localizing

@@ -1,51 +1,61 @@
-package Test::use::ok;
+package Test::MostlyLike;
 use strict;
 use warnings;
-use 5.005;
 
-our $VERSION = '1.301001_057';
-$VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
+use Test::Stream::Toolset;
+use Test::Stream::Exporter;
+default_exports qw/mostly_like/;
+Test::Stream::Exporter->cleanup;
+
+use Test::More::DeepCheck::Tolerant;
+
+sub mostly_like {
+    my ($got, $want, $name) = @_;
+
+    my $ctx = context();
+
+    unless( @_ == 2 or @_ == 3 ) {
+        my $msg = <<'WARNING';
+mostly_like() takes two or three args, you gave %d.
+This usually means you passed an array or hash instead
+of a reference to it
+WARNING
+        chop $msg;    # clip off newline so carp() will put in line/file
+
+        $ctx->alert(sprintf $msg, scalar @_);
+
+        $ctx->ok(0, undef, ['incorrect number of args']);
+        return 0;
+    }
+
+    my ($ok, @diag) = Test::More::DeepCheck::Tolerant->check($got, $want);
+    $ctx->ok($ok, $name, \@diag);
+    return $ok;
+}
 
 1;
-__END__
 
-=encoding utf8
+__END__
 
 =head1 NAME
 
-Test::use::ok - Alternative to Test::More::use_ok
+Test::MostlyLike - Relaxed checking of deep data structures.
 
-=head1 SYNOPSIS
-
-    use ok 'Some::Module';
+=head1 SYNOPSYS
 
 =head1 DESCRIPTION
 
-According to the B<Test::More> documentation, it used to be recommended to run
-C<use_ok()> inside a C<BEGIN> block, so functions are exported at compile-time
-and prototypes are properly honored.
+A tool based on C<is_deeply> from L<Test::More>. This tool produces nearly
+identical diagnostics. This tool gives you extra control by letting you check
+only the parts of the structure you care about, ignoring the rest.
 
-That is, instead of writing this:
+=head1 EXPORTS
 
-    use_ok( 'Some::Module' );
-    use_ok( 'Other::Module' );
+=over 4
 
-One should write this:
+=item mostly_like($got, $expect, $name)
 
-    BEGIN { use_ok( 'Some::Module' ); }
-    BEGIN { use_ok( 'Other::Module' ); }
-
-However, people often either forget to add C<BEGIN>, or mistakenly group
-C<use_ok> with other tests in a single C<BEGIN> block, which can create subtle
-differences in execution order.
-
-With this module, simply change all C<use_ok> in test scripts to C<use ok>,
-and they will be executed at C<BEGIN> time.  The explicit space after C<use>
-makes it clear that this is a single compile-time action.
-
-=head1 SEE ALSO
-
-L<Test::More>
+=back
 
 =encoding utf8
 
@@ -91,6 +101,8 @@ here are all the original copyrights together:
 =item Test::Stream
 
 =item Test::Stream::Tester
+
+=item Test::MostlyLike
 
 Copyright 2014 Chad Granum E<lt>exodist7@gmail.comE<gt>.
 
@@ -146,5 +158,3 @@ This program is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
 
 =back
-
-=cut
