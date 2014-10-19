@@ -1,51 +1,101 @@
-package Test::use::ok;
-use strict;
-use warnings;
-use 5.005;
-
-our $VERSION = '1.301001_061';
-$VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
-
-1;
-__END__
-
-=encoding utf8
+=pod
 
 =head1 NAME
 
-Test::use::ok - Alternative to Test::More::use_ok
+Test::Tutorial::WritingTests - A Complete Introduction to writing tests
 
-=head1 SYNOPSIS
+=head1 What are tests?
 
-    use ok 'Some::Module';
+Tests are code that verifies other code produces the expected output for a
+given input. An example may help:
 
-=head1 DESCRIPTION
+    # This code will die if math doesbn't work.
+    die "Math is broken" unless 1 + 1 == 2;
 
-According to the B<Test::More> documentation, it used to be recommended to run
-C<use_ok()> inside a C<BEGIN> block, so functions are exported at compile-time
-and prototypes are properly honored.
+However it is better to use a framework intended for testing:
 
-That is, instead of writing this:
+    ok( 1 + 1 == 2, "Math Works" );
 
-    use_ok( 'Some::Module' );
-    use_ok( 'Other::Module' );
+This will tell you if the test passes or fails, and will give you extra
+information like the name of the test, and what line it was written on if it
+fails.
 
-One should write this:
+=head1 Simple example.
 
-    BEGIN { use_ok( 'Some::Module' ); }
-    BEGIN { use_ok( 'Other::Module' ); }
+    use Test::More;
 
-However, people often either forget to add C<BEGIN>, or mistakenly group
-C<use_ok> with other tests in a single C<BEGIN> block, which can create subtle
-differences in execution order.
+    ok( 1, "1 is true, this test will pass" );
+    ok( 0, "0 is false, this test will fail" );
 
-With this module, simply change all C<use_ok> in test scripts to C<use ok>,
-and they will be executed at C<BEGIN> time.  The explicit space after C<use>
-makes it clear that this is a single compile-time action.
+    is( 1 + 1, 2, "1 + 1 == 2" );
 
-=head1 SEE ALSO
+    my @array = first_3_numbers();
+
+    is_deeply(
+        \@array,
+        [ 1, 2, 3 ],
+        "function returned an array of 3 numbers"
+    );
+
+    # When you are done, call this to satisfy the plan
+    done_testing
+
+See L<Test::More> for C<ok()>, C<is()>, C<is_deeply()>, and several other
+useful tools.
+
+=head1 What is a plan?
+
+You need to declare how many tests should be seen, this is to ensure your test
+does not die partway through. There are 2 ways to declare a plan, 1 way to
+decline to make a plan, and a way to skip everything.
+
+=over 4
+
+=item done_testing
+
+    use Test::More;
+
+    ok(1, "pass");
+
+    done_testing;
+
+Using done_testing means you do not need to update the plan every time you
+change your test script.
+
+=item Test count
+
+At import:
+
+    use Test::More tests => 1;
+    ok(1, "pass");
+
+Plan on its own:
+
+    use Test::More;
+    plan tests => 1;
+    ok(1, "pass");
+
+=item No Plan
+
+    use Test::More 'no_plan';
+
+No plan, no way to verify everything ran.
+
+=item skip_all
+
+    use Test::More skip_all => "We won't run these now";
+
+Just don't do anything.
+
+=back
+
+=head1 See Also
 
 L<Test::More>
+
+=head1 Writing tools.
+
+See L<Test::Tutorial::WritingTools>
 
 =encoding utf8
 
@@ -146,5 +196,3 @@ This program is free software; you can redistribute it
 and/or modify it under the same terms as Perl itself.
 
 =back
-
-=cut
