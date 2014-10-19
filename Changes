@@ -1,14 +1,21 @@
-1.001008     Wed Oct 15 20:10:22:00 PST 2014
-    * Updated Changes file
-
-1.001007     Wed Oct 15 16:37:11:00 PST 2014
-    * Fix subtest name when skip_all is used
-
-1.001006     Tue Sep  2 14:39:05:00 PST 2014
-    * Reverted change that is now part of alpha branch
-
-1.001005     Tue Sep  2 19:47:19:00 JST 2014
-    * Changed install path for perl 5.12 or higher.
+1.301001
+    * Normalize version number across all versioned files
+    * Event stream!
+    * Events as objects
+    * Diags can be tied to their ok's
+    * Deprecate: Test::Builder::Tester, Test::Tester, Test::Builder::Module
+    * Add Provider as an easier alternative to $Level
+    * Bundle Test::Tester
+    * Add Test::Tester2
+    * Support for event handlers/formatters
+    * Limited Forking support
+    * Refactor functionality into encapsulation modules (ExitMagic, Tap, etc...)
+    * Add Test Tracing
+    * Better encoding support in TAP output
+    * Add the 'modern' flag to disable old features
+    * Reduce dependancy on singleton pattern, each test can have its own builder
+    * Drop perl5.6 support
+    * Bugfixes
 
 1.001004_003 Sat May  17 13:43:00 PST 2014
     * Another Minor doc fix to solve test bug
