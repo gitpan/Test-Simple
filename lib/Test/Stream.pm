@@ -2,7 +2,7 @@ package Test::Stream;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_067';
+our $VERSION = '1.301001_068';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream::Threads;
@@ -305,6 +305,10 @@ sub use_fork {
 
     $_[0]->[_USE_FORK] ||= File::Temp::tempdir(CLEANUP => 0);
     confess "Could not get a temp dir" unless $_[0]->[_USE_FORK];
+    if ($^O eq 'VMS') {
+        require VMS::Filespec;
+        $_[0]->[_USE_FORK] = VMS::Filespec::unixify($_[0]->[_USE_FORK]);
+    }
     return 1;
 }
 
