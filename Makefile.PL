@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.008001;
+use 5.006;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -24,7 +24,10 @@ CHANGE_WARN
 
         sleep 5;
     }
-    if( $Config{useithreads} && $PACKAGE_VERSION < $LAST_THREAD_CHANGE ) {
+    if( $] >= 5.008001 && $Config{useithreads} &&
+        $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
+      ) 
+    {
         printf <<"THREAD_WARN", $LAST_THREAD_CHANGE;
 
 NOTE: The behavior of Test::More and threads has changed between this
@@ -68,10 +71,13 @@ WriteMakefile(
         %Prereqs
     },
 
-    INSTALLDIRS => $install_dir,
-    test => { RECURSIVE_TEST_FILES => 1 },
+    INSTALLDIRS     => $install_dir,
 
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.008001)),
+    test        => {
+        TESTS           => 't/*.t t/*/*.t',
+    },
+
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
@@ -111,13 +117,13 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
-            perl5.20.0
-            perl5.18.2
-            perl5.16.3
-            perl5.14.4
-            perl5.12.5
+            perl5.14.1
+            perl5.12.4
+            perl5.12.3
             perl5.10.1
+            perl5.10.0
             perl5.8.9
+            perl5.6.2
         );
 
         for my $perl (@perls) {
