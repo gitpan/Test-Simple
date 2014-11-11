@@ -4,7 +4,7 @@ use 5.008001;
 use strict;
 use warnings;
 
-our $VERSION = '1.301001_072';
+our $VERSION = '1.301001_073';
 $VERSION = eval $VERSION;    ## no critic (BuiltinFunctions::ProhibitStringyEval)
 
 use Test::Stream 1.301001 '-internal';
@@ -20,7 +20,7 @@ use Test::More::DeepCheck::Strict;
 use Test::Builder;
 
 use Test::Stream::Exporter qw/
-    default_export default_exports import export_to export_to_level
+    default_export default_exports export_to export_to_level
 /;
 
 our $TODO;
@@ -52,6 +52,19 @@ Test::Stream::Exporter->cleanup;
     no warnings 'once';
     $Test::Builder::Level ||= 1;
 }
+
+sub import {
+    my $class = shift;
+    my $caller = caller;
+    my @args = @_;
+
+    my $stash = $class->before_import($caller, \@args) if $class->can('before_import');
+    export_to($class, $caller, @args);
+    $class->after_import($caller, $stash, @args) if $class->can('after_import');
+    $class->import_extra(@args);
+}
+
+sub import_extra { 1 };
 
 sub builder { Test::Builder->new }
 
@@ -95,10 +108,16 @@ sub before_import {
 }
 
 sub ok ($;$) {
-    my ($bool, $name) = @_;
-    my $ctx = context();
-    $ctx->ok($bool, $name);
-    return $bool ? 1 : 0;
+    my ($test, $name) = @_;
+    my $ctx  = context();
+    if($test) {
+        $ctx->ok(1, $name);
+        return 1;
+    }
+    else {
+        $ctx->ok(0, $name);
+        return 0;
+    }
 }
 
 sub plan {
@@ -266,7 +285,7 @@ sub _skip {
     $ctx->alert("$func() was passed a non-numeric number of tests.  Did you get the arguments backwards?")
         if defined $how_many and $how_many =~ /\D/;
 
-    $how_many ||= 1;
+    $how_many = 1 unless defined $how_many;
     $ctx->set_skip($why);
     for( 1 .. $how_many ) {
         $ctx->ok($bool, '');
@@ -1042,6 +1061,28 @@ C<ok(1)> and C<ok(0)>.
 Use these very, very, very sparingly.
 
 =back
+
+=head2 Debugging tests
+
+Want a stack trace when a test failure occurs? Have some other hook in mind?
+Easy!
+
+    use Test::More;
+    use Carp qw/confess/;
+
+    Test::Stream->shared->listen(sub {
+        my ($stream, $event) = @_;
+
+        # Only care about 'Ok' events (this includes subtests)
+        return unless $event->isa('Test::Stream::Event::Ok');
+
+        # Only care about failures
+        return if $event->bool;
+
+        confess "Failed test! here is a stacktrace!";
+    });
+
+    ok(0, "This will give you a trace.");
 
 =head2 Module tests
 
