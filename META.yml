@@ -20,11 +20,11 @@ no_index:
 requires:
   Scalar::Util: '1.13'
   Test::Harness: '2.03'
-  perl: '5.006'
+  perl: '5.008001'
 resources:
   MailingList: http://lists.perl.org/list/perl-qa.html
   bugtracker: http://github.com/Test-More/test-more/issues/
   homepage: http://github.com/Test-More/test-more/
   license: http://dev.perl.org/licenses/
   repository: http://github.com/Test-More/test-more/
-version: '1.001011'
+version: 1.301001_092
