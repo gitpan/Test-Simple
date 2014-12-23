@@ -34,11 +34,11 @@
          "requires" : {
             "Scalar::Util" : "1.13",
             "Test::Harness" : "2.03",
-            "perl" : "5.008001"
+            "perl" : "5.006"
          }
       }
    },
-   "release_status" : "testing",
+   "release_status" : "stable",
    "resources" : {
       "bugtracker" : {
          "web" : "http://github.com/Test-More/test-more/issues/"
@@ -52,5 +52,5 @@
       },
       "x_MailingList" : "http://lists.perl.org/list/perl-qa.html"
    },
-   "version" : "1.301001_094"
+   "version" : "1.001012"
 }
