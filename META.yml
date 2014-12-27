@@ -20,11 +20,31 @@ no_index:
 requires:
   Scalar::Util: '1.13'
   Test::Harness: '2.03'
-  perl: '5.006'
+  perl: '5.008001'
 resources:
   MailingList: http://lists.perl.org/list/perl-qa.html
   bugtracker: http://github.com/Test-More/test-more/issues/
   homepage: http://github.com/Test-More/test-more/
   license: http://dev.perl.org/licenses/
   repository: http://github.com/Test-More/test-more/
-version: '1.001012'
+version: 1.301001_095
+x_breaks:
+  Test::Aggregate: '<= 0.371'
+  Test::Bomb: '<= 0.007'
+  Test::Builder:Clutch: '<= 0.06'
+  Test::Classy: '<= 0.09'
+  Test::DBIx::Class::Schema: '<= 1.0.6'
+  Test::FITesque: '<= 0.03'
+  Test::FileReferenced: '<= 0.02'
+  Test::Flatten: '<= 0.11'
+  Test::Kit: '<= 2.12'
+  Test::Kwalitee: '<= 1.18'
+  Test::Modern: '<= 0.011'
+  Test::Module::Used: '<= 0.2.4'
+  Test::Moose: '<= 2.1209'
+  Test::Moose::More: '<= 0.024'
+  Test::More::Prefix: '<= 0.003'
+  Test::ParallelSubtest: '<= 0.05'
+  Test::Pretty: '<= 0.30'
+  Test::Spec: '<= 100034'
+  Test::Wrapper: '<= 0.3.0'

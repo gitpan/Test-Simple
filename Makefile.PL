@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 
-use 5.006;
+use 5.008001;
 
 use Config;
 use ExtUtils::MakeMaker;
@@ -24,10 +24,7 @@ CHANGE_WARN
 
         sleep 5;
     }
-    if( $] >= 5.008001 && $Config{useithreads} &&
-        $PACKAGE_VERSION < $LAST_THREAD_CHANGE 
-      ) 
-    {
+    if( $Config{useithreads} && $PACKAGE_VERSION < $LAST_THREAD_CHANGE ) {
         printf <<"THREAD_WARN", $LAST_THREAD_CHANGE;
 
 NOTE: The behavior of Test::More and threads has changed between this
@@ -71,13 +68,10 @@ WriteMakefile(
         %Prereqs
     },
 
-    INSTALLDIRS     => $install_dir,
+    INSTALLDIRS => $install_dir,
+    test => { RECURSIVE_TEST_FILES => 1 },
 
-    test        => {
-        TESTS           => 't/*.t t/*/*.t',
-    },
-
-    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.006)),
+    ($mm_ver < 6.48 ? () : (MIN_PERL_VERSION => 5.008001)),
 
     ($mm_ver < 6.46 ? () : (META_MERGE => {
         resources => {
@@ -86,6 +80,31 @@ WriteMakefile(
             bugtracker  =>      'http://github.com/Test-More/test-more/issues/',
             repository  =>      'http://github.com/Test-More/test-more/',
             MailingList =>      'http://lists.perl.org/list/perl-qa.html',
+        },
+
+        x_breaks => {
+            # entries here declared like conflicts (see CPAN::Meta::Spec): the
+            # version range describes the versions of the module that are
+            # *incompatible* with our Test::More.
+            'Test::Aggregate'           => '<= 0.371',  # still broken: see RT#100035
+            'Test::Bomb'                => '<= 0.007',  # still broken: see GH#449
+            'Test::Builder:Clutch'      => '<= 0.06',
+            'Test::Classy'              => '<= 0.09',
+            'Test::DBIx::Class::Schema' => '<= 1.0.6',  # still broken: see GH#481
+            'Test::FITesque'            => '<= 0.03',   # still broken: see GH485
+            'Test::FileReferenced'      => '<= 0.02',   # still broken: see RT#100501
+            'Test::Flatten'             => '<= 0.11',   # still broken: see GH#498
+            'Test::Kit'                 => '<= 2.12',
+            'Test::Kwalitee'            => '<= 1.18',
+            'Test::Modern'              => '<= 0.011',
+            'Test::Module::Used'        => '<= 0.2.4',
+            'Test::Moose'               => '<= 2.1209',
+            'Test::Moose::More'         => '<= 0.024',
+            'Test::More::Prefix'        => '<= 0.003',  # still broken: see RT#90361
+            'Test::ParallelSubtest'     => '<= 0.05',   # still broken: see RT#100757
+            'Test::Pretty'              => '<= 0.30',   # still broken: see GH#505
+            'Test::Spec'                => '<= 100034', # still broken: see RT#100034
+            'Test::Wrapper'             => '<= 0.3.0',  # still broken: see GH#489
         },
     }))
 );
@@ -117,13 +136,13 @@ MAKE
         $make =~ s{\s+\z}{\n};
 
         my @perls = qw(
-            perl5.14.1
-            perl5.12.4
-            perl5.12.3
+            perl5.20.0
+            perl5.18.2
+            perl5.16.3
+            perl5.14.4
+            perl5.12.5
             perl5.10.1
-            perl5.10.0
             perl5.8.9
-            perl5.6.2
         );
 
         for my $perl (@perls) {
