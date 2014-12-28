@@ -1,46 +1,25 @@
-1.001014     Tue Dec 28 08:31:00:00 PST 2015
-    * Write a test to ensure this changes file gets updated
-    * Update changes file for 1.001013
-
-1.001013     Sun Dec 28 08:00:00:00 PST 2015
-    * Fix a unit test that broke on some platforms with spaces in the $^X path
-
-1.001012     Tue Dec 23 07:39:00:00 PST 2015
-    * Move test that was dropped in the wrong directory
-
-1.001011     Sat Dec 20 09:08:00:00 PST 2015
-    * Remove POD Coverage test
-
-1.001010     Fri Dec 19 20:16:00:00 PST 2015
-    * Fix windows test bug #491
-    * Integrate Test::Tester and Test::use::ok for easier downgrade from trial
-
-1.001009     Sun Nov  2 22:31:08:00 PST 2014
-    * Fix bug in cmp_ok
-
-1.001008     Wed Oct 15 20:10:22:00 PST 2014
-    * Updated Changes file
-
-1.001007     Wed Oct 15 16:37:11:00 PST 2014
-    * Fix subtest name when skip_all is used
-
-1.001006     Tue Sep  2 14:39:05:00 PST 2014
-    * Reverted change that is now part of alpha branch
-
-1.001005     Tue Sep  2 19:47:19:00 JST 2014
-    * Changed install path for perl 5.12 or higher.
-
-1.001004_003 Sat May  17 13:43:00 PST 2014
-    * Another Minor doc fix to solve test bug
-    * Fix #399, conflict with strawberry-portable
-
-1.001004_002 Sat May  17 13:43:00 PST 2014
-    * Minor doc fix to solve test bug
-
-1.001004_001 Sat May  10 08:39:00 PST 2014
-    * Doc updates
+1.301001
+    * Normalize version number across all versioned files
+    * Event stream!
+    * Events as objects
+    * Diags can be linked to their ok's
+    * Bundle Test::Tester
+    * Add Test::Stream::Tester
+    * Forking support that can be turned on if requested
+    * Smash Test::Builder into multiple modules
+    * Move away from the monolithic singleton
+    * Bugfixes
     * Subtests accept args
     * Outdent subtest diag
+    * Deprecate: Test::Builder::Tester, Test::Tester, Test::Builder::Module
+    * Add Context as an easier alternative to $Level
+    * API Enhancements
+    * Better encoding support in TAP output
+    * Add the 'modern' flag to disable old features
+    * Drop perl5.6 support
+    * Add API module to sugar-coat common tasks
+    * Enhanced support for windows+forking
+    * Work around https://rt.perl.org/rt3/Ticket/Display.html?id=40565
 
 1.001003     Fri Mar  21 21:12:32 PST 2014
     * Doc updates for maintainer change

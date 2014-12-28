@@ -6,10 +6,11 @@ use List::Util qw/first/;
 plan skip_all => "Only tested when releasing" unless $ENV{AUTHOR_TESTING};
 
 my $ver = $Test::More::VERSION;
+$ver =~ s/^(\d+\.\d{6}).*$/$1/;
 
 my $changes = first { -f $_ } './Changes', '../Changes';
 
-plan 'skip_all' => 'Could not find changes file'
+die "Could not find the Changes file"
     unless $changes;
 
 open(my $fh, '<', $changes) || die "Could not load changes file!";
