@@ -52,7 +52,7 @@
       },
       "x_MailingList" : "http://lists.perl.org/list/perl-qa.html"
    },
-   "version" : "1.301001_096",
+   "version" : "1.301001_097",
    "x_breaks" : {
       "Test::Aggregate" : "<= 0.371",
       "Test::Bomb" : "<= 0.007",

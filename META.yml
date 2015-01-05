@@ -27,7 +27,7 @@ resources:
   homepage: http://github.com/Test-More/test-more/
   license: http://dev.perl.org/licenses/
   repository: http://github.com/Test-More/test-more/
-version: 1.301001_096
+version: 1.301001_097
 x_breaks:
   Test::Aggregate: '<= 0.371'
   Test::Bomb: '<= 0.007'
